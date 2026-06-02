@@ -1,0 +1,56 @@
+/**
+ * Light theme layout cards — match dark elevated panels (lite-team.Md cardDesignSystem)
+ */
+
+[data-theme='light'] .sidebar-panel,
+[data-theme='light'] .notification-panel {
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme='light'] .content-panel--header {
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme='light'] .summary-card {
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme='light'] .summary-card--active {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-theme='light'] .summary-card-content__inner {
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme='light'] .summary-card-content--filled .summary-card-content__inner {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+[data-theme='light'] .eto-widget {
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme='light'] .eto-widget--clickable:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-theme='light'] .eto-today__item,
+[data-theme='light'] .eto-weekly__stat {
+  background: var(--surface-muted);
+}
+
+[data-theme='light'] .eto-notify-bar.eto-widget {
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme='light'] .content-card {
+  box-shadow: var(--shadow-card);
+}

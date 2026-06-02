@@ -1,0 +1,49 @@
+/**
+ * Maps legacy app variables → Enterprise Nexus tokens (team.Md / lite-team.Md)
+ */
+
+[data-theme='light'],
+[data-theme='dark'] {
+  --text: var(--nexus-text-secondary);
+  --text-h: var(--nexus-text-primary);
+  --bg: var(--nexus-bg);
+  --border: var(--nexus-border);
+
+  --shell-gap: var(--nexus-shell-gap);
+  --sidebar-width: var(--nexus-sidebar-width);
+  --sidebar-width-collapsed: var(--nexus-sidebar-width-collapsed);
+  --notification-panel-width: var(--sidebar-width);
+  --notification-toolbar-height: var(--nexus-notification-toolbar-height);
+
+  --surface-muted: var(--nexus-surface-muted);
+  --surface-panel: var(--nexus-surface-elevated);
+  --surface-inset: var(--nexus-surface-inset);
+
+  --radius-sm: var(--nexus-radius-sm);
+  --radius-md: var(--nexus-radius-md);
+  --radius-lg: var(--nexus-radius-lg);
+  --radius-xl: var(--nexus-radius-xl);
+  --card-radius: var(--nexus-radius-card);
+
+  --code-bg: var(--nexus-code-bg);
+  --accent: var(--nexus-primary);
+  --accent-bg: rgba(30, 79, 188, 0.12);
+  --accent-border: rgba(30, 79, 188, 0.45);
+  --accent-cyan: var(--nexus-accent);
+  --success: var(--nexus-success);
+  --danger: var(--nexus-danger);
+
+  --shadow: var(--nexus-shadow-md);
+  --shadow-card: var(--nexus-shadow-card);
+  --shadow-card-hover: var(--nexus-shadow-card-hover);
+
+  --sans: var(--nexus-font);
+  --heading: var(--nexus-font);
+  --mono: ui-monospace, Consolas, monospace;
+
+  --chart-primary: var(--nexus-chart-primary);
+  --chart-secondary: var(--nexus-chart-secondary);
+  --chart-success: var(--nexus-chart-success);
+  --chart-track: var(--nexus-chart-track);
+  --chart-text: var(--nexus-text-secondary);
+}

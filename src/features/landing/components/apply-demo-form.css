@@ -1,0 +1,234 @@
+.demo-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.demo-modal-content {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 1280px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-modal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 450px);
+  align-items: stretch;
+  min-height: min(92vh, 720px);
+}
+
+.demo-modal-illustration {
+  order: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px 28px 32px 32px;
+  background: linear-gradient(165deg, #f8fafc 0%, #eef2ff 55%, #eff6ff 100%);
+  border-right: 1px solid #e2e8f0;
+  overflow: visible;
+}
+
+.demo-illustration-crop {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: min(84vh, 620px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+  padding-bottom: 8px;
+}
+
+.demo-form-illustration {
+  width: 100%;
+  height: auto;
+  max-height: min(82vh, 600px);
+  object-fit: contain;
+  object-position: center bottom;
+  transform: translateY(6px);
+}
+
+.demo-modal-form-column {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 32px 40px 36px 32px;
+  overflow-y: auto;
+  max-height: min(92vh, 720px);
+}
+
+.demo-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #F1F5F9;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.demo-modal-close:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.demo-modal-header {
+  padding: 0 0 16px;
+  text-align: left;
+}
+
+.demo-modal-header h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.demo-modal-header p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+.demo-modal-form {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.demo-modal-form label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.demo-modal-form input,
+.demo-modal-form select {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #CBD5E1;
+  background: #F8FAFC;
+  color: #0F172A;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.demo-modal-form input:focus,
+.demo-modal-form select:focus {
+  outline: none;
+  border-color: #2563EB;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.demo-modal-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+.demo-submit-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  background: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.demo-submit-btn:hover {
+  background: #1D4ED8;
+}
+
+.demo-submit-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .demo-modal-content {
+    max-width: 520px;
+  }
+
+  .demo-modal-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: auto;
+  }
+
+  .demo-modal-illustration {
+    order: 1;
+    min-height: 260px;
+    padding: 16px 20px;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .demo-illustration-crop,
+  .demo-form-illustration {
+    max-height: 260px;
+  }
+
+  .demo-modal-form-column {
+    order: 2;
+    padding: 24px 28px 32px;
+    max-height: none;
+  }
+
+  .demo-modal-header {
+    text-align: center;
+  }
+}

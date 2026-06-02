@@ -1,0 +1,135 @@
+/**
+ * Enterprise Nexus — design tokens
+ * Dark: AI context/team.Md  |  Light: AI context/lite-team.Md
+ */
+
+:root {
+  /* Brand — shared */
+  /* ~20% darker than #2563EB */
+  --nexus-primary: #1e4fc0;
+  --nexus-primary-hover: #1a3f9a;
+  --nexus-secondary: #475569;
+  --nexus-accent: #06b6d4;
+  --nexus-success: #10b981;
+  --nexus-danger: #ef4444;
+  --nexus-warning: #f59e0b;
+
+  /* Radius */
+  --nexus-radius-card: 20px;
+  --nexus-radius-button: 14px;
+  --nexus-radius-input: 12px;
+  --nexus-radius-modal: 24px;
+  --nexus-radius-sm: 12px;
+  --nexus-radius-md: 16px;
+  --nexus-radius-lg: 20px;
+  --nexus-radius-xl: 24px;
+
+  /* Spacing (8px grid) */
+  --nexus-space-1: 8px;
+  --nexus-space-2: 16px;
+  --nexus-space-3: 24px;
+  --nexus-space-4: 32px;
+  --nexus-shell-gap: 8px;
+  --nexus-dashboard-padding: 24px;
+  --nexus-section-gap: 24px;
+  --nexus-card-gap: 20px;
+
+  /* Typography */
+  --nexus-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --nexus-font-body: 14px;
+  --nexus-line-height: 1.5;
+
+  /* Charts — brand */
+  --nexus-chart-primary: #1e4fc0;
+  --nexus-chart-secondary: #06b6d4;
+  --nexus-chart-light-blue: #38bdf8;
+  --nexus-chart-success: #10b981;
+
+  /* Switch */
+  --nexus-switch-inactive: #cbd5e1;
+  --nexus-switch-active: #06b6d4;
+
+  /* Motion */
+  --nexus-duration: 0.25s;
+  --nexus-ease: ease-in-out;
+
+  /* Layout rails */
+  --nexus-rail-width: 192px;
+  --nexus-sidebar-width: var(--nexus-rail-width);
+  --nexus-sidebar-width-collapsed: 60px;
+  --nexus-header-height: 72px;
+  --nexus-notification-panel-width: var(--nexus-rail-width);
+  --nexus-notification-toolbar-height: 28px;
+}
+
+/* Light — lite-team.Md (dull off-white surfaces, low glare) */
+[data-theme='light'] {
+  /* Canvas — subtle gradient for glass effect */
+  --nexus-bg: radial-gradient(circle at top left, #e2e8f0 0%, #cbd5e1 100%);
+  /* Cards / panels — soft gray (still lighter than canvas) */
+  --nexus-surface: #dcdfe3;
+  --nexus-surface-elevated: #dcdfe3;
+  --nexus-surface-inset: #c4cad2;
+  --nexus-surface-muted: #d4d8dd;
+  --nexus-border: rgba(100, 116, 139, 0.35);
+  --nexus-text-primary: #0f172a;
+  --nexus-text-secondary: #475569;
+  --nexus-text-muted: #64748b;
+  --nexus-text-disabled: #94a3b8;
+  --nexus-code-bg: #d4d8dd;
+
+  --nexus-topbar-bg: rgba(220, 223, 227, 0.94);
+  --nexus-topbar-blur: blur(20px);
+  --nexus-topbar-border: rgba(100, 116, 139, 0.35);
+
+  --nexus-glass-bg: rgba(220, 223, 227, 0.86);
+  --nexus-glass-blur: blur(18px);
+  --nexus-glass-border: rgba(148, 163, 184, 0.5);
+
+  --nexus-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --nexus-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --nexus-shadow-lg: 0 10px 24px rgba(15, 23, 42, 0.08);
+  --nexus-shadow-card: 0 4px 12px rgba(15, 23, 42, 0.05);
+  --nexus-shadow-card-hover: 0 10px 24px rgba(30, 79, 188, 0.08);
+  --nexus-shadow-button: 0 4px 14px rgba(30, 79, 188, 0.2);
+
+  --nexus-switch-glow: 0 0 10px rgba(6, 182, 212, 0.3);
+  --nexus-chart-track: #b8c0ca;
+  --nexus-chart-muted: #94a3b8;
+  --nexus-chart-pending: rgba(14, 165, 233, 0.55);
+}
+
+/* Dark — team.Md */
+[data-theme='dark'] {
+  --nexus-bg: radial-gradient(circle at top right, #1e293b 0%, #020617 100%);
+  --nexus-surface: #0f172a;
+  --nexus-surface-elevated: #1e293b;
+  --nexus-surface-inset: #0f172a;
+  --nexus-surface-muted: #1e293b;
+  --nexus-border: rgba(255, 255, 255, 0.08);
+  --nexus-text-primary: #f8fafc;
+  --nexus-text-secondary: #cbd5e1;
+  --nexus-text-muted: #94a3b8;
+  --nexus-text-disabled: #64748b;
+  --nexus-code-bg: #1e293b;
+
+  --nexus-topbar-bg: rgba(15, 23, 42, 0.75);
+  --nexus-topbar-blur: blur(20px);
+  --nexus-topbar-border: rgba(255, 255, 255, 0.08);
+
+  --nexus-glass-bg: rgba(15, 23, 42, 0.75);
+  --nexus-glass-blur: blur(20px);
+  --nexus-glass-border: rgba(255, 255, 255, 0.08);
+
+  --nexus-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --nexus-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --nexus-shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.12);
+  --nexus-shadow-card: 0 8px 30px rgba(0, 0, 0, 0.35);
+  --nexus-shadow-card-hover: 0 12px 24px rgba(30, 79, 188, 0.08);
+  --nexus-shadow-button: 0 4px 14px rgba(30, 79, 188, 0.25);
+
+  --nexus-switch-glow: 0 0 12px rgba(6, 182, 212, 0.45);
+  --nexus-chart-track: #334155;
+  --nexus-chart-muted: #94a3b8;
+  --nexus-chart-pending: rgba(56, 189, 248, 0.55);
+}

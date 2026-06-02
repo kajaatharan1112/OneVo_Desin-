@@ -1,0 +1,131 @@
+.control-panel-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.control-panel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full, 50%);
+  background: transparent;
+  border: none;
+  color: var(--text, #64748B);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-panel-btn:hover,
+.control-panel-btn.active {
+  background: var(--surface-muted, #f1f5f9);
+  color: var(--text-h, #0F172A);
+}
+
+[data-theme='dark'] .control-panel-btn:hover,
+[data-theme='dark'] .control-panel-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.control-panel-toast {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  background: var(--surface-panel, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius-md, 16px);
+  box-shadow: var(--shadow-card, 0 8px 24px rgba(0,0,0,0.12));
+  z-index: 1000;
+  overflow: hidden;
+  animation: controlPanelSlideDown 0.2s ease-out;
+}
+
+[data-theme='light'] .control-panel-toast {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+}
+
+[data-theme='dark'] .control-panel-toast {
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: var(--surface-muted, #f8fafc);
+}
+
+[data-theme='dark'] .control-panel-header {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.control-panel-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h, #0F172A);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.control-panel-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control-panel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.control-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, #475569);
+}
+
+@keyframes controlPanelSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.control-panel-action-btn {
+  background: var(--accent, #2563eb);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-panel-action-btn:hover {
+  filter: brightness(1.1);
+}
+
+.control-panel-action-btn.secondary {
+  background: transparent;
+  color: var(--text-h, #0f172a);
+  border: 1px solid var(--border, #cbd5e1);
+}
+
+.control-panel-action-btn.secondary:hover {
+  background: var(--surface-muted, #f1f5f9);
+}

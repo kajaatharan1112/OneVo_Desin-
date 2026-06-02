@@ -1,0 +1,264 @@
+.main-scrollable:has([data-summary-card='goals']) {
+  overflow: hidden;
+}
+
+.summarize-tabs-root--goals-overview {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.summary-card-content--goals-filled {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.summary-card-content--goals-filled .summary-card-content__inner {
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.employee-goals-overview {
+  --ego-title-size: 0.82rem;
+  --ego-body-size: 0.72rem;
+  --ego-meta-size: 0.62rem;
+
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-areas: 'plans achievements decisions';
+  gap: var(--shell-gap);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  font-family: var(--sans);
+  font-size: var(--ego-body-size);
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.ego-widget {
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.ego-plans {
+  grid-area: plans;
+}
+
+.ego-achievements {
+  grid-area: achievements;
+}
+
+.ego-decisions {
+  grid-area: decisions;
+}
+
+.ego-widget__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.ego-widget__title {
+  margin: 0;
+  font-size: var(--ego-title-size);
+  font-weight: 600;
+  color: var(--text-h);
+  flex: 1;
+  min-width: 0;
+}
+
+.ego-widget__tab {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--ego-meta-size);
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.ego-plans__list,
+.ego-achievements__list,
+.ego-decisions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.ego-plans__item {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+}
+
+.ego-plans__item--completed {
+  opacity: 0.85;
+}
+
+.ego-plans__item--at-risk {
+  border-color: color-mix(in srgb, var(--nexus-warning) 40%, var(--border));
+}
+
+.ego-plans__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.ego-plans__name {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--ego-body-size);
+}
+
+.ego-plans__due {
+  font-size: var(--ego-meta-size);
+  color: var(--nexus-text-muted);
+  white-space: nowrap;
+}
+
+.ego-plans__bar {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  margin: 4px 0;
+  overflow: hidden;
+}
+
+.ego-plans__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.ego-plans__goals {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ego-plans__goal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--ego-meta-size);
+  color: var(--text);
+}
+
+.ego-plans__goal svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.ego-plans__goal-pct {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+}
+
+.ego-achievements__item,
+.ego-decisions__item {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ego-achievements__title,
+.ego-decisions__title {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: var(--ego-body-size);
+}
+
+.ego-achievements__meta,
+.ego-decisions__meta {
+  font-size: var(--ego-meta-size);
+  color: var(--nexus-text-muted);
+}
+
+.ego-achievements__impact {
+  font-size: var(--ego-meta-size);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.ego-decisions__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ego-decisions__badge {
+  font-size: var(--ego-meta-size);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  white-space: nowrap;
+}
+
+.ego-decisions__item--deferred .ego-decisions__badge {
+  background: color-mix(in srgb, var(--nexus-warning) 12%, transparent);
+  color: var(--nexus-warning);
+  border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
+}
+
+.ego-decisions__note {
+  font-size: var(--ego-meta-size);
+  color: var(--nexus-text-secondary);
+}
+
+@media (max-width: 1100px) {
+  .employee-goals-overview {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'plans plans'
+      'achievements decisions';
+    overflow-y: auto;
+  }
+
+  .summarize-tabs-root--goals-overview {
+    overflow: auto;
+  }
+}
