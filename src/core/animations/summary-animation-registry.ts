@@ -16,7 +16,7 @@ export const summaryAnimationRegistry: Record<string, LottieAnimationData> = {
   'Active Employees': tenantEmployees as LottieAnimationData,
   'This week': tenantProjects as LottieAnimationData,
   'Monthly Review': tenantRevenue as LottieAnimationData,
-  'Open Requests': tenantRequests as LottieAnimationData
+  'Annual Analytics and Goals': tenantRequests as LottieAnimationData
 };
 
 export function getSummaryAnimation(title: string): LottieAnimationData | undefined {

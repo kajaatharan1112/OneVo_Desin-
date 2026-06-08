@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { DashboardSwitch } from '../dashboard-switch/dashboard-switch';
 import { FullscreenToggle } from '../fullscreen-toggle/fullscreen-toggle';
-import { TenantSetupWizard } from '../../../features/tenant/components/tenant-setup-wizard';
 import { RequestToast } from '../request-toast/request-toast';
 import './control-panel.css';
 
@@ -10,11 +9,16 @@ interface ControlPanelProps {
   currentView: 'employee' | 'tenant';
   onToggle: () => void;
   onGoToLandingPage?: () => void;
+  onOpenSetupWizard?: () => void;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = ({ currentView, onToggle, onGoToLandingPage }) => {
+export const ControlPanel: React.FC<ControlPanelProps> = ({
+  currentView,
+  onToggle,
+  onGoToLandingPage,
+  onOpenSetupWizard
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [showRequestToast, setShowRequestToast] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +69,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ currentView, onToggl
                 <span className="control-label">Tenant Setup</span>
                 <button 
                   className="control-panel-action-btn"
-                  onClick={() => { setIsWizardOpen(true); setIsOpen(false); }}
+                  onClick={() => {
+                    onOpenSetupWizard?.();
+                    setIsOpen(false);
+                  }}
                 >
                   Open Wizard
                 </button>
@@ -105,12 +112,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ currentView, onToggl
         <RequestToast onClose={() => setShowRequestToast(false)} />
       )}
 
-      {isWizardOpen && (
-        <TenantSetupWizard 
-          onFinish={() => setIsWizardOpen(false)}
-          onCancel={() => setIsWizardOpen(false)}
-        />
-      )}
     </div>
   );
 };

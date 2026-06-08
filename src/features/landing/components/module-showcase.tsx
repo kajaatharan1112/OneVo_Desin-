@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import './module-showcase.css';
 
 import workManagementIcon from '../../../Animation/work managemnt.svg';
-import developmentProcessIcon from '../../../Animation/development process.svg';
+import developmentProcessIcon from '../../../Animation/organizing-projects-animate.svg';
 import shareIcon from '../../../Animation/Share.svg';
 import softwareIcon from '../../../Animation/Software.svg';
 

@@ -57,7 +57,7 @@ export const tenantSummaryCards: SummaryCardData[] = [
   },
   {
     id: 'open-requests',
-    title: 'Open Requests',
+    title: 'Annual Analytics and Goals',
     value: '14',
     desc: 'Require system review',
     color: '#f59e0b'

@@ -1,0 +1,183 @@
+.app-brand-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.app-brand-container--switcher .app-brand {
+  padding: 4px 6px;
+  gap: 4px;
+}
+
+.app-brand-container--switcher .app-logo {
+  width: 24px;
+  height: 24px;
+  font-size: 0.95rem;
+}
+
+.app-brand-container--switcher:not(.app-brand-container--open) .app-brand-menu-wrap {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.app-brand-menu-wrap:not(.app-brand-menu-wrap--open) .app-brand-menu {
+  padding: 0;
+  margin: 0;
+  border: none;
+  min-height: 0;
+}
+
+.app-brand-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 8px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.app-brand-trigger:hover {
+  background-color: var(--code-bg);
+}
+
+.app-brand-trigger--static {
+  cursor: pointer;
+}
+
+.app-brand-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.app-brand-chevron {
+  flex-shrink: 0;
+  color: var(--nexus-text-secondary);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-brand-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Smooth expand — in flow, no overlap with menu/profile */
+.app-brand-menu-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.app-brand-menu-wrap--open {
+  grid-template-rows: 1fr;
+}
+
+.app-brand-menu {
+  min-height: 0;
+  margin: 0;
+  padding: 6px 8px 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: none;
+  border-top: 1px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  opacity: 0;
+  transition:
+    opacity 0.22s ease,
+    border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-brand-menu-wrap--open .app-brand-menu {
+  opacity: 1;
+  border-top-color: var(--nexus-border);
+}
+
+.app-brand-menu__item {
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-brand-menu__item:hover {
+  background-color: var(--code-bg);
+}
+
+.app-brand-menu__item--active {
+  font-weight: 600;
+  color: var(--accent);
+  background-color: var(--accent-bg);
+}
+
+.app-brand-menu__item--active:hover {
+  background-color: var(--accent-bg);
+}
+
+.app-brand-menu__item--active svg {
+  color: var(--accent);
+}
+
+.app-brand-menu__item svg {
+  flex-shrink: 0;
+  color: var(--nexus-text-secondary);
+}
+
+.app-brand-menu__divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--nexus-border);
+  list-style: none;
+}
+
+.app-brand-menu__item--add {
+  color: var(--nexus-primary);
+  font-weight: 600;
+}
+
+.app-brand-menu__item--add:hover {
+  background-color: var(--accent-bg);
+  color: var(--accent);
+}
+
+.app-brand-menu__item--add svg {
+  color: var(--nexus-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-brand-menu-wrap,
+  .app-brand-menu,
+  .app-brand-chevron {
+    transition-duration: 0.01ms;
+  }
+}

@@ -21,13 +21,25 @@ import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/ten
 import { TenantChat } from '../features/tenant/pages/tenant-chat/tenant-chat';
 import { TenantRequests } from '../features/tenant/pages/tenant-requests/tenant-requests';
 import { TenantReports } from '../features/tenant/pages/tenant-reports/tenant-reports';
-import { TenantSetupWizard } from '../features/tenant/pages/tenant-setup-wizard/tenant-setup-wizard';
+import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
+import {
+  DEFAULT_TENANT_COMPANY,
+  type TenantCompany
+} from '../shared/components/app-brand/app-brand';
 
 function App() {
   const [isLandingPage, setIsLandingPage] = useState<boolean>(false);
   // Set Employee View as default view state
   const [view, setView] = useState<'employee' | 'tenant'>('employee');
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
+  const [selectedCompany, setSelectedCompany] = useState<TenantCompany>(DEFAULT_TENANT_COMPANY);
+  const [setupWizardOpen, setSetupWizardOpen] = useState(false);
+
+  const openSetupWizard = () => setSetupWizardOpen(true);
+
+  const closeSetupWizard = () => {
+    setSetupWizardOpen(false);
+  };
 
   // Render the appropriate section context based on the active menu tab
   const renderActivePageContent = () => {
@@ -51,6 +63,10 @@ function App() {
           return <EmployeeDashboard />;
       }
     } else {
+      if (selectedCompany === 'All') {
+        return <TenantAllCompaniesEmptyPage />;
+      }
+
       switch (activeTab) {
         case 'Dashboard':
           return <TenantDashboard />;
@@ -68,8 +84,6 @@ function App() {
           return <TenantRequests />;
         case 'Reports':
           return <TenantReports />;
-        case 'SetupWizard':
-          return <TenantSetupWizard />;
         default:
           return <TenantDashboard />;
       }
@@ -86,6 +100,11 @@ function App() {
       onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
+      selectedCompany={selectedCompany}
+      onSelectCompany={setSelectedCompany}
+      onAddCompany={openSetupWizard}
+      setupWizardOpen={view === 'tenant' && setupWizardOpen}
+      onCloseSetupWizard={closeSetupWizard}
       onGoToLandingPage={() => setIsLandingPage(true)}
     >
       {renderActivePageContent()}

@@ -1,22 +1,164 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Building, ChevronDown, Plus } from 'lucide-react';
+import './app-brand.css';
+
+export const DEFAULT_TENANT_COMPANY = 'OneVo HRMS' as const;
+export const TENANT_COMPANIES = [
+  DEFAULT_TENANT_COMPANY,
+  'Selfwora',
+  'Athvo',
+  'Bubble',
+  'All'
+] as const;
+export type TenantCompany = (typeof TENANT_COMPANIES)[number];
+
+const APP_NAME = DEFAULT_TENANT_COMPANY;
 
 interface AppBrandProps {
   onClick?: () => void;
+  selectedCompany?: TenantCompany;
+  onSelectCompany?: (company: TenantCompany) => void;
+  onAddCompany?: () => void;
+  collapsed?: boolean;
 }
 
-export const AppBrand: React.FC<AppBrandProps> = ({ onClick }) => {
+export const AppBrand: React.FC<AppBrandProps> = ({
+  onClick,
+  selectedCompany,
+  onSelectCompany,
+  onAddCompany,
+  collapsed = false
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasSwitcher = Boolean(onSelectCompany && selectedCompany) && !collapsed;
+  const displayName = hasSwitcher && selectedCompany ? selectedCompany : APP_NAME;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (collapsed) setIsOpen(false);
+  }, [collapsed]);
+
+  const handleSelect = (company: TenantCompany) => {
+    onSelectCompany?.(company);
+    setIsOpen(false);
+  };
+
+  const handleAddCompany = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    onAddCompany?.();
+  };
+
+  const handleToggle = () => {
+    setIsOpen((open) => !open);
+  };
+
+  const containerClass = [
+    'app-brand-container',
+    hasSwitcher && 'app-brand-container--switcher',
+    isOpen && 'app-brand-container--open'
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div 
-      className="app-brand" 
-      onClick={onClick}
-      style={{ cursor: onClick ? 'pointer' : 'default' }}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-    >
-      <div className="app-logo" title="OneVo HRMS" aria-label="OneVo HRMS">
-        V
+    <div className={containerClass} ref={containerRef}>
+      <div className="app-brand">
+        <div className="app-logo" title={APP_NAME} aria-label={APP_NAME}>
+          V
+        </div>
+
+        {!collapsed && (
+          <>
+            {hasSwitcher ? (
+              <button
+                type="button"
+                className="app-brand-trigger"
+                onClick={handleToggle}
+                aria-expanded={isOpen}
+                aria-haspopup="listbox"
+                aria-label={`Current company: ${displayName}. Open company menu`}
+              >
+                <span className="app-brand-name">{displayName}</span>
+                <ChevronDown
+                  size={14}
+                  className={`app-brand-chevron${isOpen ? ' app-brand-chevron--open' : ''}`}
+                  aria-hidden
+                />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="app-brand-trigger app-brand-trigger--static"
+                onClick={onClick}
+                aria-label={APP_NAME}
+              >
+                <span className={`app-brand-name app-title`}>{displayName}</span>
+              </button>
+            )}
+          </>
+        )}
       </div>
-      <span className="app-title">OneVo HRMS</span>
+
+      {hasSwitcher && (
+        <div
+          className={`app-brand-menu-wrap${isOpen ? ' app-brand-menu-wrap--open' : ''}`}
+          aria-hidden={!isOpen}
+        >
+          <ul className="app-brand-menu" role="listbox" aria-label="Select company">
+            {TENANT_COMPANIES.map((company) => (
+              <li key={company}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selectedCompany === company}
+                  tabIndex={isOpen ? 0 : -1}
+                  className={`app-brand-menu__item${
+                    selectedCompany === company ? ' app-brand-menu__item--active' : ''
+                  }`}
+                  onClick={() => handleSelect(company)}
+                >
+                  <Building size={14} aria-hidden />
+                  {company}
+                </button>
+              </li>
+            ))}
+            <li className="app-brand-menu__divider" aria-hidden />
+            <li>
+              <button
+                type="button"
+                tabIndex={isOpen ? 0 : -1}
+                className="app-brand-menu__item app-brand-menu__item--add"
+                onClick={handleAddCompany}
+              >
+                <Plus size={14} aria-hidden />
+                Add company
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

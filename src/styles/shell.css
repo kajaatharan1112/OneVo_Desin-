@@ -48,6 +48,24 @@
 
 .sidebar-panel--brand {
   flex: 0 0 auto;
+  overflow: hidden;
+  transition: flex-basis 0.2s ease;
+}
+
+/* Dropdown open — brand panel grows; menu panel shrinks (no overlap) */
+.sidebar-shell:has(.app-brand-container--open) .sidebar-panel--menu {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.sidebar-shell:has(.app-brand-container--open) .sidebar-panel--menu .main-menu {
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.sidebar-shell:has(.app-brand-container--open) .sidebar-panel--menu {
+  overflow: hidden;
 }
 
 .sidebar-panel--profile {
@@ -75,6 +93,24 @@
   height: calc(100vh - 2 * var(--shell-gap));
   box-sizing: border-box;
   transition: flex 0.25s ease;
+}
+
+.content-pane__body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--shell-gap);
+  overflow: hidden;
+}
+
+.dashboard-shell--setup-wizard {
+  min-height: 100vh;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
 }
 
 .content-panel--header {
@@ -139,6 +175,10 @@
 
 /* —— Sidebar collapsed (icon-only) —— */
 .dashboard-shell--sidebar-collapsed .app-title,
+.dashboard-shell--sidebar-collapsed .app-brand-trigger,
+.dashboard-shell--sidebar-collapsed .app-brand-chevron,
+.dashboard-shell--sidebar-collapsed .app-brand-menu-wrap,
+.dashboard-shell--sidebar-collapsed .app-brand-menu,
 .dashboard-shell--sidebar-collapsed .user-profile__details,
 .dashboard-shell--sidebar-collapsed .main-menu__label,
 .dashboard-shell--sidebar-collapsed .main-menu__item-label,
@@ -310,6 +350,15 @@
   flex-direction: column;
   gap: 2px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.main-menu::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .main-menu__label {
@@ -327,8 +376,11 @@
   align-items: center;
   gap: 6px;
   width: 100%;
+  max-width: 100%;
   padding: 6px 6px;
   border-radius: var(--radius-md);
+  overflow: hidden;
+  box-sizing: border-box;
   border: none;
   background-color: transparent;
   color: var(--text);
@@ -388,10 +440,15 @@
 }
 
 .main-menu__dot {
+  flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background-color: var(--accent);
+}
+
+.sidebar-shell:has(.app-brand-container--open) .main-menu__dot {
+  display: none;
 }
 
 /* Area 4 — Utility menu */

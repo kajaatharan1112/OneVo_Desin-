@@ -8,7 +8,9 @@ import {
   MessageSquare, 
   Inbox, 
   PieChart, 
-  Briefcase 
+  Briefcase,
+  Contact,
+  Building2
 } from 'lucide-react';
 import { MainMenuItem } from './main-menu-item';
 
@@ -30,10 +32,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     { label: 'Project', icon: <FolderOpen size={20} /> },
     { label: 'Calendar', icon: <Calendar size={20} /> },
     { label: 'People', icon: <Users size={20} /> },
+    { label: 'Members', icon: <Contact size={20} /> },
     { label: 'Attendance', icon: <Clock size={20} /> },
-    { label: 'Chat', icon: <MessageSquare size={20} /> },
     { label: 'Requests', icon: <Inbox size={20} /> },
-    { label: 'Reports', icon: <PieChart size={20} /> }
+    { label: 'Reports', icon: <PieChart size={20} /> },
+    { label: 'Organization', icon: <Building2 size={20} /> }
   ];
 
   const employeeItems = [

@@ -1,18 +1,24 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { countNewNotifications } from '../../core/notifications/notification-data';
 import { NotificationPanelProvider } from '../../core/notifications/notification-panel-context';
-import { AppBrand } from '../../shared/components/app-brand/app-brand';
+import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/app-brand';
 import { UserProfile } from '../../shared/components/user-profile/user-profile';
 import { MainMenu } from '../../shared/components/main-menu/main-menu';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
 import { UtilityMenu } from '../../shared/components/utility-menu/utility-menu';
 import { Navbar } from '../navbar/navbar';
+import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
 
 interface ShellProps {
   currentView: 'employee' | 'tenant';
   onToggleView: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  selectedCompany?: TenantCompany;
+  onSelectCompany?: (company: TenantCompany) => void;
+  onAddCompany?: () => void;
+  setupWizardOpen?: boolean;
+  onCloseSetupWizard?: () => void;
   onGoToLandingPage: () => void;
   children: React.ReactNode;
 }
@@ -22,6 +28,11 @@ export const Shell: React.FC<ShellProps> = ({
   onToggleView,
   activeTab,
   setActiveTab,
+  selectedCompany,
+  onSelectCompany,
+  onAddCompany,
+  setupWizardOpen = false,
+  onCloseSetupWizard,
   onGoToLandingPage,
   children
 }) => {
@@ -61,6 +72,20 @@ export const Shell: React.FC<ShellProps> = ({
     .filter(Boolean)
     .join(' ');
 
+  if (setupWizardOpen && onCloseSetupWizard) {
+    return (
+      <NotificationPanelProvider value={notificationPanelContext}>
+        <div className="dashboard-shell dashboard-shell--setup-wizard">
+          <TenantSetupWizard
+            overlay="fullscreen"
+            onFinish={onCloseSetupWizard}
+            onCancel={onCloseSetupWizard}
+          />
+        </div>
+      </NotificationPanelProvider>
+    );
+  }
+
   return (
     <NotificationPanelProvider value={notificationPanelContext}>
     <div className={shellClassName}>
@@ -71,7 +96,12 @@ export const Shell: React.FC<ShellProps> = ({
         aria-hidden={false}
       >
         <div className="sidebar-panel sidebar-panel--brand">
-          <AppBrand />
+          <AppBrand
+            selectedCompany={currentView === 'tenant' ? selectedCompany : undefined}
+            onSelectCompany={currentView === 'tenant' ? onSelectCompany : undefined}
+            onAddCompany={currentView === 'tenant' ? onAddCompany : undefined}
+            collapsed={sidebarCollapsed}
+          />
         </div>
 
         <div className="sidebar-panel sidebar-panel--profile">
@@ -104,6 +134,9 @@ export const Shell: React.FC<ShellProps> = ({
             notificationUnreadCount={notificationUnreadCount}
             onToggleNotifications={handleToggleNotifications}
             onGoToLandingPage={onGoToLandingPage}
+            onOpenSetupWizard={
+              currentView === 'tenant' ? onAddCompany : undefined
+            }
           />
         </div>
 

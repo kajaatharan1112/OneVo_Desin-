@@ -1,0 +1,37 @@
+.tenant-all-companies-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  background: var(--nexus-surface);
+  border-radius: var(--nexus-radius-cards);
+  border: 1px solid var(--nexus-border);
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--nexus-text-secondary);
+}
+
+.empty-icon {
+  color: var(--nexus-text-muted);
+  margin-bottom: 24px;
+}
+
+.empty-state-content h2 {
+  color: var(--nexus-text-primary);
+  margin-bottom: 12px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.empty-state-content p {
+  font-size: 16px;
+  max-width: 400px;
+  line-height: 1.5;
+}

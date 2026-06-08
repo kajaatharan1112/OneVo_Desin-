@@ -16,6 +16,7 @@ interface NavbarProps {
   notificationUnreadCount: number;
   onToggleNotifications: () => void;
   onGoToLandingPage: () => void;
+  onOpenSetupWizard?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -27,7 +28,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   notificationsOpen,
   notificationUnreadCount,
   onToggleNotifications,
-  onGoToLandingPage
+  onGoToLandingPage,
+  onOpenSetupWizard
 }) => {
   const portalName = currentView === 'tenant' ? 'Tenant Workspace' : 'Employee Workspace';
 
@@ -55,10 +57,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           unreadCount={notificationUnreadCount}
           onToggle={onToggleNotifications}
         />
-        <ControlPanel 
-          currentView={currentView} 
-          onToggle={onToggle} 
-          onGoToLandingPage={onGoToLandingPage} 
+        <ControlPanel
+          currentView={currentView}
+          onToggle={onToggle}
+          onGoToLandingPage={onGoToLandingPage}
+          onOpenSetupWizard={onOpenSetupWizard}
         />
       </div>
     </header>
