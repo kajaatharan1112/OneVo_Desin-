@@ -12,6 +12,7 @@ import {
 import { getSummaryCardsForView } from '../../../core/summary/summary-cards';
 import type { SummaryCardData, SummaryCardId } from '../../types/summary-card.types';
 import { SummaryCardContent } from '../summary-card-content/summary-card-content';
+import { useTheme } from '../../../core/theme/theme-context';
 
 interface SummarizeTabsProps {
   currentView: 'employee' | 'tenant';
@@ -19,7 +20,7 @@ interface SummarizeTabsProps {
 }
 
 function getCardIcon(id: SummaryCardId): React.ReactNode {
-  const iconProps = { size: 22, strokeWidth: 2, 'aria-hidden': true as const };
+  const iconProps = { size: 16, strokeWidth: 2.2, 'aria-hidden': true as const };
 
   switch (id) {
     case 'task-overview':
@@ -50,6 +51,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
   currentView,
   onNavigateTab
 }) => {
+  const { theme } = useTheme();
   const cards = useMemo(() => getSummaryCardsForView(currentView), [currentView]);
   const [selectedId, setSelectedId] = useState<SummaryCardId | null>(() =>
     defaultCardForView(currentView)
@@ -87,6 +89,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
               onClick={() => handleCardClick(card)}
               aria-pressed={isActive}
               aria-label={`${card.title}: ${card.value}. ${card.desc}`}
+              style={{ borderColor: isActive ? card.color : undefined }}
             >
               <div className="summary-card__body">
                 <span className="summary-card__title">{card.title}</span>
@@ -110,7 +113,10 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
       </section>
 
       {selectedCard && (
-        <SummaryCardContent card={selectedCard} onNavigateTab={onNavigateTab} />
+        <SummaryCardContent
+          card={selectedCard}
+          onNavigateTab={onNavigateTab}
+        />
       )}
     </div>
   );

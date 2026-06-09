@@ -22,9 +22,12 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .summary-card-content--tenant-filled .summary-card-content__inner {
+  flex: 1 1 auto;
   min-height: 0;
   height: 100%;
   padding: 0;
@@ -32,6 +35,7 @@
   border: none;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .tenant-today-productivity {
@@ -1036,3 +1040,1001 @@
     overflow: auto;
   }
 }
+
+/* ── CEO Today Productivity Detail Page ── */
+
+.tto-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--shell-gap);
+  padding: 2px;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  animation: fadeIn 0.3s var(--nexus-ease);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tto-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--surface-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.tto-detail-header__title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tto-detail-header__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.tto-detail-header__tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+}
+
+.tto-detail-header__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--nexus-radius-button);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tto-detail-header__back-btn:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
+  border-color: var(--accent-border);
+}
+
+/* Summary Bar */
+.tto-detail-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--shell-gap);
+  flex-shrink: 0;
+}
+
+.tto-detail-summary-card {
+  background: var(--surface-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.tto-detail-summary-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.tto-detail-summary-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tto-detail-summary-card__title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+}
+
+.tto-detail-summary-card__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid var(--border);
+}
+
+.tto-detail-summary-card__value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1.1;
+  margin: 2px 0 1px 0;
+}
+
+.tto-detail-summary-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--text);
+}
+
+.tto-detail-summary-card__trend {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+}
+
+.tto-detail-summary-card__trend--up {
+  color: var(--nexus-success);
+}
+
+.tto-detail-summary-card__trend--down {
+  color: var(--nexus-danger);
+}
+
+.tto-detail-summary-card__bar-track {
+  width: 100%;
+  height: 5px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.tto-detail-summary-card__bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+/* Grid layout for Content */
+.tto-detail-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--shell-gap);
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.tto-detail-panel {
+  background: var(--surface-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tto-detail-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.tto-detail-panel__title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tto-detail-panel__badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-h);
+}
+
+/* Alerts Panel */
+.tto-detail-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: none;
+}
+.tto-detail-alerts::-webkit-scrollbar { display: none; }
+
+.tto-detail-alert-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.tto-detail-alert-card--critical {
+  border-left: 4px solid var(--nexus-danger);
+  border-color: color-mix(in srgb, var(--nexus-danger) 25%, var(--border)) color-mix(in srgb, var(--nexus-danger) 25%, var(--border)) color-mix(in srgb, var(--nexus-danger) 25%, var(--border)) var(--nexus-danger);
+}
+
+.tto-detail-alert-card--warning {
+  border-left: 4px solid var(--nexus-warning);
+  border-color: color-mix(in srgb, var(--nexus-warning) 25%, var(--border)) color-mix(in srgb, var(--nexus-warning) 25%, var(--border)) color-mix(in srgb, var(--nexus-warning) 25%, var(--border)) var(--nexus-warning);
+}
+
+.tto-detail-alert-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tto-detail-alert-card__message {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.4;
+}
+
+.tto-detail-alert-card__resolve-btn {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--nexus-radius-button);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tto-detail-alert-card__resolve-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.tto-detail-alert-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tto-detail-alert-card__tag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.tto-detail-alert-card__tag--dept {
+  background: rgba(30, 79, 188, 0.08);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.tto-detail-alert-card__tag--critical {
+  background: color-mix(in srgb, var(--nexus-danger) 10%, transparent);
+  color: var(--nexus-danger);
+  border-color: color-mix(in srgb, var(--nexus-danger) 30%, var(--border));
+}
+
+.tto-detail-alert-card__tag--warning {
+  background: color-mix(in srgb, var(--nexus-warning) 10%, transparent);
+  color: var(--nexus-warning);
+  border-color: color-mix(in srgb, var(--nexus-warning) 30%, var(--border));
+}
+
+/* Root Cause Table */
+.tto-detail-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tto-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.75rem;
+}
+
+.tto-detail-table th,
+.tto-detail-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tto-detail-table th {
+  font-weight: 700;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+}
+
+.tto-detail-table tr:last-child td {
+  border-bottom: none;
+}
+
+.tto-detail-table tr:hover td {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.tto-detail-impact-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.tto-detail-impact-badge--high {
+  background: color-mix(in srgb, var(--nexus-danger) 12%, transparent);
+  color: var(--nexus-danger);
+  border-color: color-mix(in srgb, var(--nexus-danger) 35%, var(--border));
+}
+
+.tto-detail-impact-badge--medium {
+  background: color-mix(in srgb, var(--nexus-warning) 12%, transparent);
+  color: var(--nexus-warning);
+  border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
+}
+
+/* Recommended CEO Action Panel */
+.tto-detail-action-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tto-detail-recommendation-box {
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-panel));
+  border: 1px dashed var(--accent-border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.tto-detail-action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tto-detail-btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: var(--nexus-radius-button);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.tto-detail-btn--primary {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.tto-detail-btn--primary:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.tto-detail-btn--secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.tto-detail-btn--secondary:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
+  border-color: var(--accent-border);
+}
+
+@media (max-width: 1024px) {
+  .tto-detail-summary-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tto-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .tto-detail-summary-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── CEO Top Summary Metric Strip ── */
+.tto-inline-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.tto-inline-strip__metric {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tto-inline-strip__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tto-inline-strip__icon--warn {
+  color: var(--nexus-warning);
+  background: color-mix(in srgb, var(--nexus-warning) 10%, transparent);
+}
+
+.tto-inline-strip__data {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tto-inline-strip__value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.tto-inline-strip__value-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nexus-text-muted);
+}
+
+.tto-inline-strip__label {
+  font-size: 0.65rem;
+  color: var(--nexus-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tto-inline-strip__trend {
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.tto-inline-strip__trend--up {
+  color: var(--nexus-success);
+  background: rgba(16,185,129,0.08);
+}
+
+.tto-inline-strip__trend--down {
+  color: var(--nexus-danger);
+  background: rgba(239,68,68,0.08);
+}
+
+.tto-inline-strip__mini-bar {
+  flex: 1;
+  max-width: 80px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-left: 8px;
+}
+
+.tto-inline-strip__mini-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.tto-inline-strip__mini-bar-fill--warn {
+  background: var(--nexus-warning);
+}
+
+.tto-inline-strip__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── CEO Accent Cards Grid ── */
+.tto-accent-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--shell-gap);
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.tto-accent-card {
+  position: relative;
+  background: var(--surface-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+}
+
+.tto-accent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.tto-accent-card__stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent);
+}
+
+.tto-accent-card__stripe--warn {
+  background: var(--nexus-warning);
+}
+
+.tto-accent-card__body {
+  padding: 8px 12px 8px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tto-accent-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+
+.tto-accent-card__icon {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tto-accent-card__icon--warn {
+  color: var(--nexus-warning);
+}
+
+.tto-accent-card__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tto-accent-card__value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.tto-accent-card__value-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nexus-text-muted);
+}
+
+.tto-accent-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  color: var(--nexus-text-muted);
+  font-weight: 600;
+}
+
+.tto-accent-card__gap {
+  color: var(--nexus-warning);
+}
+
+.tto-accent-card__bar {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.tto-accent-card__bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.tto-accent-card__bar-fill--warn {
+  background: var(--nexus-warning);
+}
+
+/* ── Donut Progress Cards (Top Cards Mockup Design) ── */
+.tto-donut-card {
+  background: var(--surface-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 140px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tto-donut-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.tto-donut-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.tto-donut-card__title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tto-donut-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.tto-donut-card__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.tto-donut-card__badge {
+  font-size: 0.58rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tto-donut-card__chart-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  padding: 2px 0;
+}
+
+.tto-donut-card__chart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+}
+
+.tto-donut-card__chart svg {
+  transform: rotate(-90deg);
+}
+
+.tto-donut-card__center-text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.tto-donut-card__center-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1.1;
+}
+
+.tto-donut-card__center-label {
+  font-size: 0.46rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  margin-top: 1px;
+  letter-spacing: 0.02em;
+}
+
+.tto-donut-card__footer {
+  font-size: 0.65rem;
+  color: var(--nexus-text-muted);
+  text-align: center;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* ── Tenant Summary Card (Dashboard Top Tabs) ── */
+.summary-card--tenant {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px !important;
+  min-height: 96px !important;
+  border-radius: var(--radius-xl) !important;
+  background: var(--surface-panel) !important;
+  border: 1px solid var(--border) !important;
+  transition: all 0.25s ease !important;
+  position: relative;
+  overflow: hidden;
+  gap: 12px !important;
+}
+
+.summary-card--tenant:hover {
+  background: var(--code-bg) !important;
+  border-color: var(--accent-border) !important;
+}
+
+.summary-card--tenant.summary-card--active {
+  background: var(--accent-bg) !important;
+  border-color: var(--accent) !important;
+}
+
+.summary-card__icon {
+  border-radius: 50% !important;
+}
+
+/* ── CEO Donut Progress Cards ── */
+.tto-donut-card {
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 156px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tto-donut-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.tto-donut-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.tto-donut-card__title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tto-donut-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tto-donut-card__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.tto-donut-card__badge {
+  font-size: 0.58rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.tto-donut-card__chart-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  padding: 2px 0;
+}
+
+.tto-donut-card__chart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+}
+
+.tto-donut-card__chart svg {
+  transform: rotate(-90deg);
+}
+
+.tto-donut-card__center-text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.tto-donut-card__center-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1.1;
+}
+
+.tto-donut-card__center-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+.tto-donut-card__footer {
+  font-size: 0.65rem;
+  color: var(--nexus-text-muted);
+  text-align: center;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+
+
+
