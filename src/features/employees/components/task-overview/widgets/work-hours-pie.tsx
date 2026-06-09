@@ -1,15 +1,13 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
-import {
-  employeeTaskOverviewMetrics,
-  getWorkWeekDaysRemaining
-} from '../../../data/employee-task-overview.data';
+import { useEmployeeData } from '../../../hooks/use-employee-data';
 import { ActivityRingChart } from './activity-ring-chart';
 
 export const WorkHoursPie: React.FC = () => {
-  const { targetWorkHours, completedWorkHours } = employeeTaskOverviewMetrics;
+  const { taskOverviewMetrics, workWeekDaysRemaining } = useEmployeeData();
+  const { targetWorkHours, completedWorkHours } = taskOverviewMetrics;
   const percent = (completedWorkHours / targetWorkHours) * 100;
-  const daysRemaining = getWorkWeekDaysRemaining();
+  const daysRemaining = workWeekDaysRemaining;
   const weekDaysLabel =
     daysRemaining === 1 ? '1 day more' : `${daysRemaining} days more`;
 

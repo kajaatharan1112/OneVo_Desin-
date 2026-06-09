@@ -8,6 +8,7 @@ import { NotificationPanel } from '../../shared/components/notification-panel/no
 import { UtilityMenu } from '../../shared/components/utility-menu/utility-menu';
 import { Navbar } from '../navbar/navbar';
 import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
+import type { EmployeeId } from '../../features/employees/types/employee.types';
 
 interface ShellProps {
   currentView: 'employee' | 'tenant';
@@ -20,6 +21,7 @@ interface ShellProps {
   setupWizardOpen?: boolean;
   onCloseSetupWizard?: () => void;
   onGoToLandingPage: () => void;
+  selectedEmployeeId: EmployeeId;
   children: React.ReactNode;
 }
 
@@ -34,14 +36,15 @@ export const Shell: React.FC<ShellProps> = ({
   setupWizardOpen = false,
   onCloseSetupWizard,
   onGoToLandingPage,
+  selectedEmployeeId,
   children
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const notificationUnreadCount = useMemo(
-    () => countNewNotifications(currentView),
-    [currentView]
+    () => countNewNotifications(currentView, selectedEmployeeId),
+    [currentView, selectedEmployeeId]
   );
 
   const handleToggleNotifications = () => {
@@ -105,7 +108,7 @@ export const Shell: React.FC<ShellProps> = ({
         </div>
 
         <div className="sidebar-panel sidebar-panel--profile">
-          <UserProfile currentView={currentView} />
+          <UserProfile currentView={currentView} collapsed={sidebarCollapsed} />
         </div>
 
         <div className="sidebar-panel sidebar-panel--menu">
@@ -148,6 +151,7 @@ export const Shell: React.FC<ShellProps> = ({
           {notificationsOpen && (
             <NotificationPanel
               currentView={currentView}
+              selectedEmployeeId={selectedEmployeeId}
               onClose={() => setNotificationsOpen(false)}
             />
           )}

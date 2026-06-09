@@ -1,37 +1,63 @@
 import type { SummaryCardData } from '../../shared/types/summary-card.types';
-import { employeeGoalsSummary } from '../../features/employees/data/employee-goals.data';
+import { getEmployeeData } from '../../features/employees/data/employee-data.registry';
+import type { EmployeeId } from '../../features/employees/types/employee.types';
 import { tenantProductivitySummary } from '../../features/tenant/data/tenant-today-productivity.data';
 
-export const employeeSummaryCards: SummaryCardData[] = [
-  {
-    id: 'task-overview',
-    title: 'Task Overview',
-    value: '12 / 15 ',
-    desc: 'Sprint completed · 8 notifications',
-    color: 'var(--accent)'
-  },
-  {
-    id: 'requests-approval',
-    title: 'Request & Approval',
-    value: '24 received',
-    desc: '7 pending approval',
-    color: 'var(--accent)'
-  },
-  {
-    id: 'activity',
-    title: 'Activity',
-    value: '8 leaves left',
-    desc: 'Clock in today: 9:15 AM',
-    color: 'var(--accent)'
-  },
-  {
-    id: 'goals',
-    title: 'Goals',
-    value: `${employeeGoalsSummary.activePlans} plans · ${employeeGoalsSummary.activeGoals} goals`,
-    desc: `${employeeGoalsSummary.achievementsCount} achievements · ${employeeGoalsSummary.decisionsCount} decisions`,
-    color: 'var(--accent)'
-  }
-];
+export function getEmployeeSummaryCards(): SummaryCardData[] {
+  const { summaryCards, goalsSummary } = getEmployeeData('alex');
+
+  return [
+    {
+      id: 'task-overview',
+      title: 'Task Overview',
+      value: summaryCards.taskOverviewValue,
+      desc: summaryCards.taskOverviewDesc,
+      color: 'var(--accent)',
+      variant: 'employee'
+    },
+    {
+      id: 'requests-approval',
+      title: 'Request & Approval',
+      value: summaryCards.requestsValue,
+      desc: summaryCards.requestsDesc,
+      color: 'var(--accent)',
+      variant: 'employee'
+    },
+    {
+      id: 'activity',
+      title: 'Activity',
+      value: summaryCards.activityValue,
+      desc: summaryCards.activityDesc,
+      color: 'var(--accent)',
+      variant: 'employee'
+    },
+    {
+      id: 'goals',
+      title: 'Goals',
+      value: `${goalsSummary.activePlans} plans · ${goalsSummary.activeGoals} goals`,
+      desc: `${goalsSummary.achievementsCount} achievements · ${goalsSummary.decisionsCount} decisions`,
+      color: 'var(--accent)',
+      variant: 'employee'
+    }
+  ];
+}
+
+export function getCeoSummaryCards(): SummaryCardData[] {
+  const { ceoSummaryCards } = getEmployeeData('marcus');
+
+  return (ceoSummaryCards ?? []).map((card) => ({
+    id: card.id,
+    title: card.title,
+    value: card.value,
+    desc: card.desc,
+    delta: card.delta,
+    status: card.status,
+    color: card.color,
+    actionLabel: card.actionLabel,
+    actionTab: card.actionTab,
+    variant: 'ceo' as const
+  }));
+}
 
 export const tenantSummaryCards: SummaryCardData[] = [
   {
@@ -64,6 +90,22 @@ export const tenantSummaryCards: SummaryCardData[] = [
   }
 ];
 
-export function getSummaryCardsForView(view: 'employee' | 'tenant'): SummaryCardData[] {
-  return view === 'tenant' ? tenantSummaryCards : employeeSummaryCards;
+export function getSummaryCardsForView(
+  view: 'employee' | 'tenant',
+  employeeId: EmployeeId = 'alex'
+): SummaryCardData[] {
+  if (view === 'tenant') {
+    return tenantSummaryCards;
+  }
+
+  return employeeId === 'marcus' ? getCeoSummaryCards() : getEmployeeSummaryCards();
+}
+
+export function isCeoSummaryCardId(id: SummaryCardData['id']): boolean {
+  return (
+    id === 'workforce-availability' ||
+    id === 'company-performance' ||
+    id === 'project-health' ||
+    id === 'productivity-score'
+  );
 }

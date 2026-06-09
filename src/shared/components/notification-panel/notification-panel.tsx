@@ -1,17 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { getNotificationsForView } from '../../../core/notifications/notification-data';
+import type { EmployeeId } from '../../../features/employees/types/employee.types';
 import type { NotificationFilter } from '../../types/notification.types';
 import { NotificationFilterTabs } from './notification-filter';
 import { NotificationItem } from './notification-item';
 
 interface NotificationPanelProps {
   currentView: 'employee' | 'tenant';
+  selectedEmployeeId: EmployeeId;
   onClose: () => void;
 }
 
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   currentView,
+  selectedEmployeeId,
   onClose
 }) => {
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>('new');
@@ -20,11 +23,11 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   useEffect(() => {
     setActiveFilter('new');
     setDismissedIds(new Set());
-  }, [currentView]);
+  }, [currentView, selectedEmployeeId]);
 
   const allNotifications = useMemo(
-    () => getNotificationsForView(currentView),
-    [currentView]
+    () => getNotificationsForView(currentView, selectedEmployeeId),
+    [currentView, selectedEmployeeId]
   );
 
   const visibleNotifications = useMemo(

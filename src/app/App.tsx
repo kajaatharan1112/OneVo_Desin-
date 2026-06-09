@@ -2,6 +2,9 @@ import { useState } from 'react';
 import './App.css';
 import { Shell } from '../layouts/shell/shell';
 import { LandingPage } from '../features/landing/pages/landing-page';
+import { EmployeeProvider } from '../features/employees/context/employee-context';
+import { DEFAULT_EMPLOYEE_ID } from '../features/employees/data/employees.data';
+import type { EmployeeId } from '../features/employees/types/employee.types';
 
 // Employee Pages
 import { EmployeeDashboard } from '../features/employees/pages/employee-dashboard/employee-dashboard';
@@ -28,6 +31,7 @@ import {
 } from '../shared/components/app-brand/app-brand';
 
 function App() {
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<EmployeeId>(DEFAULT_EMPLOYEE_ID);
   const [isLandingPage, setIsLandingPage] = useState<boolean>(false);
   // Set Employee View as default view state
   const [view, setView] = useState<'employee' | 'tenant'>('employee');
@@ -95,20 +99,26 @@ function App() {
   }
 
   return (
-    <Shell
-      currentView={view}
-      onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      selectedCompany={selectedCompany}
-      onSelectCompany={setSelectedCompany}
-      onAddCompany={openSetupWizard}
-      setupWizardOpen={view === 'tenant' && setupWizardOpen}
-      onCloseSetupWizard={closeSetupWizard}
-      onGoToLandingPage={() => setIsLandingPage(true)}
+    <EmployeeProvider
+      selectedEmployeeId={selectedEmployeeId}
+      onSelectEmployee={setSelectedEmployeeId}
     >
-      {renderActivePageContent()}
-    </Shell>
+      <Shell
+        currentView={view}
+        onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        selectedCompany={selectedCompany}
+        onSelectCompany={setSelectedCompany}
+        onAddCompany={openSetupWizard}
+        setupWizardOpen={view === 'tenant' && setupWizardOpen}
+        onCloseSetupWizard={closeSetupWizard}
+        onGoToLandingPage={() => setIsLandingPage(true)}
+        selectedEmployeeId={selectedEmployeeId}
+      >
+        {renderActivePageContent()}
+      </Shell>
+    </EmployeeProvider>
   );
 }
 
