@@ -19,7 +19,7 @@ interface SummarizeTabsProps {
 }
 
 function getCardIcon(id: SummaryCardId): React.ReactNode {
-  const iconProps = { size: 16, strokeWidth: 2.2, 'aria-hidden': true as const };
+  const iconProps = { size: 22, strokeWidth: 2, 'aria-hidden': true as const };
 
   switch (id) {
     case 'task-overview':
@@ -111,10 +111,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
       </section>
 
       {selectedCard && (
-        <SummaryCardContent
-          card={selectedCard}
-          onNavigateTab={onNavigateTab}
-        />
+        <SummaryCardContent card={selectedCard} onNavigateTab={onNavigateTab} />
       )}
     </div>
   );

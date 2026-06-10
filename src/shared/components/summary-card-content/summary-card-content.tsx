@@ -1,12 +1,10 @@
 import React from 'react';
 import { EmployeeGoalsDashboard } from '../../../features/employees/components/goals-overview/employee-goals-dashboard';
 import { EmployeeTaskOverviewDashboard } from '../../../features/employees/components/task-overview/employee-task-overview-dashboard';
-import {
-  TodayProductivityDetail,
-  WeeklyProductivityDetail,
-  MonthlyReviewDetail,
-  AnnualAnalyticsDetail
-} from '../../../features/tenant/components/today-productivity';
+import { TenantTodayProductivityDashboard } from '../../../features/tenant/components/today-productivity/tenant-today-productivity-dashboard';
+import { WeeklyProductivityDetail } from '../../../features/tenant/components/today-productivity/weekly-productivity-detail';
+import { MonthlyReviewDetail } from '../../../features/tenant/components/today-productivity/monthly-review-detail';
+import { AnnualAnalyticsDetail } from '../../../features/tenant/components/today-productivity/annual-analytics-detail';
 import type { SummaryCardData } from '../../types/summary-card.types';
 
 interface SummaryCardContentProps {
@@ -45,7 +43,7 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
           />
         ) : null}
         {isGoalsOverview ? <EmployeeGoalsDashboard /> : null}
-        {isTenantProductivity ? <TodayProductivityDetail /> : null}
+        {isTenantProductivity ? <TenantTodayProductivityDashboard /> : null}
         {isWeeklyProductivity ? <WeeklyProductivityDetail /> : null}
         {isMonthlyReview ? <MonthlyReviewDetail /> : null}
         {isAnnualAnalytics ? <AnnualAnalyticsDetail /> : null}
