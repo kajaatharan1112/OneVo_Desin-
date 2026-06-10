@@ -9,13 +9,14 @@ import type { EmployeeOption, PositionOption } from './alertAssignmentUtils';
 
 interface AlertTargetFieldsProps {
   label: string;
-  typeKey: 'assignToType' | 'escalationTargetType';
-  roleKey: 'assignToRole' | 'escalationRole';
-  positionKey: 'assignToPositionId' | 'escalationPositionId';
-  employeeKey: 'assignToEmployeeId' | 'escalationEmployeeId';
+  typeKey: keyof StepConfig;
+  roleKey: keyof StepConfig;
+  positionKey: keyof StepConfig;
+  employeeKey: keyof StepConfig;
   config: StepConfig;
   positions: PositionOption[];
   employees: EmployeeOption[];
+  allowedTypes?: TargetType[];
   onChange: (updates: Partial<StepConfig>) => void;
 }
 
@@ -37,6 +38,7 @@ export const AlertTargetFields: React.FC<AlertTargetFieldsProps> = ({
   config,
   positions,
   employees,
+  allowedTypes = TARGET_TYPE_OPTIONS,
   onChange
 }) => {
   const targetType = config[typeKey] as TargetType | undefined;
@@ -55,7 +57,7 @@ export const AlertTargetFields: React.FC<AlertTargetFieldsProps> = ({
       <Field label={label}>
         <select value={String(config[typeKey] ?? '')} onChange={e => handleTypeChange(e.target.value)}>
           <option value="">— Select type —</option>
-          {TARGET_TYPE_OPTIONS.map(t => (
+          {allowedTypes.map(t => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>

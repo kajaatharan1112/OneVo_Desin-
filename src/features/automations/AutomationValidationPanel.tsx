@@ -7,22 +7,33 @@ interface AutomationValidationPanelProps {
 }
 
 export const AutomationValidationPanel: React.FC<AutomationValidationPanelProps> = ({ issues }) => {
-  const isValid = issues.length === 0;
+  const errors = issues.filter(i => i.severity !== 'warning');
+  const warnings = issues.filter(i => i.severity === 'warning');
+  const isValid = errors.length === 0;
+
   return (
     <div className={`validation-panel ${isValid ? 'validation-panel--ok' : 'validation-panel--error'}`}>
       <div className="builder-config__title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {isValid ? <CheckCircle2 size={14} color="#166534" /> : <AlertCircle size={14} color="#991b1b" />}
-        {isValid ? 'Ready to activate' : `${issues.length} issue${issues.length > 1 ? 's' : ''} to fix`}
+        {isValid
+          ? warnings.length > 0
+            ? `Ready to activate · ${warnings.length} warning${warnings.length > 1 ? 's' : ''}`
+            : 'Ready to activate'
+          : `${errors.length} issue${errors.length > 1 ? 's' : ''} to fix`}
       </div>
-      {isValid ? (
+      {isValid && warnings.length === 0 && (
         <p style={{ fontSize: '0.72rem', margin: 0, color: '#166534' }}>This automation is complete and can be activated.</p>
-      ) : (
-        issues.map(i => (
-          <div key={i.id} className="validation-item validation-item--error">
-            <AlertCircle size={12} /> {i.message}
-          </div>
-        ))
       )}
+      {errors.map(i => (
+        <div key={i.id} className="validation-item validation-item--error">
+          <AlertCircle size={12} /> {i.message}
+        </div>
+      ))}
+      {warnings.map(i => (
+        <div key={i.id} className="validation-item validation-item--warning">
+          <AlertCircle size={12} /> {i.message}
+        </div>
+      ))}
     </div>
   );
 };

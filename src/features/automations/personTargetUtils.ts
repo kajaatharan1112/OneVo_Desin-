@@ -99,17 +99,29 @@ export function validatePersonTarget(
   const issues: { id: string; message: string }[] = [];
   const type = config[targetTypeKey(prefix)] as PersonTargetType | undefined;
   if (!type) {
-    issues.push({ id: `${prefix}-type-${stepId}`, message: `${label} type is required.` });
+    issues.push({
+      id: `${prefix}-type-${stepId}`,
+      message: prefix === 'approver' ? 'Approval step requires approver type.' : `${label} type is required.`
+    });
     return issues;
   }
   if (type === 'Role' && !config[targetRoleKey(prefix)]) {
-    issues.push({ id: `${prefix}-role-${stepId}`, message: `Choose a role for ${label}.` });
+    issues.push({
+      id: `${prefix}-role-${stepId}`,
+      message: prefix === 'approver' ? 'Role requires selected role.' : `Choose a role for ${label}.`
+    });
   }
   if (type === 'Specific Position' && !config[targetPositionKey(prefix)]) {
-    issues.push({ id: `${prefix}-pos-${stepId}`, message: `Choose a position for ${label}.` });
+    issues.push({
+      id: `${prefix}-pos-${stepId}`,
+      message: prefix === 'approver' ? 'Specific Position requires selected position.' : `Choose a position for ${label}.`
+    });
   }
   if (type === 'Specific Employee' && !config[targetEmployeeKey(prefix)]) {
-    issues.push({ id: `${prefix}-emp-${stepId}`, message: `Choose an employee for ${label}.` });
+    issues.push({
+      id: `${prefix}-emp-${stepId}`,
+      message: prefix === 'approver' ? 'Specific Employee requires selected employee.' : `Choose an employee for ${label}.`
+    });
   }
   return issues;
 }

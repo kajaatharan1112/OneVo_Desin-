@@ -1,33 +1,36 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, Calendar, Users, Clock, MessageSquare,
   PieChart, Briefcase, Building2, Building, CalendarMinus, Zap, Activity,
-  ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash,
+  ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash, ListChecks,
   CalendarDays, TrendingUp, Shield, Eye, List, Bell, Palette, Lock,
-  CreditCard, Monitor
+  CreditCard, Monitor, CalendarClock
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
 
 export interface NavItem {
   id: string;
   label: string;
+  /** Shorter label for the 52px icon rail when `label` would overflow. */
+  railLabel?: string;
   icon: React.ReactNode;
   subSections: SubNavSection[];
 }
 
 export const TENANT_MAIN_ITEMS: NavItem[] = [
   { id: 'dashboard',   label: 'Dashboard',   icon: <LayoutDashboard size={18} />, subSections: [] },
-  { id: 'organization', label: 'Organization', icon: <Building2 size={18} />, subSections: [
-    { id: 'main', items: [
-      { id: 'departments', label: 'Departments', icon: <Building size={13} /> },
-      { id: 'positions',   label: 'Positions',   icon: <Briefcase size={13} /> },
-    ]},
-  ]},
   { id: 'people',      label: 'People',      icon: <Users size={18} />,           subSections: [
     { id: 'main', items: [
       { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
       { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
+      { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
+    ]},
+  ]},
+  { id: 'organization', label: 'Organization', icon: <Building2 size={18} />, subSections: [
+    { id: 'main', items: [
+      { id: 'departments', label: 'Departments', icon: <Building size={13} /> },
+      { id: 'positions',   label: 'Positions',   icon: <Briefcase size={13} /> },
     ]},
   ]},
   { id: 'leave',       label: 'Leave',       icon: <CalendarMinus size={18} />,   subSections: [
@@ -36,13 +39,11 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
       { id: 'leave-types',    label: 'Leave Types',    icon: <Hash size={13} />     },
     ]},
   ]},
-  { id: 'calendar',    label: 'Calendar',    icon: <Calendar size={18} />,        subSections: [
-    { id: 'main', items: [
+  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: <CalendarClock size={18} />, subSections: [
+    { id: 'calendar', label: 'Calendar', collapsible: true, defaultOpen: true, items: [
       { id: 'holiday-calendar', label: 'Holiday Calendar', icon: <CalendarDays size={13} /> },
       { id: 'work-weeks',       label: 'Work Weeks',       icon: <Calendar size={13} />     },
     ]},
-  ]},
-  { id: 'attendance',  label: 'Attendance',  icon: <Clock size={18} />,           subSections: [
     { id: 'schedules', label: 'Schedules', collapsible: true, defaultOpen: true, items: [
       { id: 'shift-schedules', label: 'Shift Schedules', icon: <Clock size={13} />       },
       { id: 'work-patterns',   label: 'Work Patterns',   icon: <TrendingUp size={13} />  },
@@ -89,7 +90,12 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
   { id: 'dashboard',  label: 'Dashboard',  icon: <LayoutDashboard size={18} />, subSections: [] },
   { id: 'project',    label: 'Project',    icon: <FolderOpen size={18} />,      subSections: [] },
   { id: 'workspace',  label: 'Workspace',  icon: <Briefcase size={18} />,       subSections: [] },
-  { id: 'calendar',   label: 'Calendar',   icon: <Calendar size={18} />,        subSections: [] },
+  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: <CalendarClock size={18} />, subSections: [
+    { id: 'main', items: [
+      { id: 'calendar',   label: 'Calendar',   icon: <Calendar size={13} /> },
+      { id: 'attendance', label: 'Attendance', icon: <Clock size={13} />    },
+    ]},
+  ]},
   { id: 'people',     label: 'People',     icon: <Users size={18} />,           subSections: [
     { id: 'main', items: [
       { id: 'employees',   label: 'Employees',   icon: <Users size={13} />     },
@@ -97,7 +103,6 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
       { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
     ]},
   ]},
-  { id: 'attendance', label: 'Attendance', icon: <Clock size={18} />,           subSections: [] },
   { id: 'chat',       label: 'Chat',       icon: <MessageSquare size={18} />,   subSections: [] },
   { id: 'reports',    label: 'Reports',    icon: <PieChart size={18} />,        subSections: [] },
 ];
@@ -115,6 +120,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   setActiveTab,
   setActiveSubItemId
 }) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const mainItems = currentView === 'tenant' ? TENANT_MAIN_ITEMS : EMPLOYEE_ITEMS;
   const bottomItems = currentView === 'tenant' ? TENANT_BOTTOM_ITEMS : [];
@@ -131,11 +137,18 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     const subId = firstSubItem?.id ?? '';
     setActiveSubItemId(subId);
 
+    if (currentView === 'tenant' && item.label === 'People' && subId === 'checklist-templates') {
+      navigate('/people/checklist-templates');
+    }
     if (currentView === 'tenant' && item.label === 'Organization' && subId) {
       navigate(subId === 'positions' ? '/organization/positions' : '/organization/departments');
     }
     if (currentView === 'tenant' && item.label === 'Automations') {
       navigate('/automations');
+      return;
+    }
+    if (location.pathname.startsWith('/automations')) {
+      navigate('/');
     }
   };
 
@@ -149,7 +162,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       title={item.label}
     >
       <span className="rail-item__icon">{item.icon}</span>
-      <span className="rail-item__label">{item.label}</span>
+      <span className="rail-item__label">{item.railLabel ?? item.label}</span>
     </button>
   );
 

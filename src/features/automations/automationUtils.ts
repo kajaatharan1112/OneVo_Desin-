@@ -8,115 +8,57 @@ import {
 import { formatPersonTargetPhrase, validatePersonTarget } from './personTargetUtils';
 import {
   conditionStepPreview,
-  validateConditionStep,
+  createEmptyConditionClause,
   type ConditionOrgContext
 } from './conditionFields';
+import {
+  ACTION_CATALOG,
+  TRIGGER_GROUPS,
+  getAllowedConditionFieldKeys,
+  getFilteredActionGroups,
+  isChecklistTemplateAction,
+  isDemoTrigger,
+  isRemovedInternalAction,
+  triggerLabelForKey,
+  validateAutomationContext
+} from './automationContextRules';
+import { useChecklistTemplateStore } from '../../store/checklistTemplateStore';
+import {
+  approvalStepPreview,
+  getAlertAfterApprovalWarnings,
+  getDefaultApprovalStepConfig,
+  validateApprovalStep
+} from './approvalStepUtils';
+import { isOneTimeTaskAction, oneTimeTaskStepPreview, validateOneTimeTaskConfig } from './oneTimeTaskUtils';
 
-export const TRIGGER_GROUPS: Record<string, { label: string; triggers: { key: string; label: string }[] }> = {
-  Employee: {
-    label: 'Employee',
-    triggers: [
-      { key: 'employee_created', label: 'Employee created' },
-      { key: 'employee_updated', label: 'Employee updated' },
-      { key: 'employee_terminated', label: 'Employee terminated' },
-      { key: 'employee_status_changed', label: 'Employee status changed' },
-      { key: 'employee_onboarding_started', label: 'Employee onboarding started' },
-      { key: 'employee_offboarding_started', label: 'Employee offboarding started' }
-    ]
-  },
-  Organization: {
-    label: 'Organization',
-    triggers: [
-      { key: 'department_created', label: 'Department created' },
-      { key: 'department_head_changed', label: 'Department head changed' },
-      { key: 'position_created', label: 'Position created' },
-      { key: 'position_changed', label: 'Position changed' },
-      { key: 'position_assignment_changed', label: 'Position assignment changed' },
-      { key: 'reporting_manager_changed', label: 'Reporting manager changed' }
-    ]
-  },
-  Leave: {
-    label: 'Leave',
-    triggers: [
-      { key: 'leave_request_submitted', label: 'Leave request submitted' },
-      { key: 'leave_request_approved', label: 'Leave request approved' },
-      { key: 'leave_request_rejected', label: 'Leave request rejected' },
-      { key: 'leave_balance_below_limit', label: 'Leave balance below limit' }
-    ]
-  },
-  Attendance: {
-    label: 'Attendance',
-    triggers: [
-      { key: 'employee_checked_in_late', label: 'Employee checked in late' },
-      { key: 'employee_missed_checkin', label: 'Employee missed check-in' },
-      { key: 'attendance_correction_submitted', label: 'Attendance correction submitted' },
-      { key: 'overtime_request_submitted', label: 'Overtime request submitted' }
-    ]
-  },
-  Monitoring: {
-    label: 'Monitoring',
-    triggers: [
-      { key: 'monitoring_alert_created', label: 'Monitoring alert created' },
-      { key: 'idle_activity_exceeds', label: 'Idle activity exceeds threshold' },
-      { key: 'app_usage_violation', label: 'App usage violation detected' },
-      { key: 'device_offline', label: 'Device offline for too long' }
-    ]
-  },
-  Documents: {
-    label: 'Documents',
-    triggers: [
-      { key: 'document_uploaded', label: 'Document uploaded' },
-      { key: 'document_missing', label: 'Document missing' },
-      { key: 'document_expiring_soon', label: 'Document expiring soon' },
-      { key: 'document_expired', label: 'Document expired' }
-    ]
-  }
-};
+export { TRIGGER_GROUPS, getFilteredActionGroups };
 
 export const ACTION_GROUPS: Record<string, { key: string; label: string }[]> = {
-  Employee: [
-    { key: 'create_onboarding_checklist', label: 'Create onboarding checklist' },
-    { key: 'create_offboarding_checklist', label: 'Create offboarding checklist' },
-    { key: 'update_employee_status', label: 'Update employee status' },
-    { key: 'assign_employee_task', label: 'Assign employee task' },
-    { key: 'suggest_access_roles', label: 'Suggest access roles from position' },
-    { key: 'send_invite', label: 'Send invite' }
+  Checklists: [
+    ACTION_CATALOG.create_onboarding_checklist_from_template,
+    ACTION_CATALOG.create_offboarding_checklist_from_template
   ],
-  Organization: [
-    { key: 'recalculate_reporting_manager', label: 'Recalculate reporting manager' },
-    { key: 'flag_vacant_head', label: 'Flag vacant head position' },
-    { key: 'update_position_assignment', label: 'Update position assignment' },
-    { key: 'mark_department_head_missing', label: 'Mark department head missing' }
+  Tasks: [
+    ACTION_CATALOG.create_one_time_task
   ],
   Leave: [
-    { key: 'create_approval_request', label: 'Create approval request' },
-    { key: 'update_leave_status', label: 'Update leave request status' }
-  ],
-  Attendance: [
-    { key: 'create_attendance_approval', label: 'Create attendance correction approval' }
-  ],
-  Documents: [
-    { key: 'request_missing_document', label: 'Request missing document' },
-    { key: 'mark_document_reminder_sent', label: 'Mark document reminder sent' }
+    ACTION_CATALOG.update_leave_status
   ],
   Integration: [
-    { key: 'send_webhook', label: 'Send webhook' }
+    ACTION_CATALOG.send_webhook
   ]
 };
 
 export function triggerLabel(key: string): string {
-  for (const group of Object.values(TRIGGER_GROUPS)) {
-    const t = group.triggers.find(tr => tr.key === key);
-    if (t) return t.label;
-  }
+  if (isDemoTrigger(key)) return triggerLabelForKey(key);
   return key || 'Choose a trigger';
 }
 
 export function actionLabel(key: string): string {
-  for (const actions of Object.values(ACTION_GROUPS)) {
-    const a = actions.find(ac => ac.key === key);
-    if (a) return a.label;
-  }
+  if (ACTION_CATALOG[key]) return ACTION_CATALOG[key].label;
+  if (key === 'create_attendance_approval') return 'Create attendance correction approval';
+  if (key === 'create_approval_request') return 'Create approval request';
+  if (isRemovedInternalAction(key)) return 'Unavailable action';
   return key || 'Choose an action';
 }
 
@@ -132,7 +74,9 @@ export function stepToSentence(
   const c = step.config;
   switch (step.type) {
     case 'trigger':
-      return `When ${triggerLabel(c.triggerKey ?? '').toLowerCase()}`;
+      return triggerLabel(c.triggerKey ?? '') === 'Choose a trigger'
+        ? 'Choose a trigger'
+        : `When ${triggerLabel(c.triggerKey ?? '')}`;
     case 'condition': {
       const triggerKey = context?.triggerKey ?? '';
       const condOrg: ConditionOrgContext = {
@@ -140,21 +84,24 @@ export function stepToSentence(
         employees: context?.employees ?? [],
         departments: context?.departments ?? []
       };
-      return conditionStepPreview(c, triggerKey, condOrg);
+      const allowed = triggerKey ? getAllowedConditionFieldKeys(triggerKey) : undefined;
+      return conditionStepPreview(c, triggerKey, condOrg, allowed);
     }
-    case 'action':
-      return actionLabel(c.actionKey ?? '');
-    case 'approval': {
+    case 'action': {
+      const key = c.actionKey ?? '';
+      if (isChecklistTemplateAction(key)) {
+        const template = useChecklistTemplateStore.getState().getTemplateById(c.checklistTemplateId ?? '');
+        const label = actionLabel(key);
+        return template ? `${label}: ${template.name}` : label;
+      }
+      if (isOneTimeTaskAction(key) && context) {
+        return oneTimeTaskStepPreview(c, context.positions, context.employees);
+      }
+      return actionLabel(key);
+    }
+    case 'approval':
       if (!context) return 'Ask someone to approve';
-      const who = formatPersonTargetPhrase(
-        c.approverType as import('./personTargetUtils').PersonTargetType,
-        c,
-        'approver',
-        context.positions,
-        context.employees
-      );
-      return `Ask ${who} to approve`;
-    }
+      return approvalStepPreview(c, context.positions, context.employees);
     case 'notification': {
       if (!context) return 'Send notification';
       const who = formatPersonTargetPhrase(
@@ -185,7 +132,7 @@ export function buildAutomationSummary(automation: Automation): string {
   const main = getMainChainSteps(automation.steps);
   const trigger = main.find(s => s.type === 'trigger');
   const actions = main.filter(s => ['action', 'approval', 'notification', 'alert'].includes(s.type));
-  if (!trigger) return automation.summary || 'No trigger configured';
+  if (!trigger?.config.triggerKey) return automation.summary || 'No trigger configured';
   const triggerText = triggerLabel(trigger.config.triggerKey ?? '').toLowerCase();
   if (actions.length === 0) return `When ${triggerText}`;
   const actionText = actions.map(s => stepToSentence(s).toLowerCase()).join(', then ');
@@ -211,66 +158,51 @@ export function hasBranch(steps: AutomationStep[], conditionId: string): boolean
 export interface ValidationIssue {
   id: string;
   message: string;
+  stepId?: string;
+  severity?: 'error' | 'warning';
 }
 
 export function validateAutomation(automation: Automation): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const main = getMainChainSteps(automation.steps);
-  const trigger = main.find(s => s.type === 'trigger');
-
-  if (!trigger?.config.triggerKey) {
-    issues.push({ id: 'no-trigger', message: 'Automation needs a trigger.' });
-  }
-
-  const nonTrigger = main.filter(s => s.type !== 'trigger');
-  if (nonTrigger.length === 0) {
-    issues.push({ id: 'no-steps', message: 'Add at least one step after the trigger.' });
-  }
-
-  const triggerKey = trigger?.config.triggerKey ?? '';
+  const issues: ValidationIssue[] = [
+    ...validateAutomationContext(automation).map(i => ({ ...i, severity: 'error' as const })),
+    ...getAlertAfterApprovalWarnings(automation.steps).map(w => ({
+      ...w,
+      severity: 'warning' as const
+    }))
+  ];
 
   for (const step of automation.steps) {
-    if (step.type === 'condition') {
-      issues.push(...validateConditionStep(step, triggerKey));
-      if (step.config.hasBranch) {
-        const yesSteps = getBranchSteps(automation.steps, step.id, 'yes');
-        const noSteps = getBranchSteps(automation.steps, step.id, 'no');
-        if (yesSteps.length === 0) issues.push({ id: `yes-${step.id}`, message: 'Add at least one step to the YES path.' });
-        if (noSteps.length === 0) issues.push({ id: `no-${step.id}`, message: 'Add at least one step to the NO path.' });
-      }
-    }
     if (step.type === 'approval') {
       issues.push(...validatePersonTarget(step.id, step.config, 'approver', 'Approver'));
+      issues.push(...validateApprovalStep(step.id, step.config));
     }
     if (step.type === 'notification') {
       issues.push(...validatePersonTarget(step.id, step.config, 'recipient', 'Recipient'));
-      if (!step.config.channel) issues.push({ id: `notif-c-${step.id}`, message: 'Choose a notification channel.' });
+      if (!step.config.channel) issues.push({ id: `notif-c-${step.id}`, message: 'Choose a notification channel.', stepId: step.id });
     }
     if (step.type === 'alert') {
-      if (!step.config.alertTitle) issues.push({ id: `alert-t-${step.id}`, message: 'Alert needs a title.' });
-      if (!step.config.severity) issues.push({ id: `alert-s-${step.id}`, message: 'Alert needs a severity.' });
+      if (!step.config.alertTitle) issues.push({ id: `alert-t-${step.id}`, message: 'Alert needs a title.', stepId: step.id });
+      if (!step.config.severity) issues.push({ id: `alert-s-${step.id}`, message: 'Alert needs a severity.', stepId: step.id });
       issues.push(...validateAlertAssignment(step.id, step.config));
     }
-  }
-
-  const hasEnd = main.some(s => s.type === 'end');
-  if (!hasEnd) {
-    issues.push({ id: 'no-end', message: 'Automation should end clearly — add an End step.' });
+    if (step.type === 'action' && isOneTimeTaskAction(step.config.actionKey)) {
+      issues.push(...validateOneTimeTaskConfig(step.id, step.config).map(i => ({ ...i, stepId: step.id })));
+    }
   }
 
   return issues;
 }
 
 export function canActivate(automation: Automation): boolean {
-  return validateAutomation(automation).length === 0;
+  return validateAutomation(automation).filter(i => i.severity !== 'warning').length === 0;
 }
 
 export function defaultConfigForType(type: StepType): StepConfig {
   switch (type) {
     case 'trigger': return { triggerKey: '' };
-    case 'condition': return { field: '', operator: '', value: '', hasBranch: false };
+    case 'condition': return { conditions: [createEmptyConditionClause()], hasBranch: false };
     case 'action': return { actionKey: '' };
-    case 'approval': return { approverType: 'Reporting Manager', approvalTimeout: '48 hours', onApproved: 'Continue', onRejected: 'Stop automation' };
+    case 'approval': return getDefaultApprovalStepConfig();
     case 'notification': return { recipientType: 'Employee', channel: 'In-app', subject: '', body: '' };
     case 'alert': return {
       alertTitle: '',

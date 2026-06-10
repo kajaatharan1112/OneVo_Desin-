@@ -1,20 +1,158 @@
-import type { Automation, AutomationAlert, TemplateOption } from './automationTypes';
+import type { Automation, AutomationAlert } from './automationTypes';
+import type { AutomationTemplate } from './automationContextRules';
 
 const ts = (d: string) => d;
+
+export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
+  {
+    id: 'new_employee_setup',
+    name: 'New Employee Setup',
+    description: 'Onboarding tasks, invite, and notifications for new hires.',
+    summary: 'Set up tasks, invite, access suggestions, and notifications when a new employee is created.',
+    area: 'Employee Lifecycle',
+    triggerKey: 'employee_created',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'employee_created' }, sectionId: 'main', sortOrder: 0 },
+      { type: 'action', config: { actionKey: 'create_onboarding_checklist_from_template', checklistTemplateId: 'ct-onboarding-standard' }, sectionId: 'main', sortOrder: 1 },
+      { type: 'notification', config: { recipientType: 'Reporting Manager', channel: 'In-app' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  },
+  {
+    id: 'employee_offboarding',
+    name: 'Employee Offboarding',
+    description: 'Offboarding checklist and notifications when employee offboarding starts.',
+    summary: 'Create offboarding checklist and notify managers when employee offboarding starts.',
+    area: 'Employee Lifecycle',
+    triggerKey: 'employee_offboarding_started',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'employee_offboarding_started' }, sectionId: 'main', sortOrder: 0 },
+      { type: 'action', config: { actionKey: 'create_offboarding_checklist_from_template', checklistTemplateId: 'ct-offboarding-standard' }, sectionId: 'main', sortOrder: 1 },
+      { type: 'notification', config: { recipientType: 'Reporting Manager', channel: 'In-app' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'notification', config: { recipientType: 'Role', recipientRole: 'HR Admin', channel: 'In-app' }, sectionId: 'main', sortOrder: 3 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 4 }
+    ]
+  },
+  {
+    id: 'leave_request_approval',
+    name: 'Leave Request Approval',
+    description: 'Manager approval and employee notification for leave.',
+    summary: 'When leave request submitted, ask reporting manager to approve, then notify employee.',
+    area: 'Leave',
+    triggerKey: 'leave_request_submitted',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'leave_request_submitted' }, sectionId: 'main', sortOrder: 0 },
+      {
+        type: 'approval',
+        config: {
+          approverType: 'Reporting Manager',
+          approvalTimeoutEnabled: false,
+          approvalTimeoutHours: 48,
+          approvalTimeoutMinutes: 0,
+          onApproved: 'Continue',
+          onRejected: 'Notify employee',
+          onTimeout: 'Do nothing'
+        },
+        sectionId: 'main',
+        sortOrder: 1
+      },
+      { type: 'notification', config: { recipientType: 'Employee', channel: 'Email', subject: '', body: '' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  },
+  {
+    id: 'attendance_correction_approval',
+    name: 'Attendance Correction Approval',
+    description: 'Manager approval and employee notification for attendance corrections.',
+    summary: 'When attendance correction submitted, ask reporting manager to approve, then notify employee.',
+    area: 'Attendance',
+    triggerKey: 'attendance_correction_submitted',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'attendance_correction_submitted' }, sectionId: 'main', sortOrder: 0 },
+      {
+        type: 'approval',
+        config: {
+          approverType: 'Reporting Manager',
+          approvalTimeoutEnabled: false,
+          approvalTimeoutHours: 24,
+          approvalTimeoutMinutes: 0,
+          onApproved: 'Continue',
+          onRejected: 'Notify employee',
+          onTimeout: 'Do nothing'
+        },
+        sectionId: 'main',
+        sortOrder: 1
+      },
+      { type: 'notification', config: { recipientType: 'Employee', channel: 'In-app', subject: '', body: '' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  },
+  {
+    id: 'late_attendance_alert',
+    name: 'Late Attendance Alert',
+    description: 'Alert reporting manager on repeated late check-ins.',
+    summary: 'Create an attendance alert when late check-ins exceed a threshold in a period.',
+    area: 'Attendance',
+    triggerKey: 'employee_checked_in_late',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'employee_checked_in_late' }, sectionId: 'main', sortOrder: 0 },
+      { type: 'condition', config: { field: 'late_count_in_period', operator: 'greater_than', value: '3' }, sectionId: 'main', sortOrder: 1 },
+      { type: 'alert', config: { alertTitle: 'Repeated late check-in', severity: 'medium', assignToType: 'Reporting Manager', sla: '24 hours' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  },
+  {
+    id: 'position_change_check',
+    name: 'Position Change Check',
+    description: 'Verify reporting manager exists after position change.',
+    summary: 'Check reporting manager and department head rules when an employee moves position.',
+    area: 'Organization',
+    triggerKey: 'position_assignment_changed',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'position_assignment_changed' }, sectionId: 'main', sortOrder: 0 },
+      {
+        type: 'condition',
+        config: {
+          conditions: [{ id: 'c1', field: 'reporting_manager', operator: 'does_not_exist', value: '' }],
+          hasBranch: false
+        },
+        sectionId: 'main',
+        sortOrder: 1
+      },
+      { type: 'alert', config: { alertTitle: 'Missing reporting manager', severity: 'high', assignToType: 'Role', assignToRole: 'HR Admin', sla: '24 hours' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  },
+  {
+    id: 'monitoring_alert_escalation',
+    name: 'Monitoring Alert Escalation',
+    description: 'Escalate monitoring alerts for engineering violations.',
+    summary: 'Assign and escalate monitoring alerts when severity is high or critical.',
+    area: 'Monitoring',
+    triggerKey: 'app_usage_violation_detected',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'app_usage_violation_detected' }, sectionId: 'main', sortOrder: 0 },
+      { type: 'condition', config: { field: 'department', operator: 'is', value: 'dept-eng' }, sectionId: 'main', sortOrder: 1 },
+      { type: 'alert', config: { alertTitle: 'App usage violation', severity: 'high', assignToType: 'Reporting Manager', sla: '4 hours' }, sectionId: 'main', sortOrder: 2 },
+      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  }
+];
 
 export const SEED_AUTOMATIONS: Automation[] = [
   {
     id: 'auto-1',
-    name: 'New Employee Onboarding',
-    description: 'Onboarding tasks and HR notification for new hires.',
-    summary: 'When an employee is created, assign onboarding tasks and notify HR.',
+    templateId: 'new_employee_setup',
+    name: 'New Employee Setup',
+    description: 'Onboarding tasks, invite, and notifications for new hires.',
+    summary: 'Set up tasks, invite, access suggestions, and notifications when a new employee is created.',
     area: 'Employee Lifecycle',
     trigger: 'Employee created',
     status: 'active',
     steps: [
       { id: 's1', type: 'trigger', config: { triggerKey: 'employee_created' }, sectionId: 'main', sortOrder: 0 },
-      { id: 's2', type: 'action', config: { actionKey: 'create_onboarding_checklist' }, sectionId: 'main', sortOrder: 1 },
-      { id: 's3', type: 'notification', config: { recipientType: 'Role', recipientRole: 'HR Admin', channel: 'In-app' }, sectionId: 'main', sortOrder: 2 },
+      { id: 's2', type: 'action', config: { actionKey: 'create_onboarding_checklist_from_template', checklistTemplateId: 'ct-onboarding-standard' }, sectionId: 'main', sortOrder: 1 },
+      { id: 's3', type: 'notification', config: { recipientType: 'Reporting Manager', channel: 'In-app' }, sectionId: 'main', sortOrder: 2 },
       { id: 's4', type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
     ],
     lastRunAt: '2026-06-08T14:22:00Z',
@@ -26,17 +164,56 @@ export const SEED_AUTOMATIONS: Automation[] = [
     updatedAt: ts('2026-03-15T08:30:00Z')
   },
   {
+    id: 'auto-7',
+    templateId: 'employee_offboarding',
+    name: 'Employee Offboarding',
+    description: 'Offboarding checklist and notifications when employee offboarding starts.',
+    summary: 'Create offboarding checklist and notify managers when employee offboarding starts.',
+    area: 'Employee Lifecycle',
+    trigger: 'Employee offboarding started',
+    status: 'active',
+    steps: [
+      { id: 's1', type: 'trigger', config: { triggerKey: 'employee_offboarding_started' }, sectionId: 'main', sortOrder: 0 },
+      { id: 's2', type: 'action', config: { actionKey: 'create_offboarding_checklist_from_template', checklistTemplateId: 'ct-offboarding-standard' }, sectionId: 'main', sortOrder: 1 },
+      { id: 's3', type: 'notification', config: { recipientType: 'Reporting Manager', channel: 'In-app' }, sectionId: 'main', sortOrder: 2 },
+      { id: 's4', type: 'notification', config: { recipientType: 'Role', recipientRole: 'HR Admin', channel: 'In-app' }, sectionId: 'main', sortOrder: 3 },
+      { id: 's5', type: 'end', config: {}, sectionId: 'main', sortOrder: 4 }
+    ],
+    lastRunAt: '2026-06-07T11:00:00Z',
+    runCount: 28,
+    failureCount: 0,
+    alertsCreated: 0,
+    openAlerts: 0,
+    createdAt: ts('2025-12-01T10:00:00Z'),
+    updatedAt: ts('2026-04-10T09:00:00Z')
+  },
+  {
     id: 'auto-2',
+    templateId: 'leave_request_approval',
     name: 'Leave Request Approval',
     description: 'Manager approval and employee notification for leave.',
-    summary: 'When leave is requested, ask reporting manager for approval and notify the employee.',
+    summary: 'When leave request submitted, ask reporting manager to approve, then notify employee.',
     area: 'Leave',
     trigger: 'Leave request submitted',
     status: 'active',
     steps: [
       { id: 's1', type: 'trigger', config: { triggerKey: 'leave_request_submitted' }, sectionId: 'main', sortOrder: 0 },
-      { id: 's2', type: 'approval', config: { approverType: 'Reporting Manager', approvalTimeout: '48 hours', onRejected: 'Notify requester' }, sectionId: 'main', sortOrder: 1 },
-      { id: 's3', type: 'notification', config: { recipientType: 'Employee', channel: 'Email' }, sectionId: 'main', sortOrder: 2 },
+      {
+        id: 's2',
+        type: 'approval',
+        config: {
+          approverType: 'Reporting Manager',
+          approvalTimeoutEnabled: false,
+          approvalTimeoutHours: 48,
+          approvalTimeoutMinutes: 0,
+          onApproved: 'Continue',
+          onRejected: 'Notify employee',
+          onTimeout: 'Do nothing'
+        },
+        sectionId: 'main',
+        sortOrder: 1
+      },
+      { id: 's3', type: 'notification', config: { recipientType: 'Employee', channel: 'Email', subject: '', body: '' }, sectionId: 'main', sortOrder: 2 },
       { id: 's4', type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
     ],
     lastRunAt: '2026-06-09T09:15:00Z',
@@ -49,9 +226,10 @@ export const SEED_AUTOMATIONS: Automation[] = [
   },
   {
     id: 'auto-3',
+    templateId: 'late_attendance_alert',
     name: 'Late Attendance Alert',
     description: 'Alert reporting manager on repeated late check-ins.',
-    summary: 'When an employee is late more than 3 times in 7 days, create an alert for the reporting manager.',
+    summary: 'Create an attendance alert when late check-ins exceed a threshold in a period.',
     area: 'Attendance',
     trigger: 'Employee checked in late',
     status: 'active',
@@ -71,16 +249,27 @@ export const SEED_AUTOMATIONS: Automation[] = [
   },
   {
     id: 'auto-4',
+    templateId: 'position_change_check',
     name: 'Position Change Check',
     description: 'Verify reporting manager exists after position change.',
-    summary: 'When an employee position changes, check whether reporting manager exists and alert HR if missing.',
+    summary: 'Check reporting manager and department head rules when an employee moves position.',
     area: 'Organization',
     trigger: 'Position assignment changed',
     status: 'draft',
     steps: [
       { id: 's1', type: 'trigger', config: { triggerKey: 'position_assignment_changed' }, sectionId: 'main', sortOrder: 0 },
-      { id: 's2', type: 'condition', config: { field: 'reporting_manager', operator: 'does_not_exist' }, sectionId: 'main', sortOrder: 1 },
-      { id: 's3', type: 'alert', config: { alertTitle: 'Missing reporting manager', severity: 'high', assignToType: 'Role', assignToRole: 'HR Admin' }, sectionId: 'main', sortOrder: 2 }
+      {
+        id: 's2',
+        type: 'condition',
+        config: {
+          conditions: [{ id: 'c1', field: 'reporting_manager', operator: 'does_not_exist', value: '' }],
+          hasBranch: false
+        },
+        sectionId: 'main',
+        sortOrder: 1
+      },
+      { id: 's3', type: 'alert', config: { alertTitle: 'Missing reporting manager', severity: 'high', assignToType: 'Role', assignToRole: 'HR Admin', sla: '24 hours' }, sectionId: 'main', sortOrder: 2 },
+      { id: 's4', type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
     ],
     lastRunAt: null,
     runCount: 0,
@@ -91,26 +280,27 @@ export const SEED_AUTOMATIONS: Automation[] = [
     updatedAt: ts('2026-02-28T10:00:00Z')
   },
   {
-    id: 'auto-5',
-    name: 'Document Expiry Reminder',
-    description: 'Remind employee and escalate unresolved document expiry.',
-    summary: 'When a document expires soon, notify employee and create a compliance alert if unresolved.',
-    area: 'Documents',
-    trigger: 'Document expiring soon',
-    status: 'paused',
+    id: 'auto-6',
+    templateId: 'monitoring_alert_escalation',
+    name: 'Monitoring Alert Escalation',
+    description: 'Escalate monitoring alerts for engineering violations.',
+    summary: 'Assign and escalate monitoring alerts when severity is high or critical.',
+    area: 'Monitoring',
+    trigger: 'App usage violation detected',
+    status: 'active',
     steps: [
-      { id: 's1', type: 'trigger', config: { triggerKey: 'document_expiring_soon' }, sectionId: 'main', sortOrder: 0 },
-      { id: 's2', type: 'notification', config: { recipientType: 'Employee', channel: 'Email' }, sectionId: 'main', sortOrder: 1 },
-      { id: 's3', type: 'alert', config: { alertTitle: 'Document expiry unresolved', severity: 'critical', assignToType: 'Role', assignToRole: 'Compliance Admin', escalate: true, escalationTargetType: 'Role', escalationRole: 'HR Admin', sla: '24 hours' }, sectionId: 'main', sortOrder: 2 },
+      { id: 's1', type: 'trigger', config: { triggerKey: 'app_usage_violation_detected' }, sectionId: 'main', sortOrder: 0 },
+      { id: 's2', type: 'condition', config: { field: 'department', operator: 'is', value: 'dept-eng' }, sectionId: 'main', sortOrder: 1 },
+      { id: 's3', type: 'alert', config: { alertTitle: 'App usage violation', severity: 'high', assignToType: 'Reporting Manager', sla: '4 hours' }, sectionId: 'main', sortOrder: 2 },
       { id: 's4', type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
     ],
-    lastRunAt: '2026-06-05T11:00:00Z',
-    runCount: 34,
+    lastRunAt: '2026-06-09T16:30:00Z',
+    runCount: 56,
     failureCount: 0,
-    alertsCreated: 3,
-    openAlerts: 1,
-    createdAt: ts('2026-01-15T10:00:00Z'),
-    updatedAt: ts('2026-03-01T14:00:00Z')
+    alertsCreated: 8,
+    openAlerts: 3,
+    createdAt: ts('2026-02-01T10:00:00Z'),
+    updatedAt: ts('2026-06-01T12:00:00Z')
   }
 ];
 
@@ -118,87 +308,9 @@ export const SEED_ALERTS: AutomationAlert[] = [
   { id: 'al-1', automationId: 'auto-2', title: 'Leave approval overdue', severity: 'high', area: 'Leave', assignedTo: 'Department Head', status: 'open', createdAt: '2026-06-06T10:00:00Z', slaRemaining: '4h 12m' },
   { id: 'al-2', automationId: 'auto-3', title: 'Late check-in repeated', severity: 'medium', area: 'Attendance', assignedTo: 'Reporting Manager', status: 'open', createdAt: '2026-06-08T08:15:00Z', slaRemaining: '18h 30m' },
   { id: 'al-3', automationId: 'auto-3', title: 'Late check-in repeated', severity: 'medium', area: 'Attendance', assignedTo: 'Reporting Manager', status: 'resolved', createdAt: '2026-06-01T08:15:00Z', slaRemaining: '—' },
-  { id: 'al-4', automationId: 'auto-5', title: 'Document expiring soon', severity: 'critical', area: 'Documents', assignedTo: 'Compliance Admin', status: 'open', createdAt: '2026-06-05T09:00:00Z', slaRemaining: '12d' }
+  { id: 'al-5', automationId: 'auto-6', title: 'App usage violation', severity: 'high', area: 'Monitoring', assignedTo: 'Reporting Manager', status: 'open', createdAt: '2026-06-09T14:00:00Z', slaRemaining: '2h 45m' }
 ];
 
-export const TEMPLATES: TemplateOption[] = [
-  {
-    id: 'blank',
-    name: 'Start from blank',
-    description: 'Build your automation step by step.',
-    area: 'Employee Lifecycle',
-    triggerKey: '',
-    summary: '',
-    steps: [{ type: 'trigger', config: {}, sectionId: 'main', sortOrder: 0 }]
-  },
-  {
-    id: 'onboarding',
-    name: 'Employee onboarding',
-    description: 'Onboard new employees automatically.',
-    area: 'Employee Lifecycle',
-    triggerKey: 'employee_created',
-    summary: 'When an employee is created, assign onboarding tasks and notify HR.',
-    steps: [
-      { type: 'trigger', config: { triggerKey: 'employee_created' }, sectionId: 'main', sortOrder: 0 },
-      { type: 'action', config: { actionKey: 'create_onboarding_checklist' }, sectionId: 'main', sortOrder: 1 },
-      { type: 'notification', config: { recipientType: 'Role', recipientRole: 'HR Admin', channel: 'In-app' }, sectionId: 'main', sortOrder: 2 },
-      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
-    ]
-  },
-  {
-    id: 'leave',
-    name: 'Leave approval',
-    description: 'Route leave requests for manager approval.',
-    area: 'Leave',
-    triggerKey: 'leave_request_submitted',
-    summary: 'When leave is requested, ask reporting manager for approval and notify the employee.',
-    steps: [
-      { type: 'trigger', config: { triggerKey: 'leave_request_submitted' }, sectionId: 'main', sortOrder: 0 },
-      { type: 'approval', config: { approverType: 'Reporting Manager', approvalTimeout: '48 hours' }, sectionId: 'main', sortOrder: 1 },
-      { type: 'notification', config: { recipientType: 'Employee', channel: 'Email' }, sectionId: 'main', sortOrder: 2 },
-      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
-    ]
-  },
-  {
-    id: 'attendance',
-    name: 'Late attendance alert',
-    description: 'Alert when repeated late check-ins occur.',
-    area: 'Attendance',
-    triggerKey: 'employee_checked_in_late',
-    summary: 'When an employee is late more than 3 times in 7 days, create an alert for the reporting manager.',
-    steps: [
-      { type: 'trigger', config: { triggerKey: 'employee_checked_in_late' }, sectionId: 'main', sortOrder: 0 },
-      { type: 'condition', config: { field: 'late_count_in_period', operator: 'greater_than', value: '3' }, sectionId: 'main', sortOrder: 1 },
-      { type: 'alert', config: { alertTitle: 'Late attendance', severity: 'medium', assignToType: 'Reporting Manager' }, sectionId: 'main', sortOrder: 2 },
-      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
-    ]
-  },
-  {
-    id: 'position',
-    name: 'Position change check',
-    description: 'Check reporting manager after position change.',
-    area: 'Organization',
-    triggerKey: 'position_assignment_changed',
-    summary: 'When an employee position changes, check whether reporting manager exists and alert HR if missing.',
-    steps: [
-      { type: 'trigger', config: { triggerKey: 'position_assignment_changed' }, sectionId: 'main', sortOrder: 0 },
-      { type: 'condition', config: { field: 'reporting_manager', operator: 'does_not_exist' }, sectionId: 'main', sortOrder: 1 },
-      { type: 'alert', config: { alertTitle: 'Missing reporting manager', severity: 'high', assignToType: 'Role', assignToRole: 'HR Admin' }, sectionId: 'main', sortOrder: 2 },
-      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
-    ]
-  },
-  {
-    id: 'document',
-    name: 'Document expiry reminder',
-    description: 'Notify and escalate document expiry.',
-    area: 'Documents',
-    triggerKey: 'document_expiring_soon',
-    summary: 'When a document expires soon, notify employee and create a compliance alert if unresolved.',
-    steps: [
-      { type: 'trigger', config: { triggerKey: 'document_expiring_soon' }, sectionId: 'main', sortOrder: 0 },
-      { type: 'notification', config: { recipientType: 'Employee', channel: 'Email' }, sectionId: 'main', sortOrder: 1 },
-      { type: 'alert', config: { alertTitle: 'Document expiry', severity: 'critical', assignToType: 'Role', assignToRole: 'Compliance Admin' }, sectionId: 'main', sortOrder: 2 },
-      { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
-    ]
-  }
-];
+export function getTemplateById(id: string) {
+  return AUTOMATION_TEMPLATES.find(t => t.id === id);
+}

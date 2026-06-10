@@ -3,6 +3,8 @@ import { Pencil, Trash2, Zap, GitBranch, Play, Shield, Bell, AlertTriangle, Cloc
 import clsx from 'clsx';
 import type { AutomationStep } from './automationTypes';
 import { stepToSentence, stepTypeLabel } from './automationUtils';
+import { STEP_MISMATCH_MESSAGE } from './automationContextRules';
+import { ALERT_AFTER_APPROVAL_WARNING, isAlertImmediatelyAfterApproval } from './approvalStepUtils';
 import { useOrganizationStore } from '../../store/organizationStore';
 import { filterPositionOptions } from './alertAssignmentUtils';
 
@@ -19,8 +21,10 @@ const ICONS = {
 
 interface AutomationStepCardProps {
   step: AutomationStep;
+  steps?: AutomationStep[];
   triggerKey?: string;
   selected: boolean;
+  invalid?: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -29,8 +33,10 @@ interface AutomationStepCardProps {
 
 export const AutomationStepCard: React.FC<AutomationStepCardProps> = ({
   step,
+  steps = [],
   triggerKey = '',
   selected,
+  invalid = false,
   onSelect,
   onEdit,
   onDelete,
@@ -51,7 +57,7 @@ export const AutomationStepCard: React.FC<AutomationStepCardProps> = ({
 
   return (
     <div
-      className={clsx('auto-step-card', `auto-step-card--${step.type}`, selected && 'auto-step-card--selected')}
+      className={clsx('auto-step-card', `auto-step-card--${step.type}`, selected && 'auto-step-card--selected', invalid && 'auto-step-card--invalid')}
       onClick={onSelect}
       role="button"
       tabIndex={0}
@@ -68,6 +74,10 @@ export const AutomationStepCard: React.FC<AutomationStepCardProps> = ({
         </div>
       </div>
       <p className="auto-step-card__sentence">{stepToSentence(step, orgContext)}</p>
+      {invalid && <p className="auto-step-card__warning">{STEP_MISMATCH_MESSAGE}</p>}
+      {step.type === 'alert' && isAlertImmediatelyAfterApproval(steps, step.id) && (
+        <p className="auto-step-card__warning">{ALERT_AFTER_APPROVAL_WARNING}</p>
+      )}
     </div>
   );
 };
