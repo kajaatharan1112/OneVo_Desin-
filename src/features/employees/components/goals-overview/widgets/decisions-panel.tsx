@@ -1,14 +1,17 @@
 import React from 'react';
 import { Scale } from 'lucide-react';
-import { decisions } from '../../../data/employee-goals.data';
+import type { DecisionItem } from '../../../data/employee-goals.data';
+import { useEmployeeData } from '../../../hooks/use-employee-data';
 
-const outcomeLabels: Record<(typeof decisions)[number]['outcome'], string> = {
+const outcomeLabels: Record<DecisionItem['outcome'], string> = {
   approved: 'Approved',
   pending: 'Pending',
   deferred: 'Deferred'
 };
 
 export const DecisionsPanel: React.FC = () => {
+  const { decisions } = useEmployeeData();
+
   return (
     <article className="ego-widget ego-decisions">
       <header className="ego-widget__head">

@@ -7,7 +7,6 @@ import {
   BarChart2,
   ShieldCheck,
   TrendingUp,
-  TrendingDown,
   Users,
   Minus,
   FileText,

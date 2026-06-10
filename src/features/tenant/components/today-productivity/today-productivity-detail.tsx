@@ -4,7 +4,6 @@ import {
   Clock, 
   AlertTriangle, 
   Users, 
-  Check, 
   FileText, 
   Sparkles, 
   Share2, 

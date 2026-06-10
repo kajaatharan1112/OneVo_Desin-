@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import Chart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import { GanttChart } from 'lucide-react';
-import { getSprintCompletedPercent, weeklyPlan } from '../../../data/employee-task-overview.data';
 import { getChartTheme } from '../../../../../core/theme/chart-theme-config';
 import { useTheme } from '../../../../../core/theme/theme-context';
+import { useEmployeeData } from '../../../hooks/use-employee-data';
 import { createBaseChartOptions } from '../chart-theme';
 import { usePanelChartHeight } from '../use-panel-chart-height';
 
 export const WeeklyTimelinePanel: React.FC = () => {
+  const { weeklyPlan, sprintCompletedPercent } = useEmployeeData();
   const { theme } = useTheme();
   const chartTokens = useMemo(() => getChartTheme(theme), [theme]);
   const baseChartOptions = useMemo(
@@ -25,7 +26,7 @@ export const WeeklyTimelinePanel: React.FC = () => {
   const totalPending = pending.reduce((a, b) => a + b, 0);
   const totalPlanned = weeklyPlan.reduce((a, d) => a + d.planned, 0);
   const completionPct = totalPlanned > 0 ? Math.round((totalFinished / totalPlanned) * 100) : 0;
-  const sprintPct = getSprintCompletedPercent();
+  const sprintPct = sprintCompletedPercent;
   const peakValue = Math.max(...weeklyPlan.map((d) => d.finished + d.pending), 1);
 
   const options: ApexOptions = useMemo(
