@@ -15,6 +15,7 @@ import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
 import { Navbar } from '../navbar/navbar';
 import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
+import type { EmployeeId } from '../../features/employees/types/employee.types';
 
 interface ShellProps {
   currentView: 'employee' | 'tenant';
@@ -29,6 +30,7 @@ interface ShellProps {
   setupWizardOpen?: boolean;
   onCloseSetupWizard?: () => void;
   onGoToLandingPage: () => void;
+  selectedEmployeeId: EmployeeId;
   children: React.ReactNode;
 }
 
@@ -44,6 +46,7 @@ export const Shell: React.FC<ShellProps> = ({
   onAddCompany,
   setupWizardOpen = false,
   onCloseSetupWizard,
+  selectedEmployeeId,
   children
 }) => {
   const location = useLocation();
@@ -87,8 +90,8 @@ export const Shell: React.FC<ShellProps> = ({
   );
 
   const notificationUnreadCount = useMemo(
-    () => countNewNotifications(currentView),
-    [currentView]
+    () => countNewNotifications(currentView, selectedEmployeeId),
+    [currentView, selectedEmployeeId]
   );
 
   const openNotificationPanel = useCallback(() => {
@@ -206,6 +209,7 @@ export const Shell: React.FC<ShellProps> = ({
               {notificationsOpen && (
                 <NotificationPanel
                   currentView={currentView}
+                  selectedEmployeeId={selectedEmployeeId}
                   onClose={() => setNotificationsOpen(false)}
                 />
               )}

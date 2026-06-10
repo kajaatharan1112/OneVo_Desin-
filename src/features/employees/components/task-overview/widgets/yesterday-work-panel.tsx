@@ -1,11 +1,8 @@
 import React from 'react';
 import { CheckCircle2, AlertCircle, Clock, ShieldCheck } from 'lucide-react';
-import {
-  yesterdayAllClear,
-  yesterdayStatusDateLabel,
-  yesterdayWork
-} from '../../../data/employee-task-overview.data';
+import { yesterdayStatusDateLabel } from '../../../data/employee-task-overview.data';
 import type { YesterdayWorkItem } from '../../../data/employee-task-overview.data';
+import { useEmployeeData } from '../../../hooks/use-employee-data';
 
 function statusIcon(status: YesterdayWorkItem['status']) {
   switch (status) {
@@ -21,6 +18,8 @@ function statusIcon(status: YesterdayWorkItem['status']) {
 }
 
 export const YesterdayWorkPanel: React.FC = () => {
+  const { yesterdayAllClear, yesterdayWork } = useEmployeeData();
+
   return (
     <article className="eto-widget eto-status-panel eto-cell--yesterday">
       <header className="eto-widget__head">
