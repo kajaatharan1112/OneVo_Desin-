@@ -27,7 +27,7 @@ interface SummarizeTabsProps {
 }
 
 function getCardIcon(id: SummaryCardId): React.ReactNode {
-  const iconProps = { size: 16, strokeWidth: 2.2, 'aria-hidden': true as const };
+  const iconProps = { size: 22, strokeWidth: 2, 'aria-hidden': true as const };
 
   switch (id) {
     case 'task-overview':
@@ -138,12 +138,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
               data-summary-card-id={card.id}
               onClick={() => handleCardClick(card)}
               aria-pressed={isActive}
-              aria-label={
-                isCeoCard
-                  ? `${card.title}. ${card.desc}`
-                  : `${card.title}: ${card.value}. ${card.desc}`
-              }
-              style={{ borderColor: isActive && !isCeoCard ? card.color : undefined }}
+              aria-label={`${card.title}. ${card.desc}`}
             >
               <div className="summary-card__body">
                 <span className="summary-card__title">{card.title}</span>
@@ -169,10 +164,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
       </section>
 
       {selectedCard && (
-        <SummaryCardContent
-          card={selectedCard}
-          onNavigateTab={onNavigateTab}
-        />
+        <SummaryCardContent card={selectedCard} onNavigateTab={onNavigateTab} />
       )}
     </div>
   );
