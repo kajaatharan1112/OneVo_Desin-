@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Building, ChevronDown, Plus } from 'lucide-react';
+import { Building, ChevronDown, Check, Plus } from 'lucide-react';
 import './app-brand.css';
 
 export const DEFAULT_TENANT_COMPANY = 'OneVo HRMS' as const;
@@ -140,7 +140,10 @@ export const AppBrand: React.FC<AppBrandProps> = ({
                   onClick={() => handleSelect(company)}
                 >
                   <Building size={14} aria-hidden />
-                  {company}
+                  <span style={{ flex: 1 }}>{company}</span>
+                  {selectedCompany === company && (
+                    <Check size={13} className="app-brand-menu__item-check" aria-hidden />
+                  )}
                 </button>
               </li>
             ))}
