@@ -3,7 +3,6 @@ import { Calendar, Search, Users, Building2, LogOut, HelpCircle, KeyRound } from
 import { appNavDateLabel } from '../../features/employees/data/employee-task-overview.data';
 import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/app-brand';
 import { UserProfile } from '../../shared/components/user-profile/user-profile';
-import { EmployeeSwitcher } from '../../shared/components/employee-switcher/employee-switcher';
 import { NotificationToggle } from '../../shared/components/notification-toggle/notification-toggle';
 import { ThemeSwitcher } from '../../shared/components/theme-switcher/theme-switcher';
 
@@ -114,11 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {profileOpen && (
             <div className="navbar-profile__dropdown" role="menu">
-              {!isTenant && (
-                <div className="navbar-profile__switcher">
-                  <EmployeeSwitcher />
-                </div>
-              )}
               <button
                 className="navbar-profile__action"
                 role="menuitem"

@@ -1,9 +1,8 @@
 import React from 'react';
 import { Flag, Target } from 'lucide-react';
-import { useEmployeeData } from '../../../hooks/use-employee-data';
+import { goalPlans, goals } from '../../../data/employee-goals.data';
 
 export const PlansGoalsPanel: React.FC = () => {
-  const { goalPlans, goals } = useEmployeeData();
   return (
     <article className="ego-widget ego-plans">
       <header className="ego-widget__head">
