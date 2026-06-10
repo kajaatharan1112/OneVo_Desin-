@@ -1,11 +1,10 @@
 import React from 'react';
 import { PieChart } from 'lucide-react';
-import { useEmployeeData } from '../../../hooks/use-employee-data';
+import { employeeTaskOverviewMetrics } from '../../../data/employee-task-overview.data';
 import { ActivityRingChart } from './activity-ring-chart';
 
 export const TaskCastPie: React.FC = () => {
-  const { taskOverviewMetrics } = useEmployeeData();
-  const { targetTasks, completedTasks } = taskOverviewMetrics;
+  const { targetTasks, completedTasks } = employeeTaskOverviewMetrics;
   const percent = (completedTasks / targetTasks) * 100;
 
   return (

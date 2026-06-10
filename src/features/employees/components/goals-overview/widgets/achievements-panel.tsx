@@ -1,9 +1,8 @@
 import React from 'react';
 import { Trophy } from 'lucide-react';
-import { useEmployeeData } from '../../../hooks/use-employee-data';
+import { achievements } from '../../../data/employee-goals.data';
 
 export const AchievementsPanel: React.FC = () => {
-  const { achievements } = useEmployeeData();
   return (
     <article className="ego-widget ego-achievements">
       <header className="ego-widget__head">

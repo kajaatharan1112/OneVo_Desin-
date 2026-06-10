@@ -943,92 +943,6 @@
   text-overflow: ellipsis;
 }
 
-.employee-switcher {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.employee-switcher__label {
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text);
-  opacity: 0.72;
-}
-
-.employee-switcher__options {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.employee-switcher__option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-muted);
-  cursor: pointer;
-  text-align: left;
-  transition:
-    background-color var(--nexus-duration, 0.25s) var(--nexus-ease, ease),
-    border-color var(--nexus-duration, 0.25s) var(--nexus-ease, ease);
-}
-
-.employee-switcher__option:hover {
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface-muted));
-}
-
-.employee-switcher__option--active {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface-muted));
-  box-shadow: inset 3px 0 0 var(--accent);
-}
-
-.employee-switcher__avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.employee-switcher__option-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.employee-switcher__name {
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: var(--text-h);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.employee-switcher__role {
-  font-size: 0.56rem;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.navbar-profile__switcher {
-  padding: 4px 6px 6px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 3px;
-}
-
 /* ─────────────────────────────────────────────
    12. APP BRAND (employee wide)
    ───────────────────────────────────────────── */
@@ -1310,15 +1224,6 @@
   flex: 1 1 auto;
   min-height: 0;
   gap: var(--shell-gap);
-}
-
-.main-scrollable:has(.dashboard-page--ceo-overview) {
-  overflow: auto;
-}
-
-.dashboard-page--ceo-overview {
-  overflow: visible;
-  padding-bottom: var(--nexus-card-gap);
 }
 
 .summarize-tabs-root {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarDays, Cake, FileText, Bell, Video } from 'lucide-react';
+import { todayActions } from '../../../data/employee-task-overview.data';
 import type { TodayActionItem } from '../../../data/employee-task-overview.data';
-import { useEmployeeData } from '../../../hooks/use-employee-data';
 
 const kindIcons: Record<TodayActionItem['kind'], React.ReactNode> = {
   birthday: <Cake size={14} />,
@@ -11,8 +11,6 @@ const kindIcons: Record<TodayActionItem['kind'], React.ReactNode> = {
 };
 
 export const TodayPanel: React.FC = () => {
-  const { todayActions } = useEmployeeData();
-
   return (
     <article className="eto-widget eto-today eto-cell--today">
       <header className="eto-widget__head eto-today__head">

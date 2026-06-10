@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Circle, ListTodo } from 'lucide-react';
-import { useEmployeeData } from '../../../hooks/use-employee-data';
+import { pendingTasks, todayPlanTasks } from '../../../data/employee-task-overview.data';
 
 interface StickyNotesPanelProps {
   onOpenTasks: () => void;
@@ -11,7 +11,6 @@ function statusIcon(done: boolean) {
 }
 
 export const StickyNotesPanel: React.FC<StickyNotesPanelProps> = ({ onOpenTasks }) => {
-  const { pendingTasks, todayPlanTasks } = useEmployeeData();
   const pendingCount = pendingTasks.filter((t) => !t.done).length;
   const todayOpenCount = todayPlanTasks.filter((t) => !t.done).length;
 

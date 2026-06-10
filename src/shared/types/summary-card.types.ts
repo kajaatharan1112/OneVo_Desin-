@@ -4,21 +4,13 @@ export type EmployeeSummaryCardId =
   | 'activity'
   | 'goals';
 
-export type CeoSummaryCardId =
-  | 'workforce-availability'
-  | 'company-performance'
-  | 'project-health'
-  | 'productivity-score';
-
 export type TenantSummaryCardId =
   | 'today-productivity'
   | 'ongoing-projects'
   | 'total-revenue'
   | 'open-requests';
 
-export type SummaryCardId = EmployeeSummaryCardId | CeoSummaryCardId | TenantSummaryCardId;
-
-export type SummaryCardStatus = 'green' | 'amber' | 'red';
+export type SummaryCardId = EmployeeSummaryCardId | TenantSummaryCardId;
 
 export interface SummaryCardData {
   id: SummaryCardId;
@@ -26,9 +18,4 @@ export interface SummaryCardData {
   value: string;
   desc: string;
   color: string;
-  variant?: 'employee' | 'ceo';
-  delta?: string;
-  status?: SummaryCardStatus;
-  actionLabel?: string;
-  actionTab?: string;
 }

@@ -1,8 +1,4 @@
 import React from 'react';
-import { CeoPerformanceDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-performance-dashboard';
-import { CeoProductivityDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-productivity-dashboard';
-import { CeoProjectHealthDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-project-health-dashboard';
-import { CeoWorkforceDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-workforce-dashboard';
 import { EmployeeGoalsDashboard } from '../../../features/employees/components/goals-overview/employee-goals-dashboard';
 import { EmployeeTaskOverviewDashboard } from '../../../features/employees/components/task-overview/employee-task-overview-dashboard';
 import {
@@ -28,22 +24,17 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
   const isWeeklyProductivity = card.id === 'ongoing-projects';
   const isMonthlyReview = card.id === 'total-revenue';
   const isAnnualAnalytics = card.id === 'open-requests';
-  const isWorkforce = card.id === 'workforce-availability';
-  const isPerformance = card.id === 'company-performance';
-  const isProjectHealth = card.id === 'project-health';
-  const isProductivity = card.id === 'productivity-score';
-  const isTenantFilled =
-    isTenantProductivity || isWeeklyProductivity || isMonthlyReview || isAnnualAnalytics;
-  const isCeoFilled = isWorkforce || isPerformance || isProjectHealth || isProductivity;
   const isFilledOverview =
     isTaskOverview ||
     isGoalsOverview ||
-    isTenantFilled ||
-    isCeoFilled;
+    isTenantProductivity ||
+    isWeeklyProductivity ||
+    isMonthlyReview ||
+    isAnnualAnalytics;
 
   return (
     <section
-      className={`summary-card-content${isFilledOverview ? ' summary-card-content--filled' : ''}${isGoalsOverview ? ' summary-card-content--goals-filled' : ''}${isTenantFilled ? ' summary-card-content--tenant-filled' : ''}${isCeoFilled ? ' summary-card-content--ceo-filled' : ''}`}
+      className={`summary-card-content${isFilledOverview ? ' summary-card-content--filled' : ''}${isGoalsOverview ? ' summary-card-content--goals-filled' : ''}${isTenantProductivity || isWeeklyProductivity || isMonthlyReview || isAnnualAnalytics ? ' summary-card-content--tenant-filled' : ''}`}
       aria-label={`${card.title} details`}
       data-summary-card={card.id}
     >
@@ -58,10 +49,6 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
         {isWeeklyProductivity ? <WeeklyProductivityDetail /> : null}
         {isMonthlyReview ? <MonthlyReviewDetail /> : null}
         {isAnnualAnalytics ? <AnnualAnalyticsDetail /> : null}
-        {isWorkforce ? <CeoWorkforceDashboard /> : null}
-        {isPerformance ? <CeoPerformanceDashboard /> : null}
-        {isProjectHealth ? <CeoProjectHealthDashboard /> : null}
-        {isProductivity ? <CeoProductivityDashboard /> : null}
       </div>
     </section>
   );
