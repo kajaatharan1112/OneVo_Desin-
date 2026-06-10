@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import './theme/init-theme'
 import './styles/index.css'
 import './styles/shell.css'
@@ -10,13 +11,18 @@ import './styles/tenant-today-productivity.css'
 import './styles/ceo-summary-cards.css'
 import './styles/ceo-dashboard.css'
 import './styles/theme-cards.css'
+import './styles/positions.css'
+import './styles/organization.css'
+import './styles/configuration.css'
 import { ThemeProvider } from './core/theme/theme-context'
 import App from './app/App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </BrowserRouter>
   </StrictMode>,
 )
