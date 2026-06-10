@@ -3,6 +3,7 @@ import type { StepConfig } from './automationTypes';
 import {
   PERSON_TARGET_TYPES,
   ROLE_OPTIONS,
+  type PersonTargetType,
   type TargetFieldPrefix
 } from './personTargetUtils';
 import type { EmployeeOption, PositionOption } from './alertAssignmentUtils';
@@ -13,6 +14,7 @@ interface PersonTargetFieldsProps {
   config: StepConfig;
   positions: PositionOption[];
   employees: EmployeeOption[];
+  allowedTypes?: PersonTargetType[];
   onChange: (updates: Partial<StepConfig>) => void;
 }
 
@@ -31,6 +33,7 @@ export const PersonTargetFields: React.FC<PersonTargetFieldsProps> = ({
   config,
   positions,
   employees,
+  allowedTypes = PERSON_TARGET_TYPES,
   onChange
 }) => {
   const typeKey = prefix === 'approver' ? 'approverType' : prefix === 'recipient' ? 'recipientType' : prefix === 'assignTo' ? 'assignToType' : 'escalationTargetType';
@@ -54,7 +57,7 @@ export const PersonTargetFields: React.FC<PersonTargetFieldsProps> = ({
       <Field label={label}>
         <select value={String(config[typeKey] ?? '')} onChange={e => handleTypeChange(e.target.value)}>
           <option value="">— Select type —</option>
-          {PERSON_TARGET_TYPES.map(t => (
+          {allowedTypes.map(t => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>

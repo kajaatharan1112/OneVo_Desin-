@@ -1,15 +1,20 @@
-import React, { useMemo } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Play, Save, Pause, Zap } from 'lucide-react';
 import { useAutomationStore } from '../../store/automationStore';
+import { useAutomationActivityStore } from '../../store/automationActivityStore';
+import { useOrganizationStore } from '../../store/organizationStore';
+import { filterPositionOptions } from './alertAssignmentUtils';
+import type { DemoTriggerKey } from './automationContextRules';
 import { canActivate, validateAutomation } from './automationUtils';
 import { AutomationChain } from './AutomationChain';
+import { AutomationChangeTriggerModal } from './AutomationChangeTriggerModal';
 import { AutomationConfigPanel } from './AutomationConfigPanel';
 
 export const AutomationBuilderPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const isNew = id === 'new' || !id;
+  const [changeTriggerOpen, setChangeTriggerOpen] = useState(false);
 
   const {
     getAutomation,
@@ -23,8 +28,14 @@ export const AutomationBuilderPage: React.FC = () => {
     updateStep,
     deleteStep
   } = useAutomationStore();
+  const simulateAutomationRun = useAutomationActivityStore(s => s.simulateAutomationRun);
+  const { positions, employees } = useOrganizationStore();
 
-  const automation = !isNew && id ? getAutomation(id) : undefined;
+  useEffect(() => {
+    if (id === 'new') navigate('/automations/new', { replace: true });
+  }, [id, navigate]);
+
+  const automation = id && id !== 'new' ? getAutomation(id) : undefined;
 
   const validationIssues = useMemo(
     () => (automation ? validateAutomation(automation) : []),
@@ -41,9 +52,26 @@ export const AutomationBuilderPage: React.FC = () => {
     [automation]
   );
 
-  if (isNew) {
-    return <Navigate to="/automations" replace />;
-  }
+  const triggerStep = useMemo(
+    () => automation?.steps.find(s => s.type === 'trigger') ?? null,
+    [automation]
+  );
+
+  const hasOtherSteps = useMemo(
+    () => (automation?.steps.some(s => s.type !== 'trigger') ?? false),
+    [automation]
+  );
+
+  const handleOpenChangeTrigger = () => {
+    if (triggerStep) setSelectedStepId(triggerStep.id);
+    setChangeTriggerOpen(true);
+  };
+
+  const handleConfirmTriggerChange = (key: DemoTriggerKey) => {
+    if (!automation || !triggerStep) return;
+    updateStep(automation.id, triggerStep.id, { config: { ...triggerStep.config, triggerKey: key } });
+    setSelectedStepId(triggerStep.id);
+  };
 
   if (!automation) {
     return (
@@ -77,10 +105,19 @@ export const AutomationBuilderPage: React.FC = () => {
           <button
             type="button"
             className="org-btn org-btn--ghost"
-            onClick={() => updateAutomation(automation.id, {
-              lastRunAt: new Date().toISOString(),
-              runCount: automation.runCount + 1
-            })}
+            onClick={() => {
+              const created = simulateAutomationRun(automation, {
+                positions: filterPositionOptions(positions.map(p => ({ id: p.id, name: p.name }))),
+                employees: employees.map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}` }))
+              });
+              updateAutomation(automation.id, {
+                lastRunAt: new Date().toISOString(),
+                runCount: automation.runCount + 1
+              });
+              if (created.length > 0) {
+                navigate('/automations');
+              }
+            }}
           >
             <Play size={14} /> Test
           </button>
@@ -109,6 +146,7 @@ export const AutomationBuilderPage: React.FC = () => {
             triggerKey={triggerKey}
             selectedStepId={selectedStepId}
             onSelectStep={setSelectedStepId}
+            onEditTrigger={handleOpenChangeTrigger}
             onAddStep={(afterStepId, type, sectionId) => addStepAfter(automation.id, afterStepId, type, sectionId)}
             onEnableBranch={conditionId => enableBranch(automation.id, conditionId)}
             onDeleteStep={stepId => deleteStep(automation.id, stepId)}
@@ -120,12 +158,21 @@ export const AutomationBuilderPage: React.FC = () => {
           validationIssues={validationIssues}
           onAutomationChange={updates => updateAutomation(automation.id, updates)}
           onStepConfigChange={(stepId, config) => updateStep(automation.id, stepId, { config })}
+          onChangeTrigger={handleOpenChangeTrigger}
           onToggleElseBranch={(conditionStepId, enabled) => {
             if (enabled) enableBranch(automation.id, conditionStepId);
             else disableBranch(automation.id, conditionStepId);
           }}
         />
       </div>
+
+      <AutomationChangeTriggerModal
+        open={changeTriggerOpen}
+        currentTriggerKey={triggerKey}
+        hasOtherSteps={hasOtherSteps}
+        onClose={() => setChangeTriggerOpen(false)}
+        onConfirm={handleConfirmTriggerChange}
+      />
     </div>
   );
 };

@@ -18,6 +18,13 @@ export type StepType =
   | 'delay'
   | 'end';
 
+export interface ConditionClause {
+  id: string;
+  field: string;
+  operator: string;
+  value: string;
+}
+
 export type AddStepOption =
   | 'condition'
   | 'action'
@@ -25,21 +32,45 @@ export type AddStepOption =
   | 'notification'
   | 'alert'
   | 'delay'
-  | 'branch';
+  | 'branch'
+  | 'end';
 
 export interface StepConfig {
   triggerKey?: string;
   field?: string;
   operator?: string;
   value?: string;
+  conditions?: ConditionClause[];
   actionKey?: string;
   approverType?: string;
   approverRole?: string;
   approverPositionId?: string;
   approverEmployeeId?: string;
   approvalTimeout?: string;
+  approvalTimeoutEnabled?: boolean;
+  approvalTimeoutHours?: number;
+  approvalTimeoutMinutes?: number;
   onApproved?: string;
   onRejected?: string;
+  onTimeout?: string;
+  timeoutAlertSeverity?: string;
+  timeoutAlertAssignToType?: string;
+  timeoutAlertAssignToRole?: string;
+  timeoutAlertAssignToPositionId?: string;
+  timeoutAlertAssignToEmployeeId?: string;
+  timeoutNotifyType?: string;
+  timeoutNotifyRole?: string;
+  timeoutNotifyPositionId?: string;
+  timeoutNotifyEmployeeId?: string;
+  timeoutEscalationApproverType?: string;
+  timeoutEscalationApproverRole?: string;
+  timeoutEscalationApproverPositionId?: string;
+  timeoutEscalationApproverEmployeeId?: string;
+  rejectedAlertSeverity?: string;
+  rejectedAlertAssignToType?: string;
+  rejectedAlertAssignToRole?: string;
+  rejectedAlertAssignToPositionId?: string;
+  rejectedAlertAssignToEmployeeId?: string;
   recipientType?: string;
   recipientRole?: string;
   recipientPositionId?: string;
@@ -61,7 +92,19 @@ export interface StepConfig {
   escalationEmployeeId?: string;
   delayAmount?: string;
   delayUnit?: string;
+  assignTo?: string;
   hasBranch?: boolean;
+  checklistTemplateId?: string;
+  taskTitle?: string;
+  taskDescription?: string;
+  taskAssigneeType?: string;
+  taskAssigneeRole?: string;
+  taskAssigneePositionId?: string;
+  taskAssigneeEmployeeId?: string;
+  taskDueHours?: number;
+  taskDueMinutes?: number;
+  taskPriority?: string;
+  taskRelatedEmployeeFromTrigger?: boolean;
   [key: string]: unknown;
 }
 
@@ -73,8 +116,19 @@ export interface AutomationStep {
   sortOrder: number;
 }
 
+export type TemplateId =
+  | 'blank'
+  | 'new_employee_setup'
+  | 'employee_offboarding'
+  | 'leave_request_approval'
+  | 'attendance_correction_approval'
+  | 'late_attendance_alert'
+  | 'position_change_check'
+  | 'monitoring_alert_escalation';
+
 export interface Automation {
   id: string;
+  templateId: TemplateId;
   name: string;
   description: string;
   summary: string;
@@ -106,12 +160,3 @@ export interface AutomationAlert {
   slaRemaining: string;
 }
 
-export interface TemplateOption {
-  id: string;
-  name: string;
-  description: string;
-  area: AutomationArea;
-  triggerKey: string;
-  summary: string;
-  steps: Omit<AutomationStep, 'id'>[];
-}

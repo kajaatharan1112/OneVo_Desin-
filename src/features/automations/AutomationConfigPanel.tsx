@@ -1,10 +1,21 @@
 import React, { useMemo } from 'react';
 import type { Automation, AutomationStep } from './automationTypes';
 import {
-  ACTION_GROUPS,
-  TRIGGER_GROUPS,
-  stepToSentence,
-  buildAutomationSummary
+  ALERT_TARGET_TYPES,
+  NOTIFICATION_TARGET_TYPES,
+  getAllowedConditionFieldKeys,
+  getActiveChecklistTemplatesForAction,
+  getFilteredActionGroups,
+  isChecklistTemplateAction,
+  isTriggerSelected,
+  triggerLabelForKey
+} from './automationContextRules';
+import { TRIGGER_ICONS, triggerHelperText } from './triggerPickerConfig';
+import { OneTimeTaskActionFields } from './OneTimeTaskActionFields';
+import { getDefaultOneTimeTaskConfig, isOneTimeTaskAction } from './oneTimeTaskUtils';
+import {
+  buildAutomationSummary,
+  stepToSentence
 } from './automationUtils';
 import { ConditionConfigPanel } from './ConditionConfigPanel';
 import { AutomationValidationPanel } from './AutomationValidationPanel';
@@ -13,6 +24,8 @@ import { useOrganizationStore } from '../../store/organizationStore';
 import { filterPositionOptions } from './alertAssignmentUtils';
 import { AlertTargetFields } from './AlertTargetFields';
 import { PersonTargetFields } from './PersonTargetFields';
+import { ApprovalStepFields } from './ApprovalStepFields';
+import { isAlertImmediatelyAfterApproval, ALERT_AFTER_APPROVAL_WARNING } from './approvalStepUtils';
 
 const AREAS = ['Employee Lifecycle', 'Leave', 'Attendance', 'Organization', 'Documents', 'Monitoring'];
 
@@ -22,6 +35,7 @@ interface AutomationConfigPanelProps {
   validationIssues: ValidationIssue[];
   onAutomationChange: (updates: Partial<Automation>) => void;
   onStepConfigChange: (stepId: string, config: AutomationStep['config']) => void;
+  onChangeTrigger: () => void;
   onToggleElseBranch: (conditionStepId: string, enabled: boolean) => void;
 }
 
@@ -40,6 +54,7 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
   validationIssues,
   onAutomationChange,
   onStepConfigChange,
+  onChangeTrigger,
   onToggleElseBranch
 }) => {
   const { positions: orgPositions, employees: orgEmployees, departments: orgDepartments } = useOrganizationStore();
@@ -58,6 +73,16 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
     departments: orgDepartments.map(d => ({ id: d.id, name: d.name })),
     triggerKey
   }), [orgPositions, orgEmployees, orgDepartments, triggerKey]);
+
+  const filteredActions = useMemo(
+    () => getFilteredActionGroups(triggerKey),
+    [triggerKey]
+  );
+
+  const allowedConditionFields = useMemo(
+    () => getAllowedConditionFieldKeys(triggerKey),
+    [triggerKey]
+  );
 
   if (!selectedStep) {
     return (
@@ -102,74 +127,148 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
       )}
 
       {selectedStep.type === 'trigger' && (
-        <Field label="When this happens">
-          <select value={String(selectedStep.config.triggerKey ?? '')} onChange={e => update('triggerKey', e.target.value)}>
-            <option value="">— Choose trigger —</option>
-            {Object.entries(TRIGGER_GROUPS).map(([group, data]) => (
-              <optgroup key={group} label={data.label}>
-                {data.triggers.map(t => (
-                  <option key={t.key} value={t.key}>{t.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </Field>
+        <div className="auto-trigger-settings">
+          <Field label="When this happens">
+            {isTriggerSelected(triggerKey) ? (
+              <div className="auto-trigger-settings__selected">
+                {(() => {
+                  const Icon = TRIGGER_ICONS[triggerKey as keyof typeof TRIGGER_ICONS];
+                  const label = triggerLabelForKey(triggerKey);
+                  return (
+                    <>
+                      <div className="auto-trigger-settings__summary">
+                        {Icon && (
+                          <span className="auto-trigger-settings__icon">
+                            <Icon size={16} />
+                          </span>
+                        )}
+                        <span className="auto-trigger-settings__label">{label}</span>
+                      </div>
+                      <p className="auto-trigger-settings__helper">{triggerHelperText(triggerKey)}</p>
+                      <p className="auto-trigger-settings__guided">
+                        This automation is guided by {label}.
+                      </p>
+                      <button
+                        type="button"
+                        className="org-btn org-btn--secondary org-btn--sm"
+                        onClick={onChangeTrigger}
+                      >
+                        Change Trigger
+                      </button>
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              <>
+                <p className="auto-condition-note">
+                  Choose an event to begin building this automation.
+                </p>
+                <button
+                  type="button"
+                  className="org-btn org-btn--secondary org-btn--sm"
+                  onClick={onChangeTrigger}
+                >
+                  Change Trigger
+                </button>
+              </>
+            )}
+          </Field>
+        </div>
       )}
 
       {selectedStep.type === 'condition' && (
         <ConditionConfigPanel
           step={selectedStep}
           triggerKey={triggerKey}
+          allowedFieldKeys={allowedConditionFields}
           onConfigChange={config => onStepConfigChange(selectedStep.id, config)}
           onToggleElseBranch={enabled => onToggleElseBranch(selectedStep.id, enabled)}
         />
       )}
 
       {selectedStep.type === 'action' && (
-        <Field label="Action">
-          <select value={String(selectedStep.config.actionKey ?? '')} onChange={e => update('actionKey', e.target.value)}>
-            <option value="">— Choose action —</option>
-            {Object.entries(ACTION_GROUPS).map(([group, actions]) => (
-              <optgroup key={group} label={group}>
-                {actions.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
-              </optgroup>
-            ))}
-          </select>
-        </Field>
+        <>
+          <Field label="Action">
+            <select
+              value={String(selectedStep.config.actionKey ?? '')}
+              onChange={e => {
+                const actionKey = e.target.value;
+                const next: typeof selectedStep.config = {
+                  ...selectedStep.config,
+                  actionKey,
+                  checklistTemplateId: isChecklistTemplateAction(actionKey) ? selectedStep.config.checklistTemplateId : ''
+                };
+                if (isOneTimeTaskAction(actionKey)) {
+                  Object.assign(next, getDefaultOneTimeTaskConfig(), {
+                    taskTitle: selectedStep.config.taskTitle ?? '',
+                    taskDescription: selectedStep.config.taskDescription ?? '',
+                    taskAssigneeType: selectedStep.config.taskAssigneeType ?? '',
+                    taskAssigneeRole: selectedStep.config.taskAssigneeRole ?? '',
+                    taskAssigneePositionId: selectedStep.config.taskAssigneePositionId ?? '',
+                    taskAssigneeEmployeeId: selectedStep.config.taskAssigneeEmployeeId ?? '',
+                    taskDueHours: selectedStep.config.taskDueHours ?? getDefaultOneTimeTaskConfig().taskDueHours,
+                    taskDueMinutes: selectedStep.config.taskDueMinutes ?? getDefaultOneTimeTaskConfig().taskDueMinutes,
+                    taskPriority: selectedStep.config.taskPriority ?? 'medium'
+                  });
+                } else {
+                  Object.assign(next, {
+                    taskTitle: '',
+                    taskDescription: '',
+                    taskAssigneeType: '',
+                    taskAssigneeRole: '',
+                    taskAssigneePositionId: '',
+                    taskAssigneeEmployeeId: '',
+                    taskDueHours: undefined,
+                    taskDueMinutes: undefined,
+                    taskPriority: '',
+                    taskRelatedEmployeeFromTrigger: undefined
+                  });
+                }
+                onStepConfigChange(selectedStep.id, next);
+              }}
+            >
+              <option value="">— Choose action —</option>
+              {Object.entries(filteredActions).map(([group, actions]) => (
+                <optgroup key={group} label={group}>
+                  {actions.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </Field>
+          {isChecklistTemplateAction(String(selectedStep.config.actionKey ?? '')) && (
+            <Field label="Checklist template">
+              <select
+                value={String(selectedStep.config.checklistTemplateId ?? '')}
+                onChange={e => update('checklistTemplateId', e.target.value)}
+              >
+                <option value="">— Choose template —</option>
+                {getActiveChecklistTemplatesForAction(String(selectedStep.config.actionKey ?? '')).map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </Field>
+          )}
+          {isOneTimeTaskAction(String(selectedStep.config.actionKey ?? '')) && (
+            <OneTimeTaskActionFields
+              config={selectedStep.config}
+              triggerKey={triggerKey}
+              positions={orgContext.positions}
+              employees={orgContext.employees}
+              onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
+            />
+          )}
+        </>
       )}
 
       {selectedStep.type === 'approval' && (
-        <>
-          <PersonTargetFields
-            label="Approver Type"
-            prefix="approver"
-            config={selectedStep.config}
-            positions={orgContext.positions}
-            employees={orgContext.employees}
-            onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
-          />
-          <Field label="Timeout">
-            <select value={String(selectedStep.config.approvalTimeout ?? '48 hours')} onChange={e => update('approvalTimeout', e.target.value)}>
-              <option>No timeout</option>
-              <option>24 hours</option>
-              <option>48 hours</option>
-              <option>3 days</option>
-              <option>Custom</option>
-            </select>
-          </Field>
-          <Field label="If approved">
-            <select value={String(selectedStep.config.onApproved ?? 'Continue')} onChange={e => update('onApproved', e.target.value)}>
-              <option>Continue</option>
-            </select>
-          </Field>
-          <Field label="If rejected">
-            <select value={String(selectedStep.config.onRejected ?? 'Stop automation')} onChange={e => update('onRejected', e.target.value)}>
-              <option>Stop automation</option>
-              <option>Notify requester</option>
-              <option>Create alert</option>
-            </select>
-          </Field>
-        </>
+        <ApprovalStepFields
+          config={selectedStep.config}
+          triggerKey={triggerKey}
+          positions={orgContext.positions}
+          employees={orgContext.employees}
+          onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
+        />
       )}
 
       {selectedStep.type === 'notification' && (
@@ -180,6 +279,7 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
             config={selectedStep.config}
             positions={orgContext.positions}
             employees={orgContext.employees}
+            allowedTypes={NOTIFICATION_TARGET_TYPES}
             onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
           />
           <Field label="Channel">
@@ -200,6 +300,9 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
 
       {selectedStep.type === 'alert' && (
         <>
+          {isAlertImmediatelyAfterApproval(automation.steps, selectedStep.id) && (
+            <p className="auto-condition-note auto-condition-note--warning">{ALERT_AFTER_APPROVAL_WARNING}</p>
+          )}
           <Field label="Alert Title">
             <input value={String(selectedStep.config.alertTitle ?? '')} onChange={e => update('alertTitle', e.target.value)} />
           </Field>
@@ -220,6 +323,7 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
             config={selectedStep.config}
             positions={orgContext.positions}
             employees={orgContext.employees}
+            allowedTypes={ALERT_TARGET_TYPES}
             onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
           />
           <Field label="SLA">
@@ -261,6 +365,7 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
               config={selectedStep.config}
               positions={orgContext.positions}
               employees={orgContext.employees}
+              allowedTypes={ALERT_TARGET_TYPES}
               onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
             />
           )}

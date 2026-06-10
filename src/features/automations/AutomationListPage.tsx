@@ -2,7 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Copy, Edit, Pause, Play, Trash2 } from 'lucide-react';
 import { useAutomationStore } from '../../store/automationStore';
+import { getTemplateLabel } from './automationContextRules';
+import { canActivate } from './automationUtils';
 import { AutomationTemplatePicker } from './AutomationTemplatePicker';
+import { AutomationActivityPanel } from './AutomationActivityPanel';
+import type { TemplateId } from './automationTypes';
 
 const AREAS = ['Employee Lifecycle', 'Leave', 'Attendance', 'Organization', 'Documents', 'Monitoring'];
 
@@ -16,7 +20,7 @@ function formatRelative(iso: string | null) {
 
 export const AutomationListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { automations, createFromTemplate, duplicateAutomation, setAutomationStatus, deleteAutomation } = useAutomationStore();
+  const { automations, createFromTemplate, clearNewDraft, duplicateAutomation, setAutomationStatus, deleteAutomation, getAutomation } = useAutomationStore();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [areaFilter, setAreaFilter] = useState('all');
@@ -28,6 +32,16 @@ export const AutomationListPage: React.FC = () => {
     return true;
   }), [automations, search, statusFilter, areaFilter]);
 
+  const handleCardSelect = (templateId: TemplateId) => {
+    if (templateId === 'blank') {
+      clearNewDraft();
+      navigate('/automations/new');
+      return;
+    }
+    const newId = createFromTemplate(templateId);
+    if (newId) navigate(`/automations/${newId}`);
+  };
+
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`Delete "${name}"? This cannot be undone.`)) {
       deleteAutomation(id);
@@ -35,6 +49,9 @@ export const AutomationListPage: React.FC = () => {
   };
 
   const handleToggleStatus = (id: string, status: string) => {
+    const automation = getAutomation(id);
+    if (!automation) return;
+    if (status !== 'active' && !canActivate(automation)) return;
     setAutomationStatus(id, status === 'active' ? 'paused' : 'active');
   };
 
@@ -47,15 +64,7 @@ export const AutomationListPage: React.FC = () => {
         </div>
       </div>
 
-      <section className="auto-list-create">
-        <AutomationTemplatePicker
-          embedded
-          onSelect={templateId => {
-            const newId = createFromTemplate(templateId);
-            navigate(`/automations/${newId}`);
-          }}
-        />
-      </section>
+      <AutomationTemplatePicker onSelect={handleCardSelect} />
 
       <div className="cfg-page__toolbar">
         <div className="cfg-search">
@@ -80,7 +89,7 @@ export const AutomationListPage: React.FC = () => {
             <thead>
               <tr>
                 <th>Automation</th>
-                <th>Trigger</th>
+                <th>Recipe</th>
                 <th>Area</th>
                 <th>Status</th>
                 <th>Last Run</th>
@@ -97,7 +106,7 @@ export const AutomationListPage: React.FC = () => {
                     <div className="cfg-table__name">{a.name}</div>
                     <div className="cfg-table__meta">{a.summary}</div>
                   </td>
-                  <td>{a.trigger || '—'}</td>
+                  <td>{getTemplateLabel(a.templateId)}</td>
                   <td>{a.area}</td>
                   <td><span className={`cfg-badge cfg-badge--${a.status}`}>{a.status}</span></td>
                   <td>{formatRelative(a.lastRunAt)}</td>
@@ -122,6 +131,8 @@ export const AutomationListPage: React.FC = () => {
                       <button
                         type="button"
                         className="cfg-action-btn"
+                        disabled={a.status !== 'active' && !canActivate(a)}
+                        title={a.status !== 'active' && !canActivate(a) ? 'Fix validation issues before activating' : undefined}
                         onClick={() => handleToggleStatus(a.id, a.status)}
                       >
                         {a.status === 'active' ? <Pause size={13} /> : <Play size={13} />}
@@ -146,6 +157,8 @@ export const AutomationListPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        <AutomationActivityPanel />
       </div>
     </div>
   );
