@@ -1,5 +1,4 @@
-import type { SummaryCardData } from '../../shared/types/summary-card.types';
-import { tenantProductivitySummary } from '../../features/tenant/data/tenant-today-productivity.data';
+import type { SummaryCardData, TenantKpiCardData } from '../../shared/types/summary-card.types';
 
 export const employeeSummaryCards: SummaryCardData[] = [
   {
@@ -32,12 +31,52 @@ export const employeeSummaryCards: SummaryCardData[] = [
   }
 ];
 
+export const tenantKpiCards: TenantKpiCardData[] = [
+  {
+    id: 'total-employees',
+    title: 'Total Employees',
+    value: '126',
+    desc: 'Active employees',
+    accent: 'blue'
+  },
+  {
+    id: 'departments',
+    title: 'Departments',
+    value: '8',
+    desc: 'Active departments',
+    accent: 'blue'
+  },
+  {
+    id: 'active-projects',
+    title: 'Active Projects',
+    value: '14',
+    desc: 'Running projects',
+    accent: 'indigo'
+  },
+  {
+    id: 'monthly-revenue',
+    title: 'Monthly Revenue',
+    value: '$42.8k',
+    subtitle: 'This month',
+    trend: '+12% vs last month',
+    accent: 'green'
+  },
+  {
+    id: 'pending-approvals',
+    title: 'Pending Approvals',
+    value: '9',
+    desc: 'Need owner action',
+    accent: 'orange'
+  }
+];
+
+/** @deprecated Legacy tenant tab cards */
 export const tenantSummaryCards: SummaryCardData[] = [
   {
     id: 'today-productivity',
     title: 'Today',
-    value: `Productivity ${tenantProductivitySummary.productivityPercent}%`,
-    desc: `${tenantProductivitySummary.changeVsYesterday}% higher than yesterday`,
+    value: 'Productivity 87%',
+    desc: '+4% higher than yesterday',
     color: 'var(--accent)'
   },
   {

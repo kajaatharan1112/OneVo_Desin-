@@ -1,33 +1,40 @@
 import React from 'react';
-import { Users } from 'lucide-react';
-import { onSiteWorkforce, remoteWorkforce } from '../../../data/tenant-today-productivity.data';
+import { Users, TrendingUp } from 'lucide-react';
+import { overallAttendance } from '../../../data/tenant-today-productivity.data';
 
 export const TotalEmployeeAttendancePanel: React.FC = () => {
-  const totalEmployees = onSiteWorkforce.total + remoteWorkforce.total;
-  const totalAttendance = onSiteWorkforce.attendedToday + remoteWorkforce.attendedToday;
-  const attendanceRate = Math.round((totalAttendance / totalEmployees) * 100);
+  const { percent, present, total, changeVsYesterday } = overallAttendance;
 
   return (
-    <article className="tto-widget tto-total-emp tto-cell--total-emp" aria-label="Overall Today Attendance">
-      <div className="tto-total-emp__container">
-        <div className="tto-total-emp__header">
-          <div className="tto-total-emp__title-row">
-            <Users size={14} className="tto-total-emp__icon" aria-hidden="true" />
-            <span className="tto-total-emp__title">Overall Today Attendance</span>
-          </div>
-          <div className="tto-total-emp__stats">
-            <span className="tto-total-emp__count">{totalAttendance}</span>
-            <span className="tto-total-emp__sep">/</span>
-            <span className="tto-total-emp__total">{totalEmployees} employees</span>
-            <span className="tto-total-emp__rate">({attendanceRate}%)</span>
-          </div>
+    <article className="ceo-attendance" aria-label="Overall Today Attendance">
+      <div className="ceo-attendance__row">
+        <div className="ceo-attendance__left">
+          <Users size={14} className="ceo-attendance__icon" aria-hidden="true" />
+          <span className="ceo-attendance__title">Overall Today Attendance</span>
         </div>
-        <div className="tto-total-emp__bar-track" role="progressbar" aria-valuenow={attendanceRate} aria-valuemin={0} aria-valuemax={100}>
-          <div
-            className="tto-total-emp__bar-fill"
-            style={{ width: `${attendanceRate}%` }}
-          />
+        <div className="ceo-attendance__right">
+          <span className="ceo-attendance__percent">
+            <strong>{percent}%</strong>
+            <small>PRESENT</small>
+          </span>
+          <span className="ceo-attendance__count">
+            {present} / {total} Employees
+          </span>
+          <span className="ceo-attendance__trend">
+            <TrendingUp size={12} aria-hidden="true" />
+            +{changeVsYesterday}% vs yesterday
+          </span>
         </div>
+      </div>
+      <div
+        className="ceo-attendance__bar-track"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${percent}% present`}
+      >
+        <div className="ceo-attendance__bar-fill" style={{ width: `${percent}%` }} />
       </div>
     </article>
   );

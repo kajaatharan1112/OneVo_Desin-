@@ -6,7 +6,7 @@ interface UserProfileProps {
 
 export const UserProfile: React.FC<UserProfileProps> = ({ currentView }) => {
   const user = currentView === 'tenant'
-    ? { name: 'Sarah Jenkins', role: 'Department head', avatar: 'SJ', avatarUrl: 'https://i.pravatar.cc/150?u=sarah' }
+    ? { name: 'Manesh', role: 'CEO', avatar: 'M', avatarUrl: 'https://i.pravatar.cc/150?u=manesh' }
     : { name: 'Alexander Pierce', role: 'Back end developer', avatar: 'AP', avatarUrl: 'https://i.pravatar.cc/150?u=alex' };
 
   return (

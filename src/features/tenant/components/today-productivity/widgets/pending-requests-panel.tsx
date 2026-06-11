@@ -1,53 +1,57 @@
 import React from 'react';
-import { ClipboardCheck, FileText } from 'lucide-react';
-import { pendingApprovalsToday } from '../../../data/tenant-today-productivity.data';
+import { ClipboardCheck } from 'lucide-react';
+import { pendingOwnerApprovals } from '../../../data/tenant-today-productivity.data';
 
 export const PendingRequestsPanel: React.FC = () => {
   return (
-    <article className="tto-widget tto-pending tto-cell--pending">
-      <header className="tto-widget__head">
+    <article className="ceo-pending" aria-label="Pending owner approvals">
+      <header className="ceo-pending__head">
         <ClipboardCheck size={16} aria-hidden="true" />
-        <h3 className="tto-widget__title">Pending requests</h3>
-        <span className="tto-widget__tab">Need approval today</span>
+        <h3 className="ceo-pending__title">Pending owner approvals</h3>
+        <span className="ceo-pending__badge">Need your sign-off</span>
       </header>
-      <ul className="tto-pending__list">
-        {pendingApprovalsToday.map((item) => (
-          <li key={item.id} className={`tto-pending__item tto-pending__item--${item.priority}`}>
-            <span className="tto-status-icon" aria-hidden="true">
-              <FileText size={14} />
-            </span>
-            {/* LEFT: title + meta + details */}
-            <div className="tto-pending__info">
-              <span className="tto-pending__title">{item.title}</span>
-              <span className="tto-pending__meta">{item.module} · {item.requestedBy}</span>
-              <div className="tto-pending__details">
-                <span className="tto-pending__time">{item.requestedAt}</span>
-                <span className="tto-pending__dot">·</span>
-                <span className="tto-pending__duration">{item.pendingDays} {item.pendingDays === 1 ? 'day' : 'days'} pending</span>
-              </div>
-            </div>
-            {/* RIGHT: action buttons */}
-            <div className="tto-pending__right">
-              <div className="tto-pending__actions">
-                <button
-                  type="button"
-                  className="tto-pending__btn tto-pending__btn--approve"
-                  title="Approve"
-                >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  className="tto-pending__btn tto-pending__btn--reject"
-                  title="Reject"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+
+      <div className="ceo-pending__table-wrap">
+        <table className="ceo-pending__table">
+          <thead>
+            <tr>
+              <th scope="col">Request</th>
+              <th scope="col">Category</th>
+              <th scope="col">Requested by</th>
+              <th scope="col">Requested on</th>
+              <th scope="col">Pending for</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingOwnerApprovals.map((item) => (
+              <tr key={item.id}>
+                <td className="ceo-pending__request">{item.request}</td>
+                <td>{item.category}</td>
+                <td>{item.requestedBy}</td>
+                <td>{item.requestedAt}</td>
+                <td>
+                  <span
+                    className={`ceo-pending__days${item.pendingEmphasis ? ' ceo-pending__days--emphasis' : ''}`}
+                  >
+                    {item.pendingDays} {item.pendingDays === 1 ? 'day' : 'days'}
+                  </span>
+                </td>
+                <td>
+                  <div className="ceo-pending__actions">
+                    <button type="button" className="ceo-pending__btn ceo-pending__btn--approve">
+                      Approve
+                    </button>
+                    <button type="button" className="ceo-pending__btn ceo-pending__btn--reject">
+                      Reject
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </article>
   );
 };
