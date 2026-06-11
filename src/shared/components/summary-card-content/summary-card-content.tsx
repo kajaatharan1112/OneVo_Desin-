@@ -1,4 +1,10 @@
 import React, { Suspense } from 'react';
+import { CeoPrioritiesDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-priorities-dashboard';
+import { CeoPerformanceDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-performance-dashboard';
+import { CeoProductivityDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-productivity-dashboard';
+import { CeoProjectHealthDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-project-health-dashboard';
+import { CeoScheduleDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-schedule-dashboard';
+import { CeoWorkforceDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-workforce-dashboard';
 import type { SummaryCardData } from '../../types/summary-card.types';
 
 const EmployeeTaskOverviewDashboard = React.lazy(() =>
@@ -53,15 +59,28 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
   const isActivity = card.id === 'activity';
   const isMyCalendar = card.id === 'my-calendar';
   const isTenantProductivity = card.id === 'today-productivity';
+  const isWorkforce = card.id === 'workforce-availability';
+  const isPerformance = card.id === 'company-performance';
+  const isProductivity = card.id === 'productivity';
+  const isMyPriorities = card.id === 'my-priorities';
+  const isProjectHealth = card.id === 'project-health';
+  const isSchedule = card.id === 'schedule';
+  const isCeoPanel =
+    isWorkforce || isPerformance || isProductivity || isMyPriorities || isProjectHealth || isSchedule;
   const isFilledOverview =
-    isTaskOverview || isRequestsApproval || isActivity || isMyCalendar || isTenantProductivity;
+    isTaskOverview ||
+    isRequestsApproval ||
+    isActivity ||
+    isMyCalendar ||
+    isTenantProductivity ||
+    isCeoPanel;
 
   return (
     <section
       id={tabId}
       role="tabpanel"
       aria-labelledby={labelledBy}
-      className={`summary-card-content${isFilledOverview ? ' summary-card-content--filled' : ''}${isTaskOverview ? ' summary-card-content--work-filled' : ''}${isRequestsApproval ? ' summary-card-content--requests-filled' : ''}${isActivity ? ' summary-card-content--activity-filled' : ''}${isMyCalendar ? ' summary-card-content--calendar-filled' : ''}${isTenantProductivity ? ' summary-card-content--tenant-filled' : ''}`}
+      className={`summary-card-content${isFilledOverview ? ' summary-card-content--filled' : ''}${isTaskOverview ? ' summary-card-content--work-filled' : ''}${isRequestsApproval ? ' summary-card-content--requests-filled' : ''}${isActivity ? ' summary-card-content--activity-filled' : ''}${isMyCalendar ? ' summary-card-content--calendar-filled' : ''}${isTenantProductivity ? ' summary-card-content--tenant-filled' : ''}${isCeoPanel ? ' summary-card-content--ceo-filled' : ''}`}
       aria-label={`${card.title} details`}
       data-summary-card={card.id}
     >
@@ -77,6 +96,12 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
           {isMyCalendar ? <MyCalendarTab /> : null}
           {isTenantProductivity ? <TenantTodayProductivityDashboard /> : null}
         </Suspense>
+        {isWorkforce ? <CeoWorkforceDashboard /> : null}
+        {isPerformance ? <CeoPerformanceDashboard /> : null}
+        {isProductivity ? <CeoProductivityDashboard /> : null}
+        {isMyPriorities ? <CeoPrioritiesDashboard /> : null}
+        {isProjectHealth ? <CeoProjectHealthDashboard /> : null}
+        {isSchedule ? <CeoScheduleDashboard /> : null}
       </div>
     </section>
   );

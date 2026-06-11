@@ -1,0 +1,2769 @@
+/**
+ * CEO bento dashboard — equal grid, aligned rows, fixed spacing
+ * Matches reference design: 2×2 / 3-col layouts with equal cell heights
+ */
+
+:root {
+  --ceo-bento-gap: 12px;
+  --ceo-panel-pad: 14px 16px;
+  --ceo-panel-inner-gap: 10px;
+}
+
+/* ── Shell: single viewport, no page scroll ── */
+.main-scrollable:has(.summarize-tabs-root--ceo),
+.main-scrollable:has(.summarize-tabs-root--ceo-workforce),
+.main-scrollable:has(.summarize-tabs-root--ceo-performance),
+.main-scrollable:has(.summarize-tabs-root--ceo-productivity),
+.main-scrollable:has(.summarize-tabs-root--ceo-priorities),
+.main-scrollable:has(.summarize-tabs-root--ceo-project),
+.main-scrollable:has(.summarize-tabs-root--ceo-schedule) {
+  overflow: hidden !important;
+}
+
+.summarize-tabs-root--ceo,
+.summarize-tabs-root--ceo-workforce,
+.summarize-tabs-root--ceo-performance,
+.summarize-tabs-root--ceo-productivity,
+.summarize-tabs-root--ceo-priorities,
+.summarize-tabs-root--ceo-project,
+.summarize-tabs-root--ceo-schedule {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  gap: var(--ceo-bento-gap);
+}
+
+.summary-card-content--ceo-filled {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.summary-card-content--ceo-filled .summary-card-content__inner {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── CEO tabs unified shell (match Availability / Workforce) ── */
+.main-scrollable:has(.summarize-tabs-root--ceo-workforce) .main-content-slot,
+.main-scrollable:has(.summarize-tabs-root--ceo-performance) .main-content-slot,
+.main-scrollable:has(.summarize-tabs-root--ceo-productivity) .main-content-slot,
+.main-scrollable:has(.summarize-tabs-root--ceo-priorities) .main-content-slot {
+  padding: 10px 12px;
+  background: transparent;
+}
+
+.summarize-tabs-root--ceo-workforce,
+.summarize-tabs-root--ceo-performance,
+.summarize-tabs-root--ceo-productivity,
+.summarize-tabs-root--ceo-priorities {
+  gap: 10px !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.summarize-tabs-root--ceo-workforce .summary-card-content--ceo-filled,
+.summarize-tabs-root--ceo-performance .summary-card-content--ceo-filled,
+.summarize-tabs-root--ceo-productivity .summary-card-content--ceo-filled,
+.summarize-tabs-root--ceo-priorities .summary-card-content--ceo-filled {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.summarize-tabs-root--ceo-workforce .summary-card-content--ceo-filled .summary-card-content__inner,
+.summarize-tabs-root--ceo-performance .summary-card-content--ceo-filled .summary-card-content__inner,
+.summarize-tabs-root--ceo-productivity .summary-card-content--ceo-filled .summary-card-content__inner,
+.summarize-tabs-root--ceo-priorities .summary-card-content--ceo-filled .summary-card-content__inner {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;
+}
+
+.ceo-workforce-overview,
+.ceo-performance-canvas,
+.ceo-productivity-overview,
+.ceo-priorities-overview {
+  flex: 1 1 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* ── CEO summary tab strip: 4 equal cards ── */
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summarize-tabs--ceo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ceo-bento-gap);
+  align-items: stretch;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo {
+  height: var(--ceo-kpi-height, 96px);
+  min-height: var(--ceo-kpi-height, 96px);
+  max-height: var(--ceo-kpi-height, 96px);
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo .summary-card__icon--ceo {
+  width: 40px;
+  height: 40px;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo .summary-card__body {
+  gap: 2px;
+  justify-content: center;
+}
+
+/* ── Shared panel shell ── */
+.ceo-workforce-overview .eto-widget:not(.cwf-pulse),
+.ceo-productivity-overview .cpr-panel,
+.ceo-priorities-overview .eto-widget,
+.ceo-priorities-overview .mprio-section-panel,
+.ceo-projects-overview .eto-widget,
+.ceo-schedule-overview .eto-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+  padding: var(--ceo-panel-pad);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--nexus-glass-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.eto-widget__head,
+.cpr-panel .eto-widget__head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+/* ── Workforce: 2×2 — top row fits content, bottom row fills screen ── */
+.ceo-workforce-overview {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    'health actions'
+    'riskLeave trend' !important;
+  column-gap: var(--ceo-bento-gap) !important;
+  row-gap: var(--ceo-bento-gap) !important;
+  height: 100% !important;
+  min-height: 0;
+  overflow: hidden !important;
+  align-content: start !important;
+  align-items: stretch;
+}
+
+.cwo-cell--health    { grid-area: health; align-self: stretch; }
+.cwo-cell--actions   { grid-area: actions; align-self: start; max-height: 250px; overflow: hidden; }
+.cwo-cell--riskLeave { grid-area: riskLeave; min-height: 0; align-self: stretch; height: 100%; }
+.cwo-cell--trend     { grid-area: trend; min-height: 0; }
+
+/* ── Company Performance: top 3-col + bottom 2-col rows ── */
+.ceo-performance-overview {
+  display: grid !important;
+  grid-template-rows: minmax(0, 48fr) minmax(0, 52fr) !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: var(--ceo-bento-gap) !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  height: 100% !important;
+  min-height: 0;
+  overflow: hidden !important;
+  background: transparent;
+}
+
+.ceo-performance-overview .cpg-row--top {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  min-height: 0;
+  height: 100%;
+}
+
+.ceo-performance-overview .cpg-row--bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 20px;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ── Productivity: 3 columns, stacked cards via flex column gap ── */
+.ceo-productivity-overview {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.95fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  gap: var(--ceo-bento-gap) !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  height: 100% !important;
+  min-height: 0;
+  overflow: hidden !important;
+  align-items: stretch;
+}
+
+.ceo-productivity-overview .cpr-col--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.ceo-productivity-overview .cpr-col--alerts {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+/* ── My Priorities: 2 equal-height columns ── */
+.ceo-priorities-overview {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  grid-template-areas: 'queue meetings' !important;
+  gap: var(--ceo-bento-gap) !important;
+  height: 100% !important;
+  min-height: 0;
+  overflow: hidden !important;
+  align-items: stretch;
+}
+
+.mprio-cell--queue    { grid-area: queue; min-height: 0; height: 100%; }
+.mprio-cell--meetings { grid-area: meetings; min-height: 0; height: 100%; }
+
+.mprio-action-sections {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  grid-template-areas: 'approvals stack' !important;
+  gap: var(--ceo-bento-gap) !important;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.mprio-cell--approvals-decisions { grid-area: approvals; min-height: 0; height: 100%; }
+
+.mprio-action-stack {
+  grid-area: stack;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mprio-action-stack .mprio-section-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+}
+
+.mprio-cell--escalations,
+.mprio-cell--alerts {
+  min-height: 0;
+}
+
+.mprio-section-panel {
+  height: 100%;
+}
+
+.mprio-day-schedule.mprio-cell--meetings {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Panel body: fill cell, scroll lists only ── */
+.cwf-panel,
+.cpr-panel,
+.mprio-section-panel {
+  overflow: hidden;
+}
+
+.cwf-pulse__main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ceo-bento-gap);
+  align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cwf-pulse__gauge,
+.cwf-pulse__donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.cpg-drivers-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ceo-bento-gap);
+  align-items: center;
+  justify-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cpg-drivers-split__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.cpg-drivers-split__ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.cpg-drivers-split__ring .eto-pie__chart-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+  max-height: 120px;
+}
+
+.cpg-cell--score .eto-pie__chart-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  min-width: 200px;
+  min-height: 200px;
+  max-width: 200px;
+  max-height: 200px;
+  margin-inline: auto;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cpr-trend__chart,
+.cwf-trend__chart,
+.ceo-performance-overview .eto-weekly__chart-area,
+.ceo-performance-overview .eto-pie__chart {
+  flex: 1 1 auto;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ── List rows: fixed height, no stretch overlap ── */
+.mprio-section-panel__list,
+.mprio-day-schedule__list,
+.cwf-actions__list,
+.cpr-alerts__list,
+.cpr-proj-sections,
+.cwf-riskleave__grid,
+.ceo-performance-overview .cpg-dept-board,
+.ceo-performance-overview .eto-status-panel__list,
+.cwo-rank-list,
+.cpr-dept-rank {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ceo-priorities-overview .mprio-section-panel__list,
+.ceo-priorities-overview .mprio-row-list {
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ceo-priorities-overview .mprio-row.mprio-row--unified {
+  flex: 0 0 auto !important;
+}
+
+.mprio-section-panel__list .eto-today__item,
+.mprio-day-schedule__item,
+.cwf-actions__list .cwf-actions__card,
+.cpg-split__list .eto-today__item,
+.cpg-highlight-list .eto-today__item {
+  flex: 0 0 auto !important;
+  min-height: 40px;
+  align-items: center;
+}
+
+.mprio-day-schedule__item {
+  min-height: 52px;
+}
+
+.mprio-day-schedule__list {
+  gap: 2px;
+}
+
+/* ── KPI footer rows ── */
+.cwf-kpi-pills,
+.cpr-score-stats,
+.cwf-trend__footer {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* ── No animations ── */
+.ceo-workforce-overview,
+.ceo-performance-overview,
+.ceo-productivity-overview,
+.ceo-priorities-overview,
+.ceo-projects-overview,
+.ceo-schedule-overview,
+.ceo-workforce-overview *,
+.ceo-performance-overview *,
+.ceo-productivity-overview *,
+.ceo-priorities-overview *,
+.ceo-projects-overview *,
+.ceo-schedule-overview * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.cpg-rank-item__bar-fill,
+.cwo-rank-list__bar-fill,
+.cpr-meter__fill,
+.cwf-riskleave__dept-bar-fill {
+  transition: none !important;
+}
+
+/* ── Overview grids fill remaining viewport (no content-driven growth) ── */
+.ceo-performance-overview,
+.ceo-productivity-overview,
+.ceo-priorities-overview {
+  flex: 1 1 auto !important;
+  max-height: 100% !important;
+  align-content: stretch;
+}
+
+.ceo-workforce-overview {
+  flex: 1 1 auto !important;
+  max-height: 100% !important;
+}
+
+.ceo-workforce-overview > .eto-widget:not(.cwf-pulse),
+.ceo-priorities-overview > .eto-widget,
+.ceo-priorities-overview .mprio-section-panel,
+.ceo-priorities-overview .mprio-day-schedule {
+  min-height: 0 !important;
+  max-height: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ceo-productivity-overview .cpr-col--stack > .cpr-panel,
+.ceo-productivity-overview .cpr-col--alerts > .cpr-panel {
+  flex: 1 1 0;
+  min-height: 0 !important;
+  max-height: none;
+  height: auto !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.ceo-performance-overview .cpg-row--top > .cpg-card,
+.ceo-performance-overview .cpg-row--bottom > .cpg-card {
+  min-height: 0 !important;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.ceo-performance-overview .cpg-row--top > .cpg-card--score,
+.ceo-performance-overview .cpg-row--top > .cpg-card--drivers {
+  min-height: 250px !important;
+}
+
+.ceo-performance-overview .cpg-row--bottom > .cpg-card {
+  min-height: 270px !important;
+}
+
+.ceo-workforce-overview > .cwo-cell--health.cwf-pulse {
+  height: 100% !important;
+  min-height: 250px;
+  max-height: none;
+  align-self: stretch;
+  flex: 1 1 auto !important;
+}
+
+.ceo-workforce-overview > .cwo-cell--actions {
+  height: auto !important;
+  max-height: 250px;
+  align-self: start;
+}
+
+.ceo-workforce-overview > .cwo-cell--riskLeave {
+  height: 100% !important;
+  max-height: 100%;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summarize-tabs--ceo {
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo .summary-card__subtitle,
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo .summary-card__desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  white-space: normal;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summary-card--ceo .summary-card__value {
+  display: block;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summarize-tabs-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--ceo) .summarize-tabs {
+  flex-shrink: 0;
+}
+
+/* ── Workforce: charts fill panel body (pulse excluded — compact height) ── */
+.ceo-workforce-overview .cwf-panel--actions,
+.ceo-workforce-overview .cwf-panel--trend {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ceo-workforce-overview .cwf-panel--riskleave {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.ceo-workforce-overview .cwf-actions__list .cwf-actions__card {
+  flex: 0 0 auto !important;
+  min-height: 44px;
+}
+
+/* ── Performance: drivers + charts centered in cell ── */
+.ceo-performance-overview .eto-widget {
+  height: 100%;
+}
+
+.ceo-performance-overview .eto-pie__chart,
+.ceo-performance-overview .cpg-drivers-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ceo-performance-overview .cpg-split__list .eto-today__item,
+.ceo-performance-overview .cpg-highlight-list .eto-today__item {
+  flex: 0 0 auto !important;
+}
+
+/* ── Productivity: tall alerts column ── */
+.ceo-productivity-overview .cpr-cell--alerts {
+  min-height: 0;
+  height: 100%;
+}
+
+.ceo-productivity-overview .cpr-delivery-hero {
+  flex-shrink: 0;
+}
+
+.ceo-productivity-overview .cpr-score-stats {
+  flex-shrink: 0;
+}
+
+/* ── Priorities: left queue + right schedule equal height ── */
+.ceo-priorities-overview .mprio-action-sections {
+  height: 100%;
+}
+
+.ceo-priorities-overview .mprio-cell--queue {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mprio-section-panel__head {
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Workforce — match reference photo (top tabs + 2×2, no empty cards)
+   ══════════════════════════════════════════════════════════════ */
+
+.ceo-workforce-overview .eto-widget.cwf-panel {
+  padding: var(--ceo-panel-pad) !important;
+  gap: var(--ceo-panel-inner-gap) !important;
+}
+
+/* Panel body fills card — header fixed, content grows */
+.ceo-workforce-overview .cwf-actions,
+.ceo-workforce-overview .cwf-panel--trend {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.ceo-workforce-overview .cwf-riskleave {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100% !important;
+}
+
+.ceo-workforce-overview .cwf-pulse.cwf-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  height: 100% !important;
+  max-height: none;
+  flex: 1 1 auto !important;
+}
+
+.ceo-workforce-overview .cwf-pulse__head,
+.ceo-workforce-overview .cwf-actions__head,
+.ceo-workforce-overview .cwf-riskleave__head,
+.ceo-workforce-overview .cwf-panel--trend .eto-widget__head {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+/* Attendance Pulse — taller card; Risk & Leave shows full body */
+.ceo-workforce-overview > .cwo-cell--health {
+  overflow: visible;
+  isolation: isolate;
+  min-height: 250px;
+}
+
+.ceo-workforce-overview > .cwo-cell--riskLeave {
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 0;
+}
+
+.ceo-workforce-overview .cwf-pulse {
+  overflow: visible;
+  justify-content: flex-start;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  width: 100%;
+  min-height: 250px;
+  box-sizing: border-box;
+}
+
+.ceo-workforce-overview .cwf-pulse__head {
+  gap: 8px;
+}
+
+.ceo-workforce-overview .cwf-pulse__icon-wrap {
+  width: 24px;
+  height: 24px;
+}
+
+.ceo-workforce-overview .cwf-pulse__title {
+  font-size: 0.78rem;
+}
+
+.ceo-workforce-overview .cwf-pulse__subtitle {
+  font-size: 0.58rem;
+}
+
+.ceo-workforce-overview .cwf-pulse__badge {
+  padding: 2px 7px;
+  font-size: 0.58rem;
+}
+
+.ceo-workforce-overview .cwf-pulse__main {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  align-items: stretch !important;
+  align-content: stretch;
+  padding: 2px 0;
+  overflow: visible;
+}
+
+.ceo-workforce-overview .cwf-pulse__col {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  min-width: 0;
+  justify-content: center;
+  gap: 4px;
+  overflow: visible;
+}
+
+.ceo-workforce-overview .cwf-pulse__col--workmode {
+  justify-content: flex-start;
+}
+
+.ceo-workforce-overview .cwf-pulse__chart-caption {
+  flex-shrink: 0;
+  font-size: 0.56rem;
+  letter-spacing: 0.03em;
+}
+
+.ceo-workforce-overview .cwf-pulse__chart-square {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  max-height: 100%;
+  max-width: 100%;
+  width: min(100%, var(--pulse-chart-size, 120px));
+  height: min(100%, var(--pulse-chart-size, 120px));
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  margin-inline: auto;
+}
+
+.ceo-workforce-overview .cwf-pulse__score {
+  font-size: clamp(1.1rem, 4vw, 1.45rem);
+}
+
+.ceo-workforce-overview .cwf-pulse__score-label {
+  display: none;
+}
+
+.ceo-workforce-overview .cwf-pulse__gauge-center {
+  gap: 0;
+}
+
+.ceo-workforce-overview .cwf-pulse__legend--inline {
+  flex-shrink: 0;
+  margin-top: 0;
+  gap: 2px 6px;
+  line-height: 1.1;
+}
+
+.ceo-workforce-overview .cwf-pulse__legend-label {
+  font-size: 0.54rem;
+}
+
+.ceo-workforce-overview .cwf-pulse__legend-dot {
+  width: 6px;
+  height: 6px;
+}
+
+/* Critical Actions — compact top row, scroll list */
+.ceo-workforce-overview .cwf-actions {
+  gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.ceo-workforce-overview .cwf-actions__list {
+  flex: 1 1 auto !important;
+  min-height: 0;
+  gap: 5px;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.ceo-workforce-overview .cwf-actions__card {
+  min-height: 42px;
+  padding: 6px 9px;
+}
+
+/* Risk & Leave — content fits cell, no overflow */
+.ceo-workforce-overview .cwf-riskleave {
+  overflow: hidden;
+  height: 100% !important;
+  gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.ceo-workforce-overview .cwf-panel--riskleave {
+  flex: 1 1 auto !important;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ceo-workforce-overview .cwf-riskleave__head {
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ceo-workforce-overview .cwf-riskleave__title {
+  font-size: 0.78rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__subtitle {
+  font-size: 0.58rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__grid {
+  flex: 1 1 auto !important;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-content: stretch;
+  align-items: stretch;
+  gap: 6px 8px;
+  overflow: hidden;
+}
+
+.ceo-workforce-overview .cwf-riskleave__col {
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  gap: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ceo-workforce-overview .cwf-riskleave__col--leave {
+  min-width: 0;
+  padding-left: 8px;
+}
+
+.ceo-workforce-overview .cwf-riskleave__section-label {
+  font-size: 0.56rem;
+  flex-shrink: 0;
+}
+
+.ceo-workforce-overview .cwf-riskleave__dept-cards {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.ceo-workforce-overview .cwf-riskleave__dept-card {
+  flex: 0 0 auto;
+  min-height: 52px;
+  padding: 5px 7px;
+  gap: 3px;
+}
+
+.ceo-workforce-overview .cwf-riskleave__dept-name {
+  font-size: 0.68rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__dept-rate {
+  font-size: 0.82rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__dept-meta {
+  font-size: 0.56rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__impact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ceo-workforce-overview .cwf-riskleave__impact-card {
+  padding: 4px 6px;
+}
+
+.ceo-workforce-overview .cwf-riskleave__impact-label {
+  font-size: 0.56rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__impact-count {
+  font-size: 0.9rem;
+}
+
+.ceo-workforce-overview .cwf-riskleave__insight {
+  font-size: 0.56rem;
+  padding: 4px 6px;
+  flex-shrink: 0;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ceo-workforce-overview .cwf-riskleave__case-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.ceo-workforce-overview .cwf-riskleave__case-card {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 5px 7px;
+}
+
+.ceo-workforce-overview .cwf-riskleave__case-name {
+  font-size: 0.64rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-workforce-overview .cwf-riskleave__case-meta,
+.ceo-workforce-overview .cwf-riskleave__case-duration {
+  font-size: 0.54rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-workforce-overview .cwf-riskleave__bar {
+  height: 4px;
+}
+
+/* Weekly Trend — chart fills panel */
+.ceo-workforce-overview .cwf-panel--trend {
+  gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.ceo-workforce-overview .cwf-trend__head {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.ceo-workforce-overview .cwf-trend__head .eto-widget__title {
+  font-size: 0.78rem;
+}
+
+.ceo-workforce-overview .cwf-trend__chart {
+  flex: 1 1 auto !important;
+  min-height: 88px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 2px 4px;
+  overflow: hidden;
+}
+
+.ceo-workforce-overview .cwf-trend__chart .apexcharts-canvas,
+.ceo-workforce-overview .cwf-trend__chart .apexcharts-svg {
+  margin: 0 auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   My Priorities — polished SaaS layout, hidden scroll, clean rows
+   ══════════════════════════════════════════════════════════════ */
+
+.ceo-priorities-overview {
+  gap: var(--ceo-bento-gap) !important;
+}
+
+.ceo-priorities-overview .eto-widget,
+.ceo-priorities-overview .mprio-section-panel,
+.ceo-priorities-overview .mprio-day-schedule {
+  padding: var(--ceo-panel-pad) !important;
+  gap: var(--ceo-panel-inner-gap) !important;
+  background: var(--surface-panel, #fff) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, #e2e8f0) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%), 0 1px 2px rgb(15 23 42 / 3%) !important;
+}
+
+.ceo-priorities-overview .mprio-action-sections {
+  gap: var(--ceo-bento-gap) !important;
+}
+
+.ceo-priorities-overview .mprio-action-stack {
+  gap: var(--ceo-bento-gap);
+}
+
+.ceo-priorities-overview .eto-widget__head {
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
+.ceo-priorities-overview .eto-widget__title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: -0.01em;
+}
+
+.ceo-priorities-overview .eto-widget__tab {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--nexus-text-secondary);
+  white-space: nowrap;
+}
+
+.mprio-section-panel--approvals-decisions .eto-widget__head {
+  color: var(--accent);
+}
+
+.mprio-section-panel--escalation .eto-widget__head {
+  color: var(--nexus-danger, #ef4444);
+}
+
+.mprio-section-panel--alert .eto-widget__head {
+  color: var(--mprio-amber, #f59e0b);
+}
+
+/* Scroll area + bottom fade */
+.mprio-section-panel__scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mprio-section-panel__scroll::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, var(--surface-panel, #fff));
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+}
+
+.mprio-section-panel__scroll--fade::after {
+  opacity: 1;
+}
+
+.mprio-section-panel__list,
+.mprio-row-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mprio-section-panel__list::-webkit-scrollbar,
+.mprio-row-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Decision / escalation / alert rows */
+.ceo-priorities-overview .mprio-row--unified {
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr) auto 72px;
+  align-items: center;
+  gap: 8px 10px;
+  flex: 0 0 auto !important;
+  min-height: 52px;
+  max-height: none !important;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, #e8ecf1);
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* Escalations + Alerts — stacked badge & button on narrow column */
+.ceo-priorities-overview .mprio-action-stack .mprio-row--unified {
+  grid-template-columns: 3px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  padding: 10px 12px;
+  gap: 6px 8px;
+}
+
+.ceo-priorities-overview .mprio-action-stack .mprio-row__accent {
+  grid-row: 1 / -1;
+  align-self: stretch;
+  min-height: 36px;
+}
+
+.ceo-priorities-overview .mprio-action-stack .mprio-row__copy {
+  grid-column: 2 / -1;
+  grid-row: 1;
+  gap: 3px;
+}
+
+.ceo-priorities-overview .mprio-action-stack .mprio-badge--compact {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  align-self: center;
+}
+
+.ceo-priorities-overview .mprio-action-stack .mprio-action-btn {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: end;
+  align-self: center;
+  width: 68px;
+  min-height: 28px;
+}
+
+[data-theme='light'] .ceo-priorities-overview .mprio-row--unified {
+  background: #fff;
+  border-color: #e8ecf1;
+}
+
+.ceo-priorities-overview .mprio-row--unified:hover {
+  border-color: color-mix(in srgb, var(--border) 50%, #cbd5e1);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 4%);
+}
+
+.ceo-priorities-overview .mprio-row__accent {
+  align-self: stretch;
+  min-height: 32px;
+  border-radius: 3px;
+}
+
+.ceo-priorities-overview .mprio-row__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ceo-priorities-overview .mprio-row__title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-priorities-overview .mprio-row__impact {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--nexus-text-secondary);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-priorities-overview .mprio-badge--compact {
+  margin-left: 0;
+  min-width: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ceo-priorities-overview .mprio-action-btn {
+  width: 72px;
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 0.66rem;
+  border-radius: 7px;
+  justify-self: end;
+}
+
+.ceo-priorities-overview .mprio-action-btn--amber {
+  color: var(--mprio-amber, #f59e0b);
+  background: color-mix(in srgb, var(--mprio-amber, #f59e0b) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--mprio-amber, #f59e0b) 35%, var(--border));
+}
+
+/* Today's Schedule — premium timeline */
+.ceo-priorities-overview .mprio-day-schedule__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__item {
+  display: grid;
+  grid-template-columns: 54px 14px minmax(0, 1fr);
+  gap: 10px;
+  flex: 0 0 auto;
+  min-height: 58px;
+  align-items: stretch;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  padding-top: 0;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__time-start {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.15;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__time-end {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--nexus-text-secondary);
+  line-height: 1.15;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__rail {
+  padding-top: 14px;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__dot {
+  width: 7px;
+  height: 7px;
+  border-width: 2px;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__line {
+  width: 1px;
+  min-height: 10px;
+  margin-top: 3px;
+  background: color-mix(in srgb, var(--border) 70%, #d1d9e6);
+}
+
+.ceo-priorities-overview .mprio-day-schedule__card {
+  display: flex;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__accent {
+  width: 3px;
+  border-radius: 10px 0 0 10px;
+  flex-shrink: 0;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, #e8ecf1);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  background: #fff;
+}
+
+[data-theme='light'] .ceo-priorities-overview .mprio-day-schedule__body {
+  background: #fff;
+  border-color: #e8ecf1;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__meta {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: var(--nexus-text-secondary);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__badge {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  line-height: 1.3;
+}
+
+.ceo-priorities-overview .mprio-day-schedule__badge--board {
+  color: var(--ceo-sched-leadership, #7c3aed);
+  background: color-mix(in srgb, var(--ceo-sched-leadership, #7c3aed) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ceo-sched-leadership, #7c3aed) 28%, var(--border));
+}
+
+.ceo-priorities-overview .mprio-day-schedule__badge--one-on-one {
+  color: var(--nexus-success, #10b981);
+  background: color-mix(in srgb, var(--nexus-success, #10b981) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nexus-success, #10b981) 28%, var(--border));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Productivity — modern SaaS 3-column CEO dashboard
+   ══════════════════════════════════════════════════════════════ */
+
+.ceo-productivity-overview {
+  --cpr-page-gap: var(--ceo-bento-gap);
+  --cpr-stack-gap: var(--ceo-bento-gap);
+  --cpr-card-pad: var(--ceo-panel-pad);
+  --cpr-card-radius: 20px;
+  --cpr-card-border: #e2e8f0;
+  --cpr-card-bg: #ffffff;
+  --cpr-title: 16px;
+  --cpr-subtitle: 12px;
+  --cpr-metric: 24px;
+  --cpr-row-title: 13px;
+  --cpr-row-desc: 12px;
+  --cpr-inner-gap: 14px;
+
+  gap: var(--cpr-page-gap) !important;
+  padding: var(--cpr-page-gap) !important;
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+}
+
+.ceo-productivity-overview .cpr-col--stack {
+  gap: var(--cpr-stack-gap);
+}
+
+.ceo-productivity-overview .cpr-panel {
+  padding: var(--cpr-card-pad) !important;
+  gap: var(--cpr-inner-gap) !important;
+  border-radius: var(--cpr-card-radius) !important;
+  border: 1px solid var(--cpr-card-border) !important;
+  background: var(--cpr-card-bg) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03) !important;
+  box-sizing: border-box !important;
+}
+
+.ceo-productivity-overview .cpr-panel__head,
+.ceo-productivity-overview .cpr-score__head {
+  align-items: center;
+  min-height: 32px;
+}
+
+.ceo-productivity-overview .cpr-panel__icon-wrap,
+.ceo-productivity-overview .cpr-score__icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+}
+
+.ceo-productivity-overview .cpr-panel__title,
+.ceo-productivity-overview .cpr-score__title {
+  font-size: var(--cpr-title) !important;
+  font-weight: 600 !important;
+  line-height: 1.25;
+}
+
+.ceo-productivity-overview .cpr-panel__subtitle,
+.ceo-productivity-overview .cpr-score__subtitle {
+  font-size: var(--cpr-subtitle) !important;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.ceo-productivity-overview .cpr-pill,
+.ceo-productivity-overview .cpr-score__badge,
+.ceo-productivity-overview .cpr-alerts__badge {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  min-height: 24px;
+  align-items: center;
+}
+
+/* Hidden scroll + fade bottom */
+.ceo-productivity-overview .cpr-scroll-fade {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ceo-productivity-overview .cpr-scroll-fade > ul,
+.ceo-productivity-overview .cpr-scroll-fade > .cpr-alerts__groups {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ceo-productivity-overview .cpr-scroll-fade > ul::-webkit-scrollbar,
+.ceo-productivity-overview .cpr-scroll-fade > .cpr-alerts__groups::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.ceo-productivity-overview .cpr-scroll-fade::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, var(--cpr-card-bg));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Card 1 — Company Work Output */
+.ceo-productivity-overview .cpr-score.cpr-panel {
+  justify-content: flex-start;
+}
+
+.ceo-productivity-overview .cpr-score__gauge-wrap {
+  flex: 1 1 0;
+  min-height: 140px;
+  max-height: none;
+  padding: 8px 0;
+}
+
+.ceo-productivity-overview .cpr-score__gauge-center {
+  animation: cpr-gauge-center-in 1.4s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+.ceo-productivity-overview .cpr-score__value {
+  font-size: var(--cpr-metric) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  animation: cpr-gauge-value-in 1.4s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+@keyframes cpr-gauge-center-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cpr-gauge-value-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ceo-productivity-overview .cpr-score__value-label {
+  font-size: var(--cpr-subtitle);
+  color: #64748b;
+}
+
+.ceo-productivity-overview .cpr-score__chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ceo-productivity-overview .cpr-score__chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  min-width: 0;
+  text-align: center;
+}
+
+.ceo-productivity-overview .cpr-score__chip-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.ceo-productivity-overview .cpr-score__chip--warn .cpr-score__chip-value {
+  color: #ea580c;
+}
+
+.ceo-productivity-overview .cpr-score__chip--danger .cpr-score__chip-value {
+  color: #dc2626;
+}
+
+.ceo-productivity-overview .cpr-score__chip-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+.ceo-productivity-overview .cpr-score-note {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* Card 2 — Department Productivity */
+.ceo-productivity-overview .cpr-dept-legend {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  gap: 8px;
+}
+
+.ceo-productivity-overview .cpr-dept-legend__mark {
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.ceo-productivity-overview .cpr-dept-rank {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1.1fr) 38px minmax(0, 1.6fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__pos {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__row--below .cpr-dept-rank__pos {
+  color: #ea580c;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__name {
+  font-size: var(--cpr-row-title);
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__rate {
+  font-size: var(--cpr-row-title);
+  font-weight: 700;
+  color: #2563eb;
+  text-align: right;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__row--below .cpr-dept-rank__rate {
+  color: #ea580c;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__track {
+  height: 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__avg {
+  width: 2px;
+  background: #94a3b8;
+  opacity: 0.65;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__fill {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.ceo-productivity-overview .cpr-dept-rank__row--below .cpr-dept-rank__fill {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.ceo-productivity-overview .cpr-dept-rank__delta {
+  font-size: 11px;
+  font-weight: 600;
+  gap: 3px;
+  max-width: none;
+  white-space: nowrap;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__delta--up {
+  color: #2563eb;
+}
+
+.ceo-productivity-overview .cpr-dept-rank__delta--down {
+  color: #ea580c;
+}
+
+/* Card 3 — Weekly Productivity Trend */
+.ceo-productivity-overview .cpr-trend.cpr-panel {
+  justify-content: flex-start;
+}
+
+.ceo-productivity-overview .cpr-trend__chart {
+  flex: 1 1 0;
+  min-height: 175px;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ceo-productivity-overview .cpr-trend__footer {
+  gap: 20px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ceo-productivity-overview .cpr-trend__stat {
+  font-size: var(--cpr-subtitle);
+  color: #64748b;
+}
+
+.ceo-productivity-overview .cpr-trend__stat strong {
+  font-size: var(--cpr-row-title);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Card 4 — Project Contribution */
+.ceo-productivity-overview .cpr-proj-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ceo-productivity-overview .cpr-proj-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.ceo-productivity-overview .cpr-proj-chip strong {
+  font-size: var(--cpr-row-title);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ceo-productivity-overview .cpr-proj-chip--track {
+  background: color-mix(in srgb, #2563eb 6%, #fff);
+  border-color: #dbeafe;
+}
+
+.ceo-productivity-overview .cpr-proj-chip--track strong {
+  color: #2563eb;
+}
+
+.ceo-productivity-overview .cpr-proj-chip--watch {
+  background: color-mix(in srgb, #ea580c 6%, #fff);
+  border-color: #fed7aa;
+}
+
+.ceo-productivity-overview .cpr-proj-chip--watch strong {
+  color: #ea580c;
+}
+
+.ceo-productivity-overview .cpr-proj-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ceo-productivity-overview .cpr-proj-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 40px;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.ceo-productivity-overview .cpr-proj-row--track {
+  background: color-mix(in srgb, #2563eb 4%, #fff);
+  border-color: #dbeafe;
+}
+
+.ceo-productivity-overview .cpr-proj-row--risk,
+.ceo-productivity-overview .cpr-proj-row--delayed {
+  background: color-mix(in srgb, #ea580c 5%, #fff);
+  border-color: #fed7aa;
+}
+
+.ceo-productivity-overview .cpr-proj-row--blocked {
+  background: color-mix(in srgb, #dc2626 5%, #fff);
+  border-color: #fecaca;
+}
+
+.ceo-productivity-overview .cpr-proj-row__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ceo-productivity-overview .cpr-proj-row__name {
+  margin: 0;
+  font-size: var(--cpr-row-title);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-productivity-overview .cpr-proj-row__reason {
+  margin: 0;
+  font-size: var(--cpr-row-desc);
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-productivity-overview .cpr-proj-row__status {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 999px;
+  gap: 4px;
+}
+
+.ceo-productivity-overview .cpr-proj-row__ring {
+  width: 40px;
+  height: 40px;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Card 5 — Productivity Alerts */
+.ceo-productivity-overview .cpr-alerts {
+  gap: var(--cpr-inner-gap) !important;
+}
+
+.ceo-productivity-overview .cpr-alerts__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ceo-productivity-overview .cpr-alerts__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ceo-productivity-overview .cpr-alerts__group-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.ceo-productivity-overview .cpr-alerts__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ceo-productivity-overview .cpr-alerts__row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.ceo-productivity-overview .cpr-alerts__row--critical {
+  background: color-mix(in srgb, #dc2626 5%, #fff);
+  border-color: #fecaca;
+}
+
+.ceo-productivity-overview .cpr-alerts__row--warning {
+  background: color-mix(in srgb, #ea580c 5%, #fff);
+  border-color: #fed7aa;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ceo-productivity-overview .cpr-alerts__row--critical .cpr-alerts__row-icon {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.ceo-productivity-overview .cpr-alerts__row--warning .cpr-alerts__row-icon {
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-title {
+  margin: 0;
+  font-size: var(--cpr-row-title);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-desc {
+  margin: 0;
+  font-size: var(--cpr-row-desc);
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 24px;
+  border: 1px solid transparent;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-badge--critical {
+  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-badge--warning {
+  color: #ea580c;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.ceo-productivity-overview .cpr-alerts__row-badge--action {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #dbeafe;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Performance — modern SaaS CEO dashboard
+   ══════════════════════════════════════════════════════════════ */
+
+.ceo-performance-overview .cpg-card {
+  --cpg-pad: var(--ceo-panel-pad);
+  --cpg-radius: 18px;
+  --cpg-title: 16px;
+  --cpg-subtitle: 12px;
+  --cpg-row-title: 13px;
+  --cpg-row-desc: 12px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--cpg-pad);
+  border-radius: var(--cpg-radius);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03);
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+.ceo-performance-overview .cpg-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-card__title-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ceo-performance-overview .cpg-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-card__title {
+  margin: 0;
+  font-size: var(--cpg-title);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.ceo-performance-overview .cpg-card__subtitle {
+  margin: 2px 0 0;
+  font-size: var(--cpg-subtitle);
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.ceo-performance-overview .cpg-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.ceo-performance-overview .cpg-badge--good {
+  color: #059669;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.ceo-performance-overview .cpg-badge--track {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #dbeafe;
+}
+
+.ceo-performance-overview .cpg-badge--neutral {
+  color: #64748b;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+/* Hidden scroll + fade */
+.ceo-performance-overview .cpg-scroll-fade {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ceo-performance-overview .cpg-scroll-fade > ul {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ceo-performance-overview .cpg-scroll-fade > ul::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.ceo-performance-overview .cpg-scroll-fade::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, #fff);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Card 1 — Company Score */
+.ceo-performance-overview .cpg-card--score {
+  gap: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.ceo-performance-overview .cpg-score__icon {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.ceo-performance-overview .cpg-score__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  align-items: center;
+  gap: 16px;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #eff6ff 0%, #ecfdf5 100%);
+  border: 1px solid #e2e8f0;
+}
+
+.ceo-performance-overview .cpg-score__gauge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.ceo-performance-overview .cpg-score__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.ceo-performance-overview .cpg-score__value {
+  font-size: 30px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.ceo-performance-overview .cpg-score__delta {
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+  line-height: 1.2;
+}
+
+.ceo-performance-overview .cpg-score__target {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.ceo-performance-overview .cpg-score__side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ceo-performance-overview .cpg-score__side-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.ceo-performance-overview .cpg-score__side-box--good {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.ceo-performance-overview .cpg-score__side-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.ceo-performance-overview .cpg-score__side-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+  line-height: 1.25;
+}
+
+.ceo-performance-overview .cpg-score__side-box--good .cpg-score__side-value {
+  color: #059669;
+}
+
+/* Card 2 — Drivers */
+.ceo-performance-overview .cpg-card--drivers {
+  gap: 14px;
+}
+
+.ceo-performance-overview .cpg-drivers__icon {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.ceo-performance-overview .cpg-drivers__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  flex: 1 1 0;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.ceo-performance-overview .cpg-driver-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  min-height: 0;
+}
+
+.ceo-performance-overview .cpg-driver-tile--product {
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+  border-color: #dbeafe;
+}
+
+.ceo-performance-overview .cpg-driver-tile--employee {
+  background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);
+  border-color: #e9d5ff;
+}
+
+.ceo-performance-overview .cpg-driver-tile__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.ceo-performance-overview .cpg-driver-tile__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-driver-tile--product .cpg-driver-tile__icon {
+  color: #2563eb;
+  background: #dbeafe;
+}
+
+.ceo-performance-overview .cpg-driver-tile--employee .cpg-driver-tile__icon {
+  color: #7c3aed;
+  background: #ede9fe;
+}
+
+.ceo-performance-overview .cpg-driver-tile__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.ceo-performance-overview .cpg-driver-tile__ring {
+  --cpg-driver-pct: 0;
+  --cpg-driver-color: #2563eb;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--cpg-driver-color) calc(var(--cpg-driver-pct) * 1%),
+    #e2e8f0 0
+  );
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-driver-tile--employee .cpg-driver-tile__ring {
+  --cpg-driver-color: #7c3aed;
+}
+
+.ceo-performance-overview .cpg-driver-tile__ring::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ceo-performance-overview .cpg-driver-tile__ring span {
+  position: relative;
+  z-index: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ceo-performance-overview .cpg-driver-tile__headline {
+  margin: 0;
+  font-size: var(--cpg-row-title);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.ceo-performance-overview .cpg-driver-tile__status {
+  margin: 0;
+  font-size: var(--cpg-row-desc);
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.ceo-performance-overview .cpg-driver-tile__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: auto;
+}
+
+.ceo-performance-overview .cpg-driver-tile--product .cpg-driver-tile__pill {
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.ceo-performance-overview .cpg-driver-tile--employee .cpg-driver-tile__pill {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border: 1px solid #e9d5ff;
+}
+
+/* Card 3 — 5-month Trend */
+.ceo-performance-overview .cpg-trend__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-trend__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.ceo-performance-overview .cpg-trend__stat--current {
+  background: #eff6ff;
+  border-color: #dbeafe;
+}
+
+.ceo-performance-overview .cpg-trend__stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.ceo-performance-overview .cpg-trend__stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.ceo-performance-overview .cpg-trend__stat-value em {
+  font-style: normal;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.ceo-performance-overview .cpg-trend__stat-value--up {
+  color: #059669;
+}
+
+.ceo-performance-overview .cpg-trend__chart {
+  flex: 1 1 0;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ceo-performance-overview .cpg-trend__foot {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Card 4 — Department Performance */
+.ceo-performance-overview .cpg-dept__insight {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.ceo-performance-overview .cpg-dept__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ceo-performance-overview .cpg-dept__row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 38px minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ceo-performance-overview .cpg-dept__row:last-child {
+  border-bottom: none;
+}
+
+.ceo-performance-overview .cpg-dept__rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.ceo-performance-overview .cpg-dept__row--below .cpg-dept__rank {
+  color: #ea580c;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.ceo-performance-overview .cpg-dept__name {
+  font-size: var(--cpg-row-title);
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ceo-performance-overview .cpg-dept__score {
+  font-size: var(--cpg-row-title);
+  font-weight: 700;
+  color: #2563eb;
+  text-align: right;
+}
+
+.ceo-performance-overview .cpg-dept__row--below .cpg-dept__score {
+  color: #ea580c;
+}
+
+.ceo-performance-overview .cpg-dept__track {
+  height: 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.ceo-performance-overview .cpg-dept__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.ceo-performance-overview .cpg-dept__row--below .cpg-dept__fill {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.ceo-performance-overview .cpg-dept__status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ceo-performance-overview .cpg-dept__status--above {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.ceo-performance-overview .cpg-dept__status--below {
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+/* Card 5 — Watch List */
+.ceo-performance-overview .cpg-watch__banner {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.4;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.ceo-performance-overview .cpg-watch__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ceo-performance-overview .cpg-watch__card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.ceo-performance-overview .cpg-watch__card--critical {
+  background: color-mix(in srgb, #dc2626 5%, #fff);
+  border-color: #fecaca;
+}
+
+.ceo-performance-overview .cpg-watch__card--warning {
+  background: color-mix(in srgb, #ea580c 5%, #fff);
+  border-color: #fed7aa;
+}
+
+.ceo-performance-overview .cpg-watch__card--info {
+  background: color-mix(in srgb, #2563eb 4%, #fff);
+  border-color: #dbeafe;
+}
+
+.ceo-performance-overview .cpg-watch__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-watch__card--critical .cpg-watch__icon {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.ceo-performance-overview .cpg-watch__card--warning .cpg-watch__icon {
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+.ceo-performance-overview .cpg-watch__card--info .cpg-watch__icon {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.ceo-performance-overview .cpg-watch__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ceo-performance-overview .cpg-watch__title {
+  margin: 0;
+  font-size: var(--cpg-row-title);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.ceo-performance-overview .cpg-watch__reason {
+  margin: 0;
+  font-size: var(--cpg-row-desc);
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.ceo-performance-overview .cpg-watch__severity {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ceo-performance-overview .cpg-watch__severity--critical {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.ceo-performance-overview .cpg-watch__severity--warning {
+  color: #ea580c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.ceo-performance-overview .cpg-watch__severity--info {
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.ceo-performance-overview .cpg-watch__action {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Gauge animation exception */
+.ceo-performance-overview .cpg-score__hero .apexcharts-canvas,
+.ceo-performance-overview .cpg-score__center {
+  animation: cpg-gauge-in 1.2s ease-out both !important;
+}
+
+@keyframes cpg-gauge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -3,6 +3,7 @@ import { Calendar, Search, Users, ShieldCheck, LogOut, HelpCircle, KeyRound, Sli
 import { appNavDateLabel } from '../../features/employees/data/employee-task-overview.data';
 import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/app-brand';
 import { UserProfile } from '../../shared/components/user-profile/user-profile';
+import { EmployeeSwitcher } from '../../shared/components/employee-switcher/employee-switcher';
 import { NotificationToggle } from '../../shared/components/notification-toggle/notification-toggle';
 import { ThemeSwitcher } from '../../shared/components/theme-switcher/theme-switcher';
 
@@ -29,6 +30,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const isTenant = currentView === 'tenant';
+
   useEffect(() => {
     if (!profileOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -46,9 +49,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Left: brand/entity + view switcher */}
       <div className="app-navbar__start">
         <AppBrand
-          selectedCompany={selectedCompany}
-          onSelectCompany={onSelectCompany}
-          onAddCompany={onAddCompany}
+          selectedCompany={isTenant ? selectedCompany : undefined}
+          onSelectCompany={isTenant ? onSelectCompany : undefined}
+          onAddCompany={isTenant ? onAddCompany : undefined}
           collapsed={false}
         />
 
@@ -114,6 +117,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {profileOpen && (
             <div className="navbar-profile__dropdown" role="menu">
+              {!isTenant && (
+                <div className="navbar-profile__switcher">
+                  <EmployeeSwitcher />
+                </div>
+              )}
               <button
                 className="navbar-profile__action"
                 role="menuitem"

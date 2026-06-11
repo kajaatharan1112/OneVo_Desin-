@@ -4,13 +4,21 @@ import {
   CircleDollarSign,
   Inbox,
   LayoutDashboard,
+  LayoutGrid,
   ClipboardList,
   Calendar,
+  Clock,
   TrendingUp,
-  LayoutGrid,
-  Clock
+  Users,
+  Activity,
+  ListChecks
 } from 'lucide-react';
-import { getSummaryCardsForView } from '../../../core/summary/summary-cards';
+import {
+  getSummaryCardsForView,
+  isCeoSummaryCardId
+} from '../../../core/summary/summary-cards';
+import { useEmployeeContext } from '../../../features/employees/context/employee-context';
+import type { EmployeeId } from '../../../features/employees/types/employee.types';
 import type { SummaryCardData, SummaryCardId } from '../../types/summary-card.types';
 import { SummaryCardContent } from '../summary-card-content/summary-card-content';
 
@@ -31,6 +39,14 @@ function getCardIcon(id: SummaryCardId): React.ReactNode {
       return <Clock {...iconProps} />;
     case 'my-calendar':
       return <Calendar {...iconProps} />;
+    case 'workforce-availability':
+      return <Users {...iconProps} />;
+    case 'company-performance':
+      return <Activity {...iconProps} />;
+    case 'productivity':
+      return <TrendingUp {...iconProps} />;
+    case 'my-priorities':
+      return <ListChecks {...iconProps} />;
     case 'today-productivity':
       return <TrendingUp {...iconProps} />;
     case 'ongoing-projects':
@@ -44,22 +60,54 @@ function getCardIcon(id: SummaryCardId): React.ReactNode {
   }
 }
 
-const defaultCardForView = (view: 'employee' | 'tenant'): SummaryCardId | null =>
-  view === 'employee' ? 'task-overview' : 'today-productivity';
+function defaultCardForContext(
+  view: 'employee' | 'tenant',
+  employeeId: EmployeeId
+): SummaryCardId | null {
+  if (view === 'tenant') {
+    return 'today-productivity';
+  }
+
+  return employeeId === 'marcus' ? 'my-priorities' : 'task-overview';
+}
+
+function getCeoExpandClass(selectedId: SummaryCardId | null): string {
+  switch (selectedId) {
+    case 'workforce-availability':
+      return ' summarize-tabs-root--ceo-workforce';
+    case 'company-performance':
+      return ' summarize-tabs-root--ceo-performance';
+    case 'productivity':
+      return ' summarize-tabs-root--ceo-productivity';
+    case 'my-priorities':
+      return ' summarize-tabs-root--ceo-priorities';
+    case 'project-health':
+      return ' summarize-tabs-root--ceo-project';
+    case 'schedule':
+      return ' summarize-tabs-root--ceo-schedule';
+    default:
+      return '';
+  }
+}
 
 export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
   currentView,
   onNavigateTab
 }) => {
-  const cards = useMemo(() => getSummaryCardsForView(currentView), [currentView]);
+  const { selectedEmployeeId } = useEmployeeContext();
+  const isCeoView = currentView === 'employee' && selectedEmployeeId === 'marcus';
+  const cards = useMemo(
+    () => getSummaryCardsForView(currentView, selectedEmployeeId),
+    [currentView, selectedEmployeeId]
+  );
   const [selectedId, setSelectedId] = useState<SummaryCardId | null>(() =>
-    defaultCardForView(currentView)
+    defaultCardForContext(currentView, selectedEmployeeId)
   );
   const isEmployeeView = currentView === 'employee';
 
   useEffect(() => {
-    setSelectedId(defaultCardForView(currentView));
-  }, [currentView]);
+    setSelectedId(defaultCardForContext(currentView, selectedEmployeeId));
+  }, [currentView, selectedEmployeeId]);
 
   const selectedCard = cards.find((card) => card.id === selectedId) ?? null;
 
@@ -67,24 +115,27 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
     setSelectedId(card.id);
   };
 
-  const isTaskOverviewOpen = isEmployeeView && selectedId === 'task-overview';
-  const isRequestsApprovalOpen = isEmployeeView && selectedId === 'requests-approval';
-  const isActivityOpen = isEmployeeView && selectedId === 'activity';
-  const isMyCalendarOpen = isEmployeeView && selectedId === 'my-calendar';
+  const isTaskOverviewOpen = isEmployeeView && !isCeoView && selectedId === 'task-overview';
+  const isRequestsApprovalOpen = isEmployeeView && !isCeoView && selectedId === 'requests-approval';
+  const isActivityOpen = isEmployeeView && !isCeoView && selectedId === 'activity';
+  const isMyCalendarOpen = isEmployeeView && !isCeoView && selectedId === 'my-calendar';
   const isTenantProductivityOpen =
     currentView === 'tenant' && selectedId === 'today-productivity';
+  const isCeoPanelOpen =
+    isEmployeeView && isCeoView && selectedId !== null && isCeoSummaryCardId(selectedId);
 
   return (
     <div
-      className={`summarize-tabs-root${isTaskOverviewOpen ? ' summarize-tabs-root--task-overview' : ''}${isRequestsApprovalOpen ? ' summarize-tabs-root--requests-approval' : ''}${isActivityOpen ? ' summarize-tabs-root--activity' : ''}${isMyCalendarOpen ? ' summarize-tabs-root--my-calendar' : ''}${isTenantProductivityOpen ? ' summarize-tabs-root--tenant-productivity' : ''}`}
+      className={`summarize-tabs-root${isCeoView ? ' summarize-tabs-root--ceo' : ''}${isTaskOverviewOpen ? ' summarize-tabs-root--task-overview' : ''}${isRequestsApprovalOpen ? ' summarize-tabs-root--requests-approval' : ''}${isActivityOpen ? ' summarize-tabs-root--activity' : ''}${isMyCalendarOpen ? ' summarize-tabs-root--my-calendar' : ''}${isTenantProductivityOpen ? ' summarize-tabs-root--tenant-productivity' : ''}${isCeoPanelOpen ? getCeoExpandClass(selectedId) : ''}`}
     >
       <section
-        className="summarize-tabs"
+        className={`summarize-tabs${isCeoView ? ' summarize-tabs--ceo' : ''}`}
         role="tablist"
         aria-label={isEmployeeView ? 'Employee dashboard tabs' : 'Summary metrics'}
       >
         {cards.map((card) => {
           const isActive = selectedId === card.id;
+          const isCeoCard = card.variant === 'ceo';
 
           return (
             <button
@@ -94,21 +145,31 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
               id={`dashboard-tab-${card.id}`}
               aria-controls={`dashboard-tabpanel-${card.id}`}
               aria-selected={isActive}
-              className={`summary-card${isActive ? ' summary-card--active' : ''}`}
+              className={`summary-card${isActive ? ' summary-card--active' : ''}${isCeoCard ? ' summary-card--ceo' : ''}`}
+              data-summary-card-id={card.id}
               onClick={() => handleCardClick(card)}
-              aria-label={`${card.title}: ${card.value}. ${card.desc}`}
+              aria-label={isCeoCard ? `${card.title}. ${card.desc}` : `${card.title}: ${card.value}. ${card.desc}`}
               style={{ borderColor: isActive ? card.color : undefined }}
             >
               <div className="summary-card__body">
                 <span className="summary-card__title">{card.title}</span>
-                <span className="summary-card__subtitle">{card.desc}</span>
-                <span className="summary-card__value">{card.value}</span>
+                {isCeoCard ? (
+                  <>
+                    <span className="summary-card__value">{card.value}</span>
+                    <span className="summary-card__subtitle">{card.desc}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="summary-card__subtitle">{card.desc}</span>
+                    <span className="summary-card__value">{card.value}</span>
+                  </>
+                )}
               </div>
 
               <div
-                className="summary-card__icon"
+                className={`summary-card__icon${isCeoCard ? ' summary-card__icon--ceo' : ''}`}
                 style={{
-                  backgroundColor: `color-mix(in srgb, ${card.color} 12%, transparent)`,
+                  backgroundColor: `color-mix(in srgb, ${card.color} ${isCeoCard ? '14%' : '12%'}, transparent)`,
                   color: card.color
                 }}
                 aria-hidden="true"

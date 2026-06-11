@@ -9,9 +9,9 @@ export function createBaseChartOptions(tokens: ChartThemeTokens): ApexOptions {
       toolbar: { show: false },
       zoom: { enabled: false },
       animations: {
-        enabled: true,
-        speed: 500,
-        animateGradually: { enabled: true, delay: 80 }
+        enabled: false,
+        speed: 0,
+        animateGradually: { enabled: false, delay: 0 }
       }
     },
     colors: tokens.palette,

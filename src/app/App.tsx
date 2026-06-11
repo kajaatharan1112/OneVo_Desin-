@@ -4,6 +4,9 @@ import { AutomationRoutes } from './automationRoutes';
 import './App.css';
 import { Shell } from '../layouts/shell/shell';
 import { LandingPage } from '../features/landing/pages/landing-page';
+import { EmployeeProvider } from '../features/employees/context/employee-context';
+import { DEFAULT_EMPLOYEE_ID } from '../features/employees/data/employees.data';
+import type { EmployeeId } from '../features/employees/types/employee.types';
 import {
   TENANT_MAIN_ITEMS,
   TENANT_BOTTOM_ITEMS,
@@ -36,6 +39,7 @@ import {
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<EmployeeId>(DEFAULT_EMPLOYEE_ID);
   const [isLandingPage, setIsLandingPage] = useState<boolean>(false);
   const [view, setView] = useState<'employee' | 'tenant'>('employee');
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
@@ -171,22 +175,27 @@ function App() {
   }
 
   return (
-    <Shell
-      currentView={view}
-      onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      activeSubItemId={activeSubItemId}
-      setActiveSubItemId={handleSubItemSelect}
-      selectedCompany={selectedCompany}
-      onSelectCompany={setSelectedCompany}
-      onAddCompany={openSetupWizard}
-      setupWizardOpen={view === 'tenant' && setupWizardOpen}
-      onCloseSetupWizard={closeSetupWizard}
-      onGoToLandingPage={() => setIsLandingPage(true)}
+    <EmployeeProvider
+      selectedEmployeeId={selectedEmployeeId}
+      onSelectEmployee={setSelectedEmployeeId}
     >
-      {renderActivePageContent()}
-    </Shell>
+      <Shell
+        currentView={view}
+        onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        activeSubItemId={activeSubItemId}
+        setActiveSubItemId={handleSubItemSelect}
+        selectedCompany={selectedCompany}
+        onSelectCompany={setSelectedCompany}
+        onAddCompany={openSetupWizard}
+        setupWizardOpen={view === 'tenant' && setupWizardOpen}
+        onCloseSetupWizard={closeSetupWizard}
+        onGoToLandingPage={() => setIsLandingPage(true)}
+      >
+        {renderActivePageContent()}
+      </Shell>
+    </EmployeeProvider>
   );
 }
 
