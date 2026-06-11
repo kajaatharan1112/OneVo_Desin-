@@ -1,27 +1,14 @@
 import React from 'react';
-import {
-  onSiteWorkforce,
-  remoteWorkforce
-} from '../../data/tenant-today-productivity.data';
-import { MeetingSchedulePanel } from './widgets/meeting-schedule-panel';
-import { PendingRequestsPanel } from './widgets/pending-requests-panel';
-import { TenantModuleNotificationsBar } from './widgets/tenant-module-notifications-bar';
-import { TenantTodayAlertsPanel } from './widgets/tenant-today-alerts-panel';
-import { TodayGoalsPanel } from './widgets/today-goals-panel';
-import { WorkforcePanel } from './widgets/workforce-panel';
 import { TotalEmployeeAttendancePanel } from './widgets/total-employee-attendance-panel';
+import { ExecutiveHealthPanel } from './widgets/executive-health-panel';
+import { PendingRequestsPanel } from './widgets/pending-requests-panel';
 
 export const TenantTodayProductivityDashboard: React.FC = () => {
   return (
-    <div className="tenant-today-productivity" aria-label="Today productivity dashboard">
-      <WorkforcePanel variant="onsite" metrics={onSiteWorkforce} />
-      <WorkforcePanel variant="remote" metrics={remoteWorkforce} />
+    <section className="ceo-operations" aria-label="Operations overview">
       <TotalEmployeeAttendancePanel />
-      <TenantTodayAlertsPanel />
-      <TenantModuleNotificationsBar />
-      <MeetingSchedulePanel />
+      <ExecutiveHealthPanel />
       <PendingRequestsPanel />
-      <TodayGoalsPanel />
-    </div>
+    </section>
   );
 };
