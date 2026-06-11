@@ -1,34 +1,33 @@
 import type { SummaryCardData } from '../../shared/types/summary-card.types';
-import { employeeGoalsSummary } from '../../features/employees/data/employee-goals.data';
 import { tenantProductivitySummary } from '../../features/tenant/data/tenant-today-productivity.data';
 
 export const employeeSummaryCards: SummaryCardData[] = [
   {
     id: 'task-overview',
-    title: 'Task Overview',
-    value: '12 / 15 ',
-    desc: 'Sprint completed · 8 notifications',
+    title: 'Work',
+    value: '12/15 sprint done',
+    desc: '6 open · 2 due today · 1 blocked',
     color: 'var(--accent)'
   },
   {
     id: 'requests-approval',
-    title: 'Request & Approval',
-    value: '24 received',
-    desc: '7 pending approval',
+    title: 'Requests',
+    value: '7 waiting',
+    desc: '24 days leave left · 1 action needed',
     color: 'var(--accent)'
   },
   {
     id: 'activity',
-    title: 'Activity',
-    value: '8 leaves left',
-    desc: 'Clock in today: 9:15 AM',
+    title: 'Attendance',
+    value: '9:15 AM clocked in',
+    desc: '4h 30m worked · On time',
     color: 'var(--accent)'
   },
   {
-    id: 'goals',
-    title: 'Goals',
-    value: `${employeeGoalsSummary.activePlans} plans · ${employeeGoalsSummary.activeGoals} goals`,
-    desc: `${employeeGoalsSummary.achievementsCount} achievements · ${employeeGoalsSummary.decisionsCount} decisions`,
+    id: 'my-calendar',
+    title: 'Schedule',
+    value: '4 events today',
+    desc: 'Next: Sprint Review · No conflicts',
     color: 'var(--accent)'
   }
 ];

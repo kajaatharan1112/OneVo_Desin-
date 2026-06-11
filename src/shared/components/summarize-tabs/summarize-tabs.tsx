@@ -4,10 +4,11 @@ import {
   CircleDollarSign,
   Inbox,
   LayoutDashboard,
-  ClipboardCheck,
-  CalendarClock,
-  Target,
-  TrendingUp
+  ClipboardList,
+  Calendar,
+  TrendingUp,
+  LayoutGrid,
+  Clock
 } from 'lucide-react';
 import { getSummaryCardsForView } from '../../../core/summary/summary-cards';
 import type { SummaryCardData, SummaryCardId } from '../../types/summary-card.types';
@@ -23,13 +24,13 @@ function getCardIcon(id: SummaryCardId): React.ReactNode {
 
   switch (id) {
     case 'task-overview':
-      return <LayoutDashboard {...iconProps} />;
+      return <LayoutGrid {...iconProps} />;
     case 'requests-approval':
-      return <ClipboardCheck {...iconProps} />;
+      return <ClipboardList {...iconProps} />;
     case 'activity':
-      return <CalendarClock {...iconProps} />;
-    case 'goals':
-      return <Target {...iconProps} />;
+      return <Clock {...iconProps} />;
+    case 'my-calendar':
+      return <Calendar {...iconProps} />;
     case 'today-productivity':
       return <TrendingUp {...iconProps} />;
     case 'ongoing-projects':
@@ -54,6 +55,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
   const [selectedId, setSelectedId] = useState<SummaryCardId | null>(() =>
     defaultCardForView(currentView)
   );
+  const isEmployeeView = currentView === 'employee';
 
   useEffect(() => {
     setSelectedId(defaultCardForView(currentView));
@@ -62,20 +64,25 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
   const selectedCard = cards.find((card) => card.id === selectedId) ?? null;
 
   const handleCardClick = (card: SummaryCardData) => {
-    setSelectedId((prev) => (prev === card.id ? null : card.id));
+    setSelectedId(card.id);
   };
 
-  const isTaskOverviewOpen =
-    currentView === 'employee' && selectedId === 'task-overview';
-  const isGoalsOverviewOpen = currentView === 'employee' && selectedId === 'goals';
+  const isTaskOverviewOpen = isEmployeeView && selectedId === 'task-overview';
+  const isRequestsApprovalOpen = isEmployeeView && selectedId === 'requests-approval';
+  const isActivityOpen = isEmployeeView && selectedId === 'activity';
+  const isMyCalendarOpen = isEmployeeView && selectedId === 'my-calendar';
   const isTenantProductivityOpen =
     currentView === 'tenant' && selectedId === 'today-productivity';
 
   return (
     <div
-      className={`summarize-tabs-root${isTaskOverviewOpen ? ' summarize-tabs-root--task-overview' : ''}${isGoalsOverviewOpen ? ' summarize-tabs-root--goals-overview' : ''}${isTenantProductivityOpen ? ' summarize-tabs-root--tenant-productivity' : ''}`}
+      className={`summarize-tabs-root${isTaskOverviewOpen ? ' summarize-tabs-root--task-overview' : ''}${isRequestsApprovalOpen ? ' summarize-tabs-root--requests-approval' : ''}${isActivityOpen ? ' summarize-tabs-root--activity' : ''}${isMyCalendarOpen ? ' summarize-tabs-root--my-calendar' : ''}${isTenantProductivityOpen ? ' summarize-tabs-root--tenant-productivity' : ''}`}
     >
-      <section className="summarize-tabs" aria-label="Summary metrics">
+      <section
+        className="summarize-tabs"
+        role="tablist"
+        aria-label={isEmployeeView ? 'Employee dashboard tabs' : 'Summary metrics'}
+      >
         {cards.map((card) => {
           const isActive = selectedId === card.id;
 
@@ -83,15 +90,18 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
             <button
               key={card.id}
               type="button"
+              role="tab"
+              id={`dashboard-tab-${card.id}`}
+              aria-controls={`dashboard-tabpanel-${card.id}`}
+              aria-selected={isActive}
               className={`summary-card${isActive ? ' summary-card--active' : ''}`}
               onClick={() => handleCardClick(card)}
-              aria-pressed={isActive}
               aria-label={`${card.title}: ${card.value}. ${card.desc}`}
             >
               <div className="summary-card__body">
                 <span className="summary-card__title">{card.title}</span>
+                <span className="summary-card__subtitle">{card.desc}</span>
                 <span className="summary-card__value">{card.value}</span>
-                <span className="summary-card__desc">{card.desc}</span>
               </div>
 
               <div
@@ -109,9 +119,14 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
         })}
       </section>
 
-      {selectedCard && (
-        <SummaryCardContent card={selectedCard} onNavigateTab={onNavigateTab} />
-      )}
+      {selectedCard ? (
+        <SummaryCardContent
+          card={selectedCard}
+          onNavigateTab={onNavigateTab}
+          tabId={`dashboard-tabpanel-${selectedCard.id}`}
+          labelledBy={`dashboard-tab-${selectedCard.id}`}
+        />
+      ) : null}
     </div>
   );
 };
