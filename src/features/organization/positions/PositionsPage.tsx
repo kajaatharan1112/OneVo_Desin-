@@ -6,6 +6,7 @@ import { PositionOrgChart } from './PositionOrgChart';
 import { PositionList } from './PositionList';
 import { PositionAssignments } from './PositionAssignments';
 import { PositionFormPanel } from './PositionFormPanel';
+import { AssignmentFormPanel } from './AssignmentFormPanel';
 import { OrgToast } from '../components/OrgToast';
 
 const TABS: { id: PositionTab; label: string; icon: React.ReactNode }[] = [
@@ -16,7 +17,8 @@ const TABS: { id: PositionTab; label: string; icon: React.ReactNode }[] = [
 
 export const PositionsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PositionTab>('org-chart');
-  const { positionForm, closePositionForm } = useOrganizationStore();
+  const { positionForm, closePositionForm, assignmentForm, closeAssignEmployee } =
+    useOrganizationStore();
 
   return (
     <div className="positions-page">
@@ -56,6 +58,7 @@ export const PositionsPage: React.FC = () => {
       </div>
 
       {positionForm.open && <PositionFormPanel onClose={closePositionForm} />}
+      {assignmentForm.open && <AssignmentFormPanel onClose={closeAssignEmployee} />}
       <OrgToast />
     </div>
   );

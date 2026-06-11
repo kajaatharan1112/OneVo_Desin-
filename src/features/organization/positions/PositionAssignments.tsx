@@ -6,17 +6,13 @@ import {
   getEmployeeById,
   getReportingManagerForEmployee
 } from '../../../utils/organizationUtils';
-import { AssignmentFormPanel } from './AssignmentFormPanel';
-
 export const PositionAssignments: React.FC = () => {
   const {
     assignments,
     employees,
     positions,
     departments,
-    assignmentForm,
-    openAssignEmployee,
-    closeAssignEmployee
+    openAssignEmployee
   } = useOrganizationStore();
 
   const [positionFilter, setPositionFilter] = useState('');
@@ -127,10 +123,6 @@ export const PositionAssignments: React.FC = () => {
           </tbody>
         </table>
       </div>
-
-      {assignmentForm.open && (
-        <AssignmentFormPanel onClose={closeAssignEmployee} />
-      )}
     </div>
   );
 };
