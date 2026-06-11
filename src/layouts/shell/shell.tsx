@@ -100,14 +100,11 @@ export const Shell: React.FC<ShellProps> = ({
     [openNotificationPanel]
   );
 
-  const isTenant = currentView === 'tenant';
-
   const hasSubNav = activeSubSections.length > 0;
   const showSubNav = hasSubNav && !subNavCollapsed;
 
   const shellClassName = [
     'dashboard-shell',
-    isTenant ? 'dashboard-shell--tenant' : 'dashboard-shell--employee',
     showSubNav && 'dashboard-shell--subnav-open',
     hasSubNav && subNavCollapsed && 'dashboard-shell--subnav-collapsed',
     notificationsOpen && 'dashboard-shell--notifications-open'

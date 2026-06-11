@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Search, Users, Building2, LogOut, HelpCircle, KeyRound } from 'lucide-react';
+import { Calendar, Search, Users, ShieldCheck, LogOut, HelpCircle, KeyRound, SlidersHorizontal } from 'lucide-react';
 import { appNavDateLabel } from '../../features/employees/data/employee-task-overview.data';
 import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/app-brand';
 import { UserProfile } from '../../shared/components/user-profile/user-profile';
@@ -29,8 +29,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const isTenant = currentView === 'tenant';
-
   useEffect(() => {
     if (!profileOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -48,9 +46,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Left: brand/entity + view switcher */}
       <div className="app-navbar__start">
         <AppBrand
-          selectedCompany={isTenant ? selectedCompany : undefined}
-          onSelectCompany={isTenant ? onSelectCompany : undefined}
-          onAddCompany={isTenant ? onAddCompany : undefined}
+          selectedCompany={selectedCompany}
+          onSelectCompany={onSelectCompany}
+          onAddCompany={onAddCompany}
           collapsed={false}
         />
 
@@ -68,23 +66,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => currentView !== 'tenant' && onToggle()}
             title="Admin workspace"
           >
-            <Building2 size={11} />
+            <ShieldCheck size={11} />
             Admin
           </button>
         </div>
       </div>
 
-      {/* Right: actions */}
-      <div className="app-navbar__actions">
+      {/* Center: date */}
+      <div className="app-navbar__center">
         <div className="app-navbar__date-tab" role="status" aria-label={`Today: ${appNavDateLabel}`}>
           <Calendar size={14} aria-hidden="true" />
           <span>{appNavDateLabel}</span>
         </div>
+      </div>
 
+      {/* Right: actions */}
+      <div className="app-navbar__actions">
         <div className="app-navbar__search" role="search">
           <Search size={13} aria-hidden="true" />
           <span className="app-navbar__search-ph">Search…</span>
-          <kbd className="app-navbar__kbd">⌘K</kbd>
+          <SlidersHorizontal size={13} className="app-navbar__search-filter" aria-hidden="true" />
         </div>
 
         <ThemeSwitcher />

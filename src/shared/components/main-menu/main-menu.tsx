@@ -20,17 +20,17 @@ export interface NavItem {
 
 export const TENANT_MAIN_ITEMS: NavItem[] = [
   { id: 'dashboard',   label: 'Dashboard',   icon: <LayoutDashboard size={18} />, subSections: [] },
+  { id: 'organization', label: 'Organization', icon: <Building2 size={18} />, subSections: [
+    { id: 'main', items: [
+      { id: 'departments', label: 'Departments', icon: <Building size={13} /> },
+      { id: 'positions',   label: 'Positions',   icon: <Briefcase size={13} /> },
+    ]},
+  ]},
   { id: 'people',      label: 'People',      icon: <Users size={18} />,           subSections: [
     { id: 'main', items: [
       { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
       { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
-    ]},
-  ]},
-  { id: 'organization', label: 'Organization', icon: <Building2 size={18} />, subSections: [
-    { id: 'main', items: [
-      { id: 'departments', label: 'Departments', icon: <Building size={13} /> },
-      { id: 'positions',   label: 'Positions',   icon: <Briefcase size={13} /> },
     ]},
   ]},
   { id: 'leave',       label: 'Leave',       icon: <CalendarMinus size={18} />,   subSections: [
