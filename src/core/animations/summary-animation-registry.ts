@@ -8,10 +8,10 @@ import tenantRequests from '../../assets/animations/tenant-requests.json';
 
 /** key = summary card title, value = Lottie JSON (per 3DAnimation.md) */
 export const summaryAnimationRegistry: Record<string, LottieAnimationData> = {
-  'Task Overview': employeeLeaves as LottieAnimationData,
-  'Request & Approval': tenantRequests as LottieAnimationData,
-  Activity: employeeLeaves as LottieAnimationData,
-  Goals: employeeTasks as LottieAnimationData,
+  Work: employeeTasks as LottieAnimationData,
+  Requests: tenantRequests as LottieAnimationData,
+  Attendance: employeeLeaves as LottieAnimationData,
+  Schedule: employeeTasks as LottieAnimationData,
   Today: tenantEmployees as LottieAnimationData,
   'Active Employees': tenantEmployees as LottieAnimationData,
   'This week': tenantProjects as LottieAnimationData,

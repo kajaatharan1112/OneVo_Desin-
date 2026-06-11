@@ -2,7 +2,7 @@ export type EmployeeSummaryCardId =
   | 'task-overview'
   | 'requests-approval'
   | 'activity'
-  | 'goals';
+  | 'my-calendar';
 
 export type TenantSummaryCardId =
   | 'today-productivity'

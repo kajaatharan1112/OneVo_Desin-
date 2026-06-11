@@ -1,0 +1,699 @@
+/* Employee Workspace — fixed viewport dashboard shell (all 4 tabs) */
+.main-scrollable:has(.dashboard-page--employee-overview) {
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview {
+  /* Unified employee workspace typography & spacing */
+  --ewd-title: 0.875rem;
+  --ewd-body: 0.8125rem;
+  --ewd-meta: 0.75rem;
+  --ewd-label: 0.6875rem;
+  --ewd-value: 1.0625rem;
+  --ewd-gap: 14px;
+  --ewd-pad-x: 12px;
+  --ewd-pad-y: 10px;
+  --ewd-card-radius: var(--nexus-radius-lg, 20px);
+  --ewd-tab-strip-gap: 8px;
+  --ewd-tab-card-pad-y: 7px;
+  --ewd-tab-card-pad-x: 11px;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview .summarize-tabs-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  gap: var(--ewd-tab-strip-gap);
+}
+
+.dashboard-page--employee-overview .summarize-tabs {
+  flex-shrink: 0;
+  gap: var(--ewd-tab-strip-gap);
+}
+
+/* Top dashboard tab cards — same strip height on all 4 tabs */
+.dashboard-page--employee-overview .summary-card {
+  padding: var(--ewd-tab-card-pad-y) var(--ewd-tab-card-pad-x);
+  min-height: 54px;
+}
+
+.dashboard-page--employee-overview .summary-card--active {
+  box-shadow: var(--shadow-card);
+}
+
+.dashboard-page--employee-overview .summary-card-content {
+  animation: none;
+}
+
+.dashboard-page--employee-overview .summary-card__title {
+  font-size: var(--ewd-body);
+  font-weight: 600;
+}
+
+.dashboard-page--employee-overview .summary-card__subtitle {
+  font-size: var(--ewd-meta);
+}
+
+.dashboard-page--employee-overview .summary-card__value {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.dashboard-page--employee-overview .summary-card-content--filled {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview .summary-card-content--filled .summary-card-content__inner {
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Shared dashboard tokens */
+.employee-dashboard-grid,
+.employee-request-approval,
+.employee-activity,
+.employee-my-calendar {
+  --emp-dash-gap: var(--ewd-gap);
+  --emp-dash-card-radius: var(--ewd-card-radius);
+  --emp-dash-pad-x: var(--ewd-pad-x);
+  --emp-dash-pad-y: var(--ewd-pad-y);
+  --emp-dash-title-size: var(--ewd-title);
+  --emp-dash-body-size: var(--ewd-body);
+  --emp-dash-meta-size: var(--ewd-meta);
+  --eac-title-size: var(--ewd-title);
+  --eac-body-size: var(--ewd-body);
+  --eac-meta-size: var(--ewd-meta);
+  --eac-gap: var(--ewd-gap);
+  --era-title-size: var(--ewd-title);
+  --era-body-size: var(--ewd-body);
+  --era-meta-size: var(--ewd-meta);
+  --era-gap: var(--ewd-gap);
+  --era-pad: var(--ewd-pad-y) var(--ewd-pad-x);
+  --emc-title-size: var(--ewd-title);
+  --emc-body-size: var(--ewd-body);
+  --emc-meta-size: var(--ewd-meta);
+  --emc-gap: var(--ewd-gap);
+}
+
+/* Shared card shell — consistent padding & type across all tabs */
+.dashboard-page--employee-overview .emp-dash-card,
+.dashboard-page--employee-overview .eac-widget,
+.dashboard-page--employee-overview .emc-widget,
+.dashboard-page--employee-overview .era-panel:not(.era-hero-banner) {
+  padding: var(--ewd-pad-y) var(--ewd-pad-x);
+  font-size: var(--ewd-body);
+  line-height: 1.45;
+  border-radius: var(--ewd-card-radius);
+}
+
+/* Reusable enterprise card shell */
+.emp-dash-card {
+  background: var(--nexus-glass-bg, var(--surface-panel));
+  backdrop-filter: var(--nexus-glass-blur, none);
+  -webkit-backdrop-filter: var(--nexus-glass-blur, none);
+  border: 1px solid var(--nexus-glass-border, var(--border));
+  border-radius: var(--emp-dash-card-radius);
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--sans);
+  font-size: var(--emp-dash-body-size);
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.emp-dash-card__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: var(--emp-dash-pad-y) var(--emp-dash-pad-x) 2px;
+  color: var(--accent);
+}
+
+.emp-dash-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.emp-dash-card__title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--emp-dash-title-size);
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.25;
+}
+
+.emp-dash-card__action {
+  flex-shrink: 0;
+}
+
+.emp-dash-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 var(--emp-dash-pad-x) var(--emp-dash-pad-y);
+  overflow: hidden;
+}
+
+.emp-dash-highlight {
+  flex-shrink: 0;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.emp-dash-highlight__title {
+  margin: 0;
+  font-size: var(--emp-dash-title-size);
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.25;
+}
+
+.emp-dash-highlight__desc {
+  margin: 2px 0 0;
+  font-size: var(--emp-dash-meta-size);
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.emp-dash-card__lead {
+  margin: 0;
+  font-size: var(--emp-dash-meta-size);
+  color: var(--nexus-text-muted, var(--text));
+  flex-shrink: 0;
+}
+
+.emp-dash-card__footnote {
+  margin: 0;
+  font-size: var(--ewd-meta);
+  color: var(--nexus-text-muted, var(--text));
+  flex-shrink: 0;
+}
+
+.emp-dash-card--alert .emp-dash-card__head {
+  color: var(--nexus-danger);
+}
+
+/* Buttons */
+.emp-dash-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: var(--nexus-radius-button, var(--radius-sm));
+  border: 1px solid transparent;
+  font-family: var(--sans);
+  font-size: var(--emp-dash-meta-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--nexus-duration, 0.2s) ease,
+    border-color var(--nexus-duration, 0.2s) ease;
+}
+
+.emp-dash-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.emp-dash-btn--ghost {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.emp-dash-btn--ghost:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.emp-dash-btn--action {
+  width: 100%;
+  border-color: var(--border);
+  background: var(--surface-muted);
+  color: var(--text-h);
+  min-height: 28px;
+  padding: 0 6px;
+}
+
+.emp-dash-btn--action:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* Chips */
+.emp-dash-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: var(--ewd-label);
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.emp-dash-chip--status-open,
+.emp-dash-chip--status-in-progress {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.emp-dash-chip--status-review {
+  color: var(--nexus-warning);
+  background: color-mix(in srgb, var(--nexus-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
+}
+
+.emp-dash-chip--priority-high {
+  color: var(--nexus-danger);
+  background: color-mix(in srgb, var(--nexus-danger) 10%, transparent);
+  border-color: color-mix(in srgb, var(--nexus-danger) 35%, var(--border));
+}
+
+.emp-dash-chip--priority-medium {
+  color: var(--nexus-warning);
+  background: color-mix(in srgb, var(--nexus-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
+}
+
+.emp-dash-chip--priority-low {
+  color: var(--nexus-text-muted, var(--text));
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-color: var(--border);
+}
+
+.emp-dash-chip--yesterday-completed,
+.emp-dash-chip--yesterday-approved,
+.emp-dash-chip--yesterday-cleared {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+}
+
+.emp-dash-chip--yesterday-issue {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+
+.emp-dash-chip--kind-blocked {
+  color: var(--nexus-danger);
+  background: color-mix(in srgb, var(--nexus-danger) 10%, transparent);
+  border-color: color-mix(in srgb, var(--nexus-danger) 35%, var(--border));
+}
+
+.emp-dash-chip--kind-dependency,
+.emp-dash-chip--kind-pr-review {
+  color: var(--nexus-warning);
+  background: color-mix(in srgb, var(--nexus-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
+}
+
+/* Internal scroll regions — fill card, no fixed empty space */
+.emp-dash-scroll {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.emp-dash-scroll--tasks,
+.emp-dash-scroll--queue,
+.emp-dash-scroll--yesterday,
+.emp-dash-scroll--blockers {
+  max-height: none;
+}
+
+.emp-dash-task-row,
+.emp-dash-queue-row,
+.emp-dash-yesterday-row,
+.emp-dash-blocker-row {
+  padding: 3px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.emp-dash-task-row:last-child,
+.emp-dash-queue-row:last-child,
+.emp-dash-yesterday-row:last-child,
+.emp-dash-blocker-row:last-child {
+  border-bottom: none;
+}
+
+.emp-dash-task-row__title,
+.emp-dash-queue-row__title,
+.emp-dash-yesterday-row__title,
+.emp-dash-blocker-row__title {
+  display: block;
+  font-size: var(--emp-dash-meta-size);
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.3;
+}
+
+.emp-dash-task-row__meta,
+.emp-dash-queue-row__meta,
+.emp-dash-yesterday-row__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 1px;
+}
+
+.emp-dash-task-row__due,
+.emp-dash-queue-row__due,
+.emp-dash-yesterday-row__detail {
+  font-size: var(--ewd-meta);
+  color: var(--nexus-text-muted, var(--text));
+}
+
+.emp-dash-queue-group {
+  padding-bottom: 2px;
+}
+
+.emp-dash-queue-group__title {
+  margin: 0 0 1px;
+  font-size: var(--ewd-meta);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nexus-text-muted, var(--text));
+}
+
+.emp-dash-queue-group--overdue .emp-dash-queue-group__title {
+  color: var(--nexus-danger);
+}
+
+.emp-dash-queue-group--due-today .emp-dash-queue-group__title {
+  color: var(--nexus-warning);
+}
+
+.emp-dash-queue-group--upcoming .emp-dash-queue-group__title {
+  color: var(--accent);
+}
+
+.emp-dash-queue-group--blocked .emp-dash-queue-group__title {
+  color: var(--nexus-warning);
+}
+
+.emp-dash-queue-group__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.emp-dash-blocker-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.emp-dash-blocker-row__detail {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--ewd-meta);
+  color: var(--nexus-text-muted, var(--text));
+  line-height: 1.35;
+}
+
+.emp-dash-blocker-row--high {
+  padding-left: 6px;
+  border-left: 2px solid var(--nexus-danger);
+}
+
+.emp-dash-actions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  flex: 1 1 auto;
+  align-content: stretch;
+}
+
+/* Charts */
+.emp-dash-chart-skeleton {
+  flex: 1 1 auto;
+  min-height: 120px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--border) 35%, transparent);
+}
+
+.emp-dash-chart-skeleton--wide {
+  min-height: 132px;
+}
+
+.emp-dash-donut,
+.emp-dash-radial {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.emp-dash-donut__chart {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emp-dash-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.emp-dash-donut__center-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.emp-dash-donut__center-label {
+  font-size: var(--ewd-meta);
+  color: var(--nexus-text-muted, var(--text));
+}
+
+.emp-dash-donut__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.emp-dash-donut__legend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--ewd-meta);
+  color: var(--nexus-text-muted, var(--text));
+  text-align: center;
+}
+
+.emp-dash-donut__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.emp-dash-donut__legend-dot--0 {
+  background: var(--accent);
+}
+
+.emp-dash-donut__legend-dot--1 {
+  background: var(--nexus-chart-pending, var(--accent));
+}
+
+.emp-dash-donut__legend-dot--2 {
+  background: color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+.emp-dash-donut__caption,
+.emp-dash-radial__caption {
+  margin: 0;
+  font-size: var(--ewd-label);
+  color: var(--nexus-text-muted, var(--text));
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.emp-dash-radial__chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.emp-dash-weekly-chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emp-dash-weekly-chart__area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.emp-dash-weekly-chart__area > div {
+  width: 100% !important;
+}
+
+.emp-dash-weekly-chart__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.emp-dash-weekly-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--ewd-meta);
+  color: var(--nexus-text-muted, var(--text));
+}
+
+.emp-dash-weekly-chart__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.emp-dash-weekly-chart__legend-dot--finished {
+  background: var(--accent);
+}
+
+.emp-dash-weekly-chart__legend-dot--pending {
+  background: var(--nexus-chart-pending, var(--accent));
+}
+
+/* Tab content loading */
+.emp-dash-tab-loading {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nexus-text-muted, var(--text));
+  font-size: var(--ewd-meta);
+}
+
+/* Requests + Schedule — same fixed viewport as Work/Attendance */
+.dashboard-page--employee-overview .employee-request-approval-grid,
+.dashboard-page--employee-overview .employee-my-calendar-grid {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview .summarize-tabs-root--requests-approval,
+.dashboard-page--employee-overview .summarize-tabs-root--my-calendar {
+  height: 100%;
+  gap: var(--ewd-tab-strip-gap);
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-page--employee-overview .employee-request-approval-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1.15fr) minmax(0, 0.95fr);
+    grid-auto-rows: unset;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .dashboard-page--employee-overview .employee-my-calendar-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-auto-rows: unset;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .main-scrollable:has(.dashboard-page--employee-overview) {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-scrollable:has(.dashboard-page--employee-overview),
+  .main-scrollable:has(.dashboard-page--employee-overview [data-summary-card='requests-approval']),
+  .main-scrollable:has(.dashboard-page--employee-overview [data-summary-card='my-calendar']) {
+    overflow: hidden;
+  }
+
+  .dashboard-page--employee-overview .employee-request-approval-grid,
+  .dashboard-page--employee-overview .employee-my-calendar-grid {
+    overflow: hidden;
+    height: 100%;
+    max-height: 100%;
+  }
+}
