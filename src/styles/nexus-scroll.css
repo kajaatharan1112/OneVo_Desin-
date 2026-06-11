@@ -1,0 +1,129 @@
+/**
+ * App-wide scroll without visible scrollbar (employee Tasks & plan pattern)
+ */
+
+.nexus-scroll-y {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nexus-scroll {
+  overflow: auto;
+}
+
+.cpr-project-list,
+.cpr-proj-sections,
+.cpr-proj-list,
+.cpr-action-list,
+.cwo-meter-list,
+.cwo-queue-list,
+.cwo-chip-list,
+.ceo-approval-list,
+.cpr-highlight-list,
+.cdo-timeline,
+.cdo-banner-list,
+.mprio-row-list,
+.mprio-action-queue__list {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nexus-scroll-y,
+.nexus-scroll,
+.main-scrollable,
+.main-menu,
+.ego-plans__list,
+.ego-achievements__list,
+.ego-decisions__list,
+.employee-goals-overview,
+.summarize-tabs-root--goals-overview,
+.eto-status-panel__list,
+.employee-task-overview,
+.dashboard-page--employee-overview,
+.summarize-tabs-root--task-overview,
+.notification-panel__list,
+.tto-alerts__list,
+.tto-meetings__list,
+.tto-pending__list,
+.tto-goals__list,
+.tenant-today-productivity,
+.summarize-tabs-root--tenant-productivity,
+.cpr-project-list,
+.cpr-proj-sections,
+.cpr-proj-list,
+.cpr-action-list,
+.cwo-meter-list,
+.cwo-queue-list,
+.cwo-chip-list,
+.ceo-approval-list,
+.cpr-highlight-list,
+.cdo-timeline,
+.cdo-banner-list,
+.mprio-row-list,
+.mprio-action-queue__list,
+.ceo-priorities-overview,
+.ceo-calendar-overview,
+.dashboard-page--employee-calendar,
+.ceo-workforce-overview,
+.ceo-performance-overview,
+.ceo-decisions-overview,
+.ceo-projects-overview,
+.ceo-productivity-overview,
+.main-scrollable:has(.dashboard-page--ceo-overview),
+.demo-modal-form-column,
+.apply-popup-modal.wide,
+.tenant-wizard-form-panel,
+.dashboard-shell,
+.cwo-scroll-y {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nexus-scroll-y::-webkit-scrollbar,
+.nexus-scroll::-webkit-scrollbar,
+.main-scrollable::-webkit-scrollbar,
+.main-menu::-webkit-scrollbar,
+.ego-plans__list::-webkit-scrollbar,
+.ego-achievements__list::-webkit-scrollbar,
+.ego-decisions__list::-webkit-scrollbar,
+.employee-goals-overview::-webkit-scrollbar,
+.summarize-tabs-root--goals-overview::-webkit-scrollbar,
+.eto-status-panel__list::-webkit-scrollbar,
+.employee-task-overview::-webkit-scrollbar,
+.dashboard-page--employee-overview::-webkit-scrollbar,
+.summarize-tabs-root--task-overview::-webkit-scrollbar,
+.notification-panel__list::-webkit-scrollbar,
+.tto-alerts__list::-webkit-scrollbar,
+.tto-meetings__list::-webkit-scrollbar,
+.tto-pending__list::-webkit-scrollbar,
+.tto-goals__list::-webkit-scrollbar,
+.tenant-today-productivity::-webkit-scrollbar,
+.summarize-tabs-root--tenant-productivity::-webkit-scrollbar,
+.cpr-project-list::-webkit-scrollbar,
+.cpr-project-cards::-webkit-scrollbar,
+.cpr-action-list::-webkit-scrollbar,
+.cwo-meter-list::-webkit-scrollbar,
+.cwo-queue-list::-webkit-scrollbar,
+.cwo-chip-list::-webkit-scrollbar,
+.ceo-approval-list::-webkit-scrollbar,
+.cpr-highlight-list::-webkit-scrollbar,
+.cdo-timeline::-webkit-scrollbar,
+.cdo-banner-list::-webkit-scrollbar,
+.mprio-row-list::-webkit-scrollbar,
+.mprio-action-queue__list::-webkit-scrollbar,
+.ceo-priorities-overview::-webkit-scrollbar,
+.ceo-workforce-overview::-webkit-scrollbar,
+.ceo-performance-overview::-webkit-scrollbar,
+.ceo-decisions-overview::-webkit-scrollbar,
+.ceo-projects-overview::-webkit-scrollbar,
+.ceo-productivity-overview::-webkit-scrollbar,
+.main-scrollable:has(.dashboard-page--ceo-overview)::-webkit-scrollbar,
+.demo-modal-form-column::-webkit-scrollbar,
+.apply-popup-modal.wide::-webkit-scrollbar,
+.tenant-wizard-form-panel::-webkit-scrollbar,
+.dashboard-shell::-webkit-scrollbar,
+.cwo-scroll-y::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

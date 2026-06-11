@@ -10,7 +10,7 @@ import {
   TrendingUp,
   Users,
   Activity,
-  FolderKanban
+  ListChecks
 } from 'lucide-react';
 import {
   getSummaryCardsForView,
@@ -42,10 +42,10 @@ function getCardIcon(id: SummaryCardId): React.ReactNode {
       return <Users {...iconProps} />;
     case 'company-performance':
       return <Activity {...iconProps} />;
-    case 'project-health':
-      return <FolderKanban {...iconProps} />;
-    case 'productivity-score':
+    case 'productivity':
       return <TrendingUp {...iconProps} />;
+    case 'my-priorities':
+      return <ListChecks {...iconProps} />;
     case 'today-productivity':
       return <TrendingUp {...iconProps} />;
     case 'ongoing-projects':
@@ -76,10 +76,14 @@ function getCeoExpandClass(selectedId: SummaryCardId | null): string {
       return ' summarize-tabs-root--ceo-workforce';
     case 'company-performance':
       return ' summarize-tabs-root--ceo-performance';
+    case 'productivity':
+      return ' summarize-tabs-root--ceo-productivity';
+    case 'my-priorities':
+      return ' summarize-tabs-root--ceo-priorities';
     case 'project-health':
       return ' summarize-tabs-root--ceo-project';
-    case 'productivity-score':
-      return ' summarize-tabs-root--ceo-productivity';
+    case 'schedule':
+      return ' summarize-tabs-root--ceo-schedule';
     default:
       return '';
   }

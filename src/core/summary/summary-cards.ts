@@ -105,7 +105,9 @@ export function isCeoSummaryCardId(id: SummaryCardData['id']): boolean {
   return (
     id === 'workforce-availability' ||
     id === 'company-performance' ||
+    id === 'productivity' ||
+    id === 'my-priorities' ||
     id === 'project-health' ||
-    id === 'productivity-score'
+    id === 'schedule'
   );
 }

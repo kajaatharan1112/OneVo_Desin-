@@ -1,18 +1,25 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { CeoCalendarDashboard } from '../../components/ceo-dashboard/ceo-calendar-dashboard';
+import { TodayPanel } from '../../components/task-overview/widgets/today-panel';
+import { useEmployeeContext } from '../../context/employee-context';
 
 export const EmployeeCalendar: React.FC = () => {
+  const { selectedEmployeeId } = useEmployeeContext();
+  const isCeo = selectedEmployeeId === 'marcus';
+
+  if (isCeo) {
+    return (
+      <div className="dashboard-page dashboard-page--employee-calendar">
+        <CeoCalendarDashboard />
+      </div>
+    );
+  }
+
   return (
-    <div className="content-card">
-      <span style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', color: 'var(--accent)' }}>
-        <Calendar size={40} />
-      </span>
-      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-h)', marginBottom: '8px' }}>
-        Employee Calendar Portal
-      </h3>
-      <p style={{ fontSize: '0.85rem', color: '#6b7280', maxWidth: '400px', margin: '0 auto' }}>
-        This is a dedicated workspace panel for the employee's custom calendar interface.
-      </p>
+    <div className="dashboard-page dashboard-page--employee-calendar">
+      <div className="employee-calendar-overview" aria-label="Calendar">
+        <TodayPanel />
+      </div>
     </div>
   );
 };

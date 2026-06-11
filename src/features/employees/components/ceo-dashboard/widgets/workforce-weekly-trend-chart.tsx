@@ -15,49 +15,71 @@ export const WorkforceWeeklyTrendChart: React.FC = () => {
     () => createBaseChartOptions(chartTokens),
     [chartTokens]
   );
-  const { containerRef, height } = usePanelChartHeight(100);
-  const chartHeight = Math.max(height, 88);
-  const { weeklyAttendanceTrend } = ceoDashboardData.workforce;
+  const { containerRef, height } = usePanelChartHeight(88);
+  const chartHeight = Math.max(height, 72);
+  const { weeklyAttendanceTrend, weeklyTrendSummary } = ceoDashboardData.workforce;
 
   const weekdayTrend = weeklyAttendanceTrend.filter(
     (point) => !['Sat', 'Sun'].includes(point.day)
   );
-  const weekdayAvg = Math.round(
-    weekdayTrend.reduce((sum, point) => sum + point.rate, 0) / weekdayTrend.length
-  );
-  const peakDay = weeklyAttendanceTrend.reduce((best, point) =>
-    point.rate > best.rate ? point : best
+
+  const barColors = weekdayTrend.map((point) =>
+    point.rate >= weeklyTrendSummary.target
+      ? (chartTokens.palette[2] ?? '#10b981')
+      : '#f59e0b'
   );
 
   const options: ApexOptions = useMemo(
     () => ({
       ...baseChartOptions,
-      chart: { ...baseChartOptions.chart, type: 'bar', height: chartHeight, offsetY: 0 },
+      chart: { ...baseChartOptions.chart, type: 'bar', height: chartHeight, offsetY: 0, toolbar: { show: false } },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '58%',
-          borderRadius: 5,
+          columnWidth: '48%',
+          borderRadius: 6,
           borderRadiusApplication: 'end',
+          distributed: true,
           dataLabels: { position: 'top' }
         }
       },
       dataLabels: {
         enabled: true,
         formatter: (val: number) => `${val}%`,
-        offsetY: -14,
+        offsetY: -10,
         style: { fontSize: '8px', fontWeight: 700, colors: [chartTokens.textColor] }
       },
-      colors: [chartTokens.primary],
+      colors: barColors,
       grid: {
         borderColor: chartTokens.gridColor,
-        strokeDashArray: 3,
-        padding: { top: 16, right: 4, left: 0, bottom: 0 },
+        strokeDashArray: 4,
+        padding: { top: 12, right: 8, left: 4, bottom: 0 },
         xaxis: { lines: { show: false } },
         yaxis: { lines: { show: true } }
       },
+      annotations: {
+        yaxis: [
+          {
+            y: weeklyTrendSummary.target,
+            borderColor: chartTokens.primary,
+            strokeDashArray: 5,
+            borderWidth: 2,
+            label: {
+              text: `Target ${weeklyTrendSummary.target}%`,
+              position: 'right',
+              offsetX: 0,
+              style: {
+                color: chartTokens.primary,
+                fontSize: '8px',
+                fontWeight: 700,
+                background: 'transparent'
+              }
+            }
+          }
+        ]
+      },
       xaxis: {
-        categories: weeklyAttendanceTrend.map((point) => point.day),
+        categories: weekdayTrend.map((point) => point.day),
         labels: {
           style: {
             colors: chartTokens.textColor,
@@ -70,9 +92,9 @@ export const WorkforceWeeklyTrendChart: React.FC = () => {
         axisTicks: { show: false }
       },
       yaxis: {
-        min: 0,
+        min: 60,
         max: 100,
-        tickAmount: 3,
+        tickAmount: 4,
         labels: {
           style: {
             colors: chartTokens.textColor,
@@ -82,24 +104,25 @@ export const WorkforceWeeklyTrendChart: React.FC = () => {
           formatter: (val: number) => `${Math.round(val)}%`
         }
       },
+      legend: { show: false },
       tooltip: {
         ...baseChartOptions.tooltip,
         y: { formatter: (val: number) => `${val}% attendance` }
       }
     }),
-    [baseChartOptions, chartHeight, chartTokens, weeklyAttendanceTrend]
+    [barColors, baseChartOptions, chartHeight, chartTokens, weekdayTrend, weeklyTrendSummary.target]
   );
 
   return (
-    <article className="cwo-widget cwo-widget--trend cwo-cell--trend">
-      <header className="cwo-widget__head">
+    <article className="eto-widget cwo-cell--trend cwf-panel cwf-panel--trend">
+      <header className="eto-widget__head">
         <TrendingUp size={16} aria-hidden="true" />
-        <h4 className="cwo-widget__title">Attendance this week</h4>
-        <span className="cwo-widget__tab">
-          {weekdayAvg}% avg · peak {peakDay.day}
+        <h3 className="eto-widget__title">Weekly Attendance Trend</h3>
+        <span className="eto-widget__tab">
+          {weeklyTrendSummary.weekdayAvg}% avg · peak {weeklyTrendSummary.peakDay}
         </span>
       </header>
-      <div ref={containerRef} className="cwo-trend__chart cwo-trend__chart--solo">
+      <div ref={containerRef} className="cwf-trend__chart">
         <Chart
           type="bar"
           height={chartHeight}
@@ -108,10 +131,26 @@ export const WorkforceWeeklyTrendChart: React.FC = () => {
           series={[
             {
               name: 'Attendance',
-              data: weeklyAttendanceTrend.map((point) => point.rate)
+              data: weekdayTrend.map((point) => point.rate)
             }
           ]}
         />
+      </div>
+      <div className="cwf-kpi-pills">
+        <span className="cwf-kpi-pill">
+          <span className="cwf-kpi-pill__label">Average</span>
+          <span className="cwf-kpi-pill__value">{weeklyTrendSummary.weekdayAvg}%</span>
+        </span>
+        <span className="cwf-kpi-pill">
+          <span className="cwf-kpi-pill__label">Peak</span>
+          <span className="cwf-kpi-pill__value">
+            {weeklyTrendSummary.peakDay} {weeklyTrendSummary.peakRate}%
+          </span>
+        </span>
+        <span className="cwf-kpi-pill cwf-kpi-pill--warn">
+          <span className="cwf-kpi-pill__label">Gap</span>
+          <span className="cwf-kpi-pill__value">{weeklyTrendSummary.gapFromTarget}%</span>
+        </span>
       </div>
     </article>
   );

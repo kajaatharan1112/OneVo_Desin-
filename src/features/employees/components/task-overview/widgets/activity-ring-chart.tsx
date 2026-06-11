@@ -11,6 +11,8 @@ interface ActivityRingChartProps {
   centerLabel: string;
   centerValue: string;
   caption: string;
+  /** Matches Attendance Pulse gauge — blue→green gradient, dark center text. */
+  variant?: 'default' | 'attendance';
 }
 
 /** Apple Fitness–style activity ring (radialBar + round stroke caps). */
@@ -18,7 +20,8 @@ export const ActivityRingChart: React.FC<ActivityRingChartProps> = ({
   percent,
   centerLabel,
   centerValue,
-  caption
+  caption,
+  variant = 'default'
 }) => {
   const { theme } = useTheme();
   const chartTokens = useMemo(() => getChartTheme(theme), [theme]);
@@ -29,6 +32,8 @@ export const ActivityRingChart: React.FC<ActivityRingChartProps> = ({
   const { containerRef, height } = usePanelChartHeight(148);
   const chartSize = Math.max(148, height);
   const clampedPercent = Math.min(100, Math.max(0, Math.round(percent)));
+
+  const isAttendance = variant === 'attendance';
 
   const options: ApexOptions = useMemo(
     () => ({
@@ -45,17 +50,30 @@ export const ActivityRingChart: React.FC<ActivityRingChartProps> = ({
       stroke: {
         lineCap: 'round'
       },
-      fill: {
-        type: 'solid',
-        opacity: chartTokens.primaryOpacity
-      },
+      fill: isAttendance
+        ? {
+            type: 'gradient',
+            gradient: {
+              type: 'horizontal',
+              shadeIntensity: 0.35,
+              gradientToColors: [chartTokens.palette[2] ?? '#10b981'],
+              inverseColors: false,
+              opacityFrom: 1,
+              opacityTo: 1,
+              stops: [0, 100]
+            }
+          }
+        : {
+            type: 'solid',
+            opacity: chartTokens.primaryOpacity
+          },
       plotOptions: {
         radialBar: {
           startAngle: 0,
           endAngle: 360,
           hollow: {
             margin: 0,
-            size: '58%',
+            size: isAttendance ? '54%' : '58%',
             background: 'transparent'
           },
           track: {
@@ -77,8 +95,8 @@ export const ActivityRingChart: React.FC<ActivityRingChartProps> = ({
             value: {
               show: true,
               fontSize: '22px',
-              fontWeight: 700,
-              color: chartTokens.primary,
+              fontWeight: isAttendance ? 800 : 700,
+              color: isAttendance ? chartTokens.headingColor : chartTokens.primary,
               offsetY: -10,
               formatter: () => centerValue
             }
@@ -86,7 +104,7 @@ export const ActivityRingChart: React.FC<ActivityRingChartProps> = ({
         }
       }
     }),
-    [baseChartOptions, centerLabel, centerValue, chartSize, chartTokens, clampedPercent]
+    [baseChartOptions, centerLabel, centerValue, chartSize, chartTokens, clampedPercent, isAttendance]
   );
 
   return (

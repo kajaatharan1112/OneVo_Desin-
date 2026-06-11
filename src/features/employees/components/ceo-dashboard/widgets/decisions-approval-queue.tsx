@@ -34,7 +34,7 @@ export const DecisionsApprovalQueue: React.FC = () => {
         <h4 className="cwo-widget__title">Approval queue</h4>
         <span className="cwo-widget__tab">{approvalQueue.length} items</span>
       </header>
-      <ul className="cdo-timeline">
+      <ul className="cdo-timeline" aria-label="Pending approvals">
         {approvalQueue.map((item) => (
           <li
             key={item.id}
@@ -57,6 +57,14 @@ export const DecisionsApprovalQueue: React.FC = () => {
           </li>
         ))}
       </ul>
+      <div className="cdo-queue-actions">
+        <button type="button" className="ceo-action-btn ceo-action-btn--primary">
+          Review next
+        </button>
+        <button type="button" className="ceo-action-btn">
+          View all pending
+        </button>
+      </div>
     </article>
   );
 };

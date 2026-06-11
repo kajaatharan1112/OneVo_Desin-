@@ -8,43 +8,41 @@ import { createBaseChartOptions } from '../../task-overview/chart-theme';
 import { usePanelChartHeight } from '../../task-overview/use-panel-chart-height';
 import { ceoDashboardData } from '../data/ceo-dashboard.data';
 
+const TREND_TARGET = 85;
+
 export const PerformanceTrendPanel: React.FC = () => {
   const { monthlyTrend, summary } = ceoDashboardData.companyPerformance;
   const { theme } = useTheme();
   const chartTokens = useMemo(() => getChartTheme(theme), [theme]);
   const baseChartOptions = useMemo(() => createBaseChartOptions(chartTokens), [chartTokens]);
-  const { containerRef, height } = usePanelChartHeight(100);
-  const chartHeight = Math.max(height, 88);
+  const { containerRef, height } = usePanelChartHeight(96);
 
+  const firstPoint = monthlyTrend[0];
   const latestPoint = monthlyTrend[monthlyTrend.length - 1];
+  const growthPoints = latestPoint.rate - firstPoint.rate;
 
   const options: ApexOptions = useMemo(
     () => ({
       ...baseChartOptions,
-      chart: { ...baseChartOptions.chart, type: 'bar', height: chartHeight, offsetY: 0 },
+      chart: {
+        ...baseChartOptions.chart,
+        type: 'bar',
+        height,
+        offsetY: 0,
+        toolbar: { show: false }
+      },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '52%',
+          columnWidth: '58%',
           borderRadius: 5,
-          borderRadiusApplication: 'end',
-          distributed: true,
-          dataLabels: { position: 'top' }
+          borderRadiusApplication: 'end'
         }
       },
-      dataLabels: {
-        enabled: true,
-        formatter: (val: number) => `${val}%`,
-        offsetY: -14,
-        style: { fontSize: '8px', fontWeight: 700, colors: [chartTokens.textColor] }
-      },
-      colors: monthlyTrend.map((_point, index) =>
-        index === monthlyTrend.length - 1 ? chartTokens.primary : chartTokens.lightBlue
-      ),
       grid: {
         borderColor: chartTokens.gridColor,
         strokeDashArray: 3,
-        padding: { top: 16, right: 4, left: 0, bottom: 0 },
+        padding: { top: 6, right: 4, left: 0, bottom: 0 },
         xaxis: { lines: { show: false } },
         yaxis: { lines: { show: true } }
       },
@@ -53,7 +51,7 @@ export const PerformanceTrendPanel: React.FC = () => {
         labels: {
           style: {
             colors: chartTokens.textColor,
-            fontSize: '9px',
+            fontSize: '10px',
             fontFamily: 'inherit',
             fontWeight: 600
           }
@@ -64,38 +62,75 @@ export const PerformanceTrendPanel: React.FC = () => {
       yaxis: {
         min: Math.max(0, Math.min(...monthlyTrend.map((p) => p.rate)) - 8),
         max: 100,
-        tickAmount: 3,
+        tickAmount: 4,
         labels: {
-          style: { colors: chartTokens.textColor, fontSize: '8px', fontFamily: 'inherit' },
+          style: {
+            colors: chartTokens.textColor,
+            fontSize: '9px',
+            fontFamily: 'inherit'
+          },
           formatter: (val: number) => `${Math.round(val)}%`
         }
+      },
+      colors: [chartTokens.primary],
+      fill: {
+        type: 'solid',
+        opacity: chartTokens.primaryOpacity
       },
       legend: { show: false },
       tooltip: {
         ...baseChartOptions.tooltip,
-        y: { formatter: (val: number) => `${val}% performance` }
+        y: { formatter: (val: number) => `${val}% company performance` }
       }
     }),
-    [baseChartOptions, chartHeight, chartTokens, monthlyTrend]
+    [baseChartOptions, chartTokens, height, monthlyTrend]
   );
 
   return (
-    <article className="cwo-widget cwo-widget--trend cpg-cell--trend">
-      <header className="cwo-widget__head">
+    <article className="eto-widget eto-weekly cpg-cell--trend">
+      <header className="eto-widget__head">
         <TrendingUp size={16} aria-hidden="true" />
-        <h4 className="cwo-widget__title">5-month trend</h4>
-        <span className="cwo-widget__tab">
-          {latestPoint.rate}% · {summary.monthDeltaLabel}
-        </span>
+        <h3 className="eto-widget__title">5-month trend</h3>
+        <span className="eto-widget__tab">{summary.monthDeltaLabel}</span>
       </header>
-      <div ref={containerRef} className="cwo-trend__chart cwo-trend__chart--solo">
+
+      <div className="eto-weekly__stats">
+        <div className="eto-weekly__stat">
+          <span className="eto-weekly__stat-value">{firstPoint.rate}%</span>
+          <span className="eto-weekly__stat-label">{firstPoint.month}</span>
+        </div>
+        <div className="eto-weekly__stat">
+          <span className="eto-weekly__stat-value">
+            {growthPoints >= 0 ? '+' : ''}
+            {growthPoints}
+          </span>
+          <span className="eto-weekly__stat-label">Growth pts</span>
+        </div>
+        <div className="eto-weekly__stat eto-weekly__stat--accent">
+          <span className="eto-weekly__stat-value">{latestPoint.rate}%</span>
+          <span className="eto-weekly__stat-label">{latestPoint.month}</span>
+        </div>
+      </div>
+
+      <div ref={containerRef} className="eto-weekly__chart-area">
         <Chart
           type="bar"
-          height={chartHeight}
+          height={height}
           width="100%"
           options={options}
           series={[{ name: 'Performance', data: monthlyTrend.map((point) => point.rate) }]}
         />
+      </div>
+
+      <div className="eto-weekly__legend" aria-hidden="true">
+        <span className="eto-weekly__legend-item">
+          <span className="eto-weekly__legend-dot eto-weekly__legend-dot--finished" />
+          Target {TREND_TARGET}%
+        </span>
+        <span className="eto-weekly__legend-item">
+          <span className="eto-weekly__legend-dot eto-weekly__legend-dot--pending" />
+          Monthly score
+        </span>
       </div>
     </article>
   );

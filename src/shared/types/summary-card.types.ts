@@ -7,8 +7,10 @@ export type EmployeeSummaryCardId =
 export type CeoSummaryCardId =
   | 'workforce-availability'
   | 'company-performance'
+  | 'productivity'
+  | 'my-priorities'
   | 'project-health'
-  | 'productivity-score';
+  | 'schedule';
 
 export type TenantSummaryCardId =
   | 'today-productivity'

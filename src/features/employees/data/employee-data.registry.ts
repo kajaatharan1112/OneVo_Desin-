@@ -40,7 +40,7 @@ export interface EmployeeSummaryCardSnapshot {
 }
 
 export interface CeoSummaryCardItem {
-  id: 'workforce-availability' | 'company-performance' | 'project-health' | 'productivity-score';
+  id: 'workforce-availability' | 'company-performance' | 'productivity' | 'my-priorities' | 'project-health' | 'schedule';
   title: string;
   value: string;
   desc: string;
@@ -445,32 +445,29 @@ const marcusData: EmployeeDataBundle = {
       id: 'company-performance',
       title: 'Company Performance',
       value: '86%',
-      desc: 'Overall business health',
+      desc: 'Product delivery, employee output and company health in one view.',
       delta: '+4% vs last month',
       status: 'green',
       color: 'var(--ceo-performance-color, var(--accent))'
     },
     {
-      id: 'project-health',
-      title: 'Project Health',
-      value: '14',
-      desc: 'Active Projects',
-      delta: '2 at risk',
-      status: 'amber',
-      color: 'var(--ceo-project-color, var(--accent))',
-      actionLabel: 'View Workspace →',
-      actionTab: 'Workspace'
+      id: 'productivity',
+      title: 'Productivity & Delivery',
+      value: '82%',
+      desc: 'Delivery & task output',
+      delta: '+6% vs last week',
+      status: 'green',
+      color: 'var(--nexus-success)'
     },
     {
-      id: 'productivity-score',
-      title: 'Productivity Score',
-      value: '82%',
-      desc: 'Company productivity',
-      delta: '+6% compared to last week',
-      status: 'green',
-      color: 'var(--nexus-success)',
-      actionLabel: 'Export report'
-    }
+      id: 'my-priorities',
+      title: 'My Priorities',
+      value: '14',
+      desc: 'Daily work, meetings, approvals, escalations and alerts in one clear view.',
+      delta: '4 approvals pending',
+      status: 'amber',
+      color: 'var(--ceo-performance-color, var(--accent))'
+    },
   ]
 };
 

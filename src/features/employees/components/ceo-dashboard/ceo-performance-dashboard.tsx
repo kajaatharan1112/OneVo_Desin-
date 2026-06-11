@@ -1,14 +1,16 @@
 import React from 'react';
-import { PerformanceBreakdownPanel } from './widgets/performance-breakdown-panel';
-import { PerformanceDeptPanel } from './widgets/performance-dept-panel';
+import { PerformanceDepartmentsPanel } from './widgets/performance-areas-panel';
+import { PerformanceDriversPanel } from './widgets/performance-drivers-panel';
 import { PerformanceSummaryPanel } from './widgets/performance-summary-panel';
 import { PerformanceTrendPanel } from './widgets/performance-trend-panel';
+import { PerformanceWatchPanel } from './widgets/performance-watch-panel';
 
 export const CeoPerformanceDashboard: React.FC = () => (
   <div className="ceo-performance-overview" aria-label="Company performance">
     <PerformanceSummaryPanel />
-    <PerformanceBreakdownPanel />
+    <PerformanceDriversPanel />
     <PerformanceTrendPanel />
-    <PerformanceDeptPanel />
+    <PerformanceDepartmentsPanel />
+    <PerformanceWatchPanel />
   </div>
 );

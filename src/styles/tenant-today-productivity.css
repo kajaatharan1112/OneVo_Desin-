@@ -341,16 +341,6 @@
   gap: 6px;
   overflow-y: auto;
   min-height: 0;
-  /* Hide scrollbar for clean UI */
-  scrollbar-width: none;
-  /* Firefox */
-}
-
-.tto-alerts__list::-webkit-scrollbar,
-.tto-meetings__list::-webkit-scrollbar,
-.tto-pending__list::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari, Edge */
 }
 
 .tto-alerts__item {
@@ -824,8 +814,9 @@
   gap: 6px;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
-  justify-content: space-between;
+  overflow-y: auto;
+  overflow-x: hidden;
+  justify-content: flex-start;
 }
 
 .tto-goals__project-box {

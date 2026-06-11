@@ -486,7 +486,6 @@
   .tenant-wizard-form-panel {
     padding-right: 22px;
     overflow-y: auto;
-    scrollbar-width: none;
   }
 
   .tenant-wizard-visual-panel {

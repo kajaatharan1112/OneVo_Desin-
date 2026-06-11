@@ -46,9 +46,9 @@
   background: color-mix(in srgb, var(--ceo-performance-color) 14%, transparent);
 }
 
-.summary-card--ceo[data-summary-card-id='project-health'] .summary-card__icon--ceo {
-  color: var(--ceo-project-color);
-  background: color-mix(in srgb, var(--ceo-project-color) 14%, transparent);
+.summary-card--ceo[data-summary-card-id='my-priorities'] .summary-card__icon--ceo {
+  color: var(--ceo-performance-color);
+  background: color-mix(in srgb, var(--ceo-performance-color) 14%, transparent);
 }
 
 .summary-card--ceo.summary-card--active {
