@@ -97,6 +97,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
               className={`summary-card${isActive ? ' summary-card--active' : ''}`}
               onClick={() => handleCardClick(card)}
               aria-label={`${card.title}: ${card.value}. ${card.desc}`}
+              style={{ borderColor: isActive ? card.color : undefined }}
             >
               <div className="summary-card__body">
                 <span className="summary-card__title">{card.title}</span>
