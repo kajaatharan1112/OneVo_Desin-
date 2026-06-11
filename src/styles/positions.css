@@ -15,10 +15,13 @@
 }
 
 .positions-page__title-row,
-.departments-page__header {
+.departments-page__title-row {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+}
+
+.positions-page__title-row {
   margin-bottom: 16px;
 }
 
@@ -713,6 +716,9 @@
 /* Departments */
 .departments-page__content {
   flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .departments-page__card {
