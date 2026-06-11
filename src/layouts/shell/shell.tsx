@@ -1,11 +1,18 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { PanelLeftOpen } from 'lucide-react';
 import { countNewNotifications } from '../../core/notifications/notification-data';
 import { NotificationPanelProvider } from '../../core/notifications/notification-panel-context';
-import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/app-brand';
-import { UserProfile } from '../../shared/components/user-profile/user-profile';
-import { MainMenu } from '../../shared/components/main-menu/main-menu';
+import { type TenantCompany } from '../../shared/components/app-brand/app-brand';
+import {
+  MainMenu,
+  TENANT_MAIN_ITEMS,
+  TENANT_BOTTOM_ITEMS,
+  EMPLOYEE_ITEMS
+} from '../../shared/components/main-menu/main-menu';
+import { resolveSubItemId } from '../../shared/utils/nav-utils';
+import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
-import { UtilityMenu } from '../../shared/components/utility-menu/utility-menu';
 import { Navbar } from '../navbar/navbar';
 import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
 import type { EmployeeId } from '../../features/employees/types/employee.types';
@@ -15,6 +22,8 @@ interface ShellProps {
   onToggleView: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  activeSubItemId: string;
+  setActiveSubItemId: (id: string) => void;
   selectedCompany?: TenantCompany;
   onSelectCompany?: (company: TenantCompany) => void;
   onAddCompany?: () => void;
@@ -30,35 +39,62 @@ export const Shell: React.FC<ShellProps> = ({
   onToggleView,
   activeTab,
   setActiveTab,
+  activeSubItemId,
+  setActiveSubItemId,
   selectedCompany,
   onSelectCompany,
   onAddCompany,
   setupWizardOpen = false,
   onCloseSetupWizard,
-  onGoToLandingPage,
   selectedEmployeeId,
   children
 }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [subNavCollapsed, setSubNavCollapsed] = useState(false);
+
+  const allTenantItems = useMemo(
+    () => [...TENANT_MAIN_ITEMS, ...TENANT_BOTTOM_ITEMS],
+    []
+  );
+
+  const activeNavItem = useMemo(() => {
+    const items = currentView === 'tenant' ? allTenantItems : EMPLOYEE_ITEMS;
+    return items.find(i => i.label === activeTab);
+  }, [activeTab, currentView, allTenantItems]);
+
+  const activeSubSections = useMemo(
+    () => activeNavItem?.subSections ?? [],
+    [activeNavItem]
+  );
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/organization/')) {
+      setSubNavCollapsed(false);
+      return;
+    }
+    const firstItem = activeSubSections[0]?.items[0];
+    setActiveSubItemId(firstItem?.id ?? '');
+    setSubNavCollapsed(false);
+  }, [currentView, activeTab, activeSubSections, setActiveSubItemId, location.pathname]);
+
+  useEffect(() => {
+    if (activeSubSections.length === 0) {
+      setSubNavCollapsed(false);
+    }
+  }, [activeSubSections.length]);
+
+  const resolvedSubItemId = useMemo(
+    () => resolveSubItemId(activeNavItem, activeSubItemId),
+    [activeNavItem, activeSubItemId]
+  );
 
   const notificationUnreadCount = useMemo(
     () => countNewNotifications(currentView, selectedEmployeeId),
     [currentView, selectedEmployeeId]
   );
 
-  const handleToggleNotifications = () => {
-    setNotificationsOpen((open) => {
-      const next = !open;
-      if (next) {
-        setSidebarCollapsed(true);
-      }
-      return next;
-    });
-  };
-
   const openNotificationPanel = useCallback(() => {
-    setSidebarCollapsed(true);
     setNotificationsOpen(true);
   }, []);
 
@@ -67,9 +103,16 @@ export const Shell: React.FC<ShellProps> = ({
     [openNotificationPanel]
   );
 
+  const isTenant = currentView === 'tenant';
+
+  const hasSubNav = activeSubSections.length > 0;
+  const showSubNav = hasSubNav && !subNavCollapsed;
+
   const shellClassName = [
     'dashboard-shell',
-    sidebarCollapsed && 'dashboard-shell--sidebar-collapsed',
+    isTenant ? 'dashboard-shell--tenant' : 'dashboard-shell--employee',
+    showSubNav && 'dashboard-shell--subnav-open',
+    hasSubNav && subNavCollapsed && 'dashboard-shell--subnav-collapsed',
     notificationsOpen && 'dashboard-shell--notifications-open'
   ]
     .filter(Boolean)
@@ -91,73 +134,91 @@ export const Shell: React.FC<ShellProps> = ({
 
   return (
     <NotificationPanelProvider value={notificationPanelContext}>
-    <div className={shellClassName}>
-      <aside
-        id="app-sidebar"
-        className="sidebar-shell"
-        aria-label="Main navigation"
-        aria-hidden={false}
-      >
-        <div className="sidebar-panel sidebar-panel--brand">
-          <AppBrand
-            selectedCompany={currentView === 'tenant' ? selectedCompany : undefined}
-            onSelectCompany={currentView === 'tenant' ? onSelectCompany : undefined}
-            onAddCompany={currentView === 'tenant' ? onAddCompany : undefined}
-            collapsed={sidebarCollapsed}
-          />
-        </div>
+      <div className={shellClassName}>
 
-        <div className="sidebar-panel sidebar-panel--profile">
-          <UserProfile currentView={currentView} collapsed={sidebarCollapsed} />
-        </div>
-
-        <div className="sidebar-panel sidebar-panel--menu">
-          <MainMenu
-            currentView={currentView}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            collapsed={sidebarCollapsed}
-          />
-        </div>
-
-        <div className="sidebar-panel sidebar-panel--utility">
-          <UtilityMenu />
-        </div>
-      </aside>
-
-      <div className="content-pane">
+        {/* ── Full-width topbar ── */}
         <div className="content-panel content-panel--header">
           <Navbar
             currentView={currentView}
-            activeTab={activeTab}
             onToggle={onToggleView}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
             notificationsOpen={notificationsOpen}
             notificationUnreadCount={notificationUnreadCount}
-            onToggleNotifications={handleToggleNotifications}
-            onGoToLandingPage={onGoToLandingPage}
-            onOpenSetupWizard={
-              currentView === 'tenant' ? onAddCompany : undefined
-            }
+            onToggleNotifications={() => setNotificationsOpen(open => !open)}
+            selectedCompany={selectedCompany}
+            onSelectCompany={onSelectCompany}
+            onAddCompany={onAddCompany}
           />
         </div>
 
-        <div className="content-pane__body">
-          <div className="main-scrollable">
-            <main className="main-content-slot">{children}</main>
+        {/* ── Body: sidebar + content ── */}
+        <div className="shell-body">
+
+          {/* ── Sidebar: 68px icon rail for both views ── */}
+          <aside
+            id="app-sidebar"
+            className={[
+              'sidebar-shell sidebar-shell--rail',
+              hasSubNav && subNavCollapsed && 'sidebar-shell--subnav-collapsed'
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-label="Main navigation"
+          >
+            <div className="sidebar-rail">
+              <div className="sidebar-rail__menu">
+                <MainMenu
+                  currentView={currentView}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  setActiveSubItemId={setActiveSubItemId}
+                />
+              </div>
+
+            </div>
+
+            {showSubNav && (
+              <SubNavPanel
+                sections={activeSubSections}
+                panelTitle={activeTab}
+                activeId={resolvedSubItemId}
+                onSelect={setActiveSubItemId}
+                onCollapse={() => setSubNavCollapsed(true)}
+              />
+            )}
+
+            {hasSubNav && subNavCollapsed && (
+              <button
+                type="button"
+                className="sub-nav-reopen-tab"
+                onClick={() => setSubNavCollapsed(false)}
+                aria-label={`Expand ${activeTab} menu`}
+                title={`Expand ${activeTab} menu`}
+              >
+                <PanelLeftOpen size={15} strokeWidth={2} aria-hidden />
+              </button>
+            )}
+          </aside>
+
+          {/* ── Content island ── */}
+          <div className="content-pane">
+            <div className="content-pane__body">
+              <div className="main-scrollable">
+                <main className="main-content-slot">{children}</main>
+              </div>
+
+              {notificationsOpen && (
+                <NotificationPanel
+                  currentView={currentView}
+                  selectedEmployeeId={selectedEmployeeId}
+                  onClose={() => setNotificationsOpen(false)}
+                />
+              )}
+            </div>
           </div>
 
-          {notificationsOpen && (
-            <NotificationPanel
-              currentView={currentView}
-              selectedEmployeeId={selectedEmployeeId}
-              onClose={() => setNotificationsOpen(false)}
-            />
-          )}
         </div>
+
       </div>
-    </div>
     </NotificationPanelProvider>
   );
 };

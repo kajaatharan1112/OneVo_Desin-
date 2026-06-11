@@ -1,7 +1,5 @@
 .app-brand-container {
   position: relative;
-  width: 100%;
-  overflow: hidden;
 }
 
 .app-brand-container--switcher .app-brand {
@@ -13,19 +11,6 @@
   width: 24px;
   height: 24px;
   font-size: 0.95rem;
-}
-
-.app-brand-container--switcher:not(.app-brand-container--open) .app-brand-menu-wrap {
-  margin: 0;
-  padding: 0;
-  border: none;
-}
-
-.app-brand-menu-wrap:not(.app-brand-menu-wrap--open) .app-brand-menu {
-  padding: 0;
-  margin: 0;
-  border: none;
-  min-height: 0;
 }
 
 .app-brand-trigger {
@@ -67,54 +52,53 @@
 .app-brand-chevron {
   flex-shrink: 0;
   color: var(--nexus-text-secondary);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .app-brand-chevron--open {
   transform: rotate(180deg);
 }
 
-/* Smooth expand — in flow, no overlap with menu/profile */
+/* Floating dropdown — does not push topbar height */
 .app-brand-menu-wrap {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 224px;
+  background: var(--nexus-surface-elevated, #ffffff);
+  border: 1px solid var(--nexus-border);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.14),
+    0 2px 8px rgba(15, 23, 42, 0.06);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .app-brand-menu-wrap--open {
-  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .app-brand-menu {
-  min-height: 0;
   margin: 0;
-  padding: 6px 8px 8px;
+  padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  border: none;
-  border-top: 1px solid transparent;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-  opacity: 0;
-  transition:
-    opacity 0.22s ease,
-    border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.app-brand-menu-wrap--open .app-brand-menu {
-  opacity: 1;
-  border-top-color: var(--nexus-border);
+  gap: 1px;
 }
 
 .app-brand-menu__item {
   width: 100%;
   padding: 7px 10px;
   border: none;
-  border-radius: var(--radius-md, 8px);
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 500;
@@ -125,9 +109,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .app-brand-menu__item:hover {
@@ -153,6 +135,12 @@
   color: var(--nexus-text-secondary);
 }
 
+.app-brand-menu__item-check {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
 .app-brand-menu__divider {
   height: 1px;
   margin: 4px 8px;
@@ -176,7 +164,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .app-brand-menu-wrap,
-  .app-brand-menu,
   .app-brand-chevron {
     transition-duration: 0.01ms;
   }

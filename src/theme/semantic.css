@@ -46,4 +46,18 @@
   --chart-success: var(--nexus-chart-success);
   --chart-track: var(--nexus-chart-track);
   --chart-text: var(--nexus-text-secondary);
+
+  --surface: var(--nexus-surface);
+  --shell-outer: var(--nexus-shell-outer);
+  --content-island: var(--nexus-content-island);
+  --rail-bg: var(--nexus-rail-bg);
+  --topbar-bg: var(--nexus-topbar-bg);
+  --rail-fg: var(--nexus-rail-fg);
+  --rail-fg-active: var(--nexus-rail-fg-active);
+  --rail-active-bg: var(--nexus-rail-active-bg);
+  --rail-hover-bg: var(--nexus-rail-hover-bg);
+  --subnav-fg: var(--nexus-subnav-fg);
+  --subnav-fg-active: var(--nexus-subnav-fg-active);
+  --subnav-active-bg: var(--nexus-subnav-active-bg);
+  --subnav-section-label: var(--nexus-subnav-section-label);
 }
