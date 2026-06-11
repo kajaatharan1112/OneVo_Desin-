@@ -8,7 +8,7 @@
 }
 
 [data-theme='light'] .content-panel--header {
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 [data-theme='light'] .summary-card {
