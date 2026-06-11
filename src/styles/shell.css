@@ -256,6 +256,7 @@
   -ms-overflow-style: none;
   box-sizing: border-box;
   background: var(--surface);
+  border-right: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -278,7 +279,7 @@
   position: relative;
   border-top-left-radius: 16px;
   border-bottom-left-radius: 16px;
-  border-right: none;
+  border-right: 1px solid var(--border);
 }
 
 /* Bottom inverse corner — rail color, matches topbar/sidebar connector */

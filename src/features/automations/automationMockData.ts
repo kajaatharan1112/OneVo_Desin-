@@ -96,9 +96,20 @@ export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
     triggerKey: 'employee_checked_in_late',
     steps: [
       { type: 'trigger', config: { triggerKey: 'employee_checked_in_late' }, sectionId: 'main', sortOrder: 0 },
-      { type: 'condition', config: { field: 'late_count_in_period', operator: 'greater_than', value: '3' }, sectionId: 'main', sortOrder: 1 },
+      { type: 'condition', config: { field: 'late_minutes', operator: 'greater_than', value: '180' }, sectionId: 'main', sortOrder: 1 },
       { type: 'alert', config: { alertTitle: 'Repeated late check-in', severity: 'medium', assignToType: 'Reporting Manager', sla: '24 hours' }, sectionId: 'main', sortOrder: 2 },
       { type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
+    ]
+  },
+  {
+    id: 'late_attendance_leave_rule',
+    name: 'Late Attendance Leave Rule',
+    description: 'Deduct late time or convert late attendance to half-day/full-day leave based on thresholds.',
+    summary: 'Convert very late attendance to full-day or half-day leave, or deduct late minutes from leave balance.',
+    area: 'Attendance',
+    triggerKey: 'employee_checked_in_late',
+    steps: [
+      { type: 'trigger', config: { triggerKey: 'employee_checked_in_late' }, sectionId: 'main', sortOrder: 0 }
     ]
   },
   {
@@ -235,7 +246,7 @@ export const SEED_AUTOMATIONS: Automation[] = [
     status: 'active',
     steps: [
       { id: 's1', type: 'trigger', config: { triggerKey: 'employee_checked_in_late' }, sectionId: 'main', sortOrder: 0 },
-      { id: 's2', type: 'condition', config: { field: 'late_count_in_period', operator: 'greater_than', value: '3' }, sectionId: 'main', sortOrder: 1 },
+      { id: 's2', type: 'condition', config: { field: 'late_minutes', operator: 'greater_than', value: '180' }, sectionId: 'main', sortOrder: 1 },
       { id: 's3', type: 'alert', config: { alertTitle: 'Repeated late check-in', severity: 'medium', assignToType: 'Reporting Manager', sla: '24 hours' }, sectionId: 'main', sortOrder: 2 },
       { id: 's4', type: 'end', config: {}, sectionId: 'main', sortOrder: 3 }
     ],

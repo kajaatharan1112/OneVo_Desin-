@@ -30,6 +30,10 @@ import {
   validateApprovalStep
 } from './approvalStepUtils';
 import { isOneTimeTaskAction, oneTimeTaskStepPreview, validateOneTimeTaskConfig } from './oneTimeTaskUtils';
+import {
+  isLateAttendanceLeaveAction,
+  lateAttendanceActionLabel
+} from './lateAttendanceLeaveTemplate';
 
 export { TRIGGER_GROUPS, getFilteredActionGroups };
 
@@ -56,6 +60,7 @@ export function triggerLabel(key: string): string {
 
 export function actionLabel(key: string): string {
   if (ACTION_CATALOG[key]) return ACTION_CATALOG[key].label;
+  if (isLateAttendanceLeaveAction(key)) return lateAttendanceActionLabel(key);
   if (key === 'create_attendance_approval') return 'Create attendance correction approval';
   if (key === 'create_approval_request') return 'Create approval request';
   if (isRemovedInternalAction(key)) return 'Unavailable action';
@@ -72,6 +77,7 @@ export function stepToSentence(
   }
 ): string {
   const c = step.config;
+  if (c.displaySentence) return String(c.displaySentence);
   switch (step.type) {
     case 'trigger':
       return triggerLabel(c.triggerKey ?? '') === 'Choose a trigger'
@@ -85,10 +91,16 @@ export function stepToSentence(
         departments: context?.departments ?? []
       };
       const allowed = triggerKey ? getAllowedConditionFieldKeys(triggerKey) : undefined;
-      return conditionStepPreview(c, triggerKey, condOrg, allowed);
+      const preview = conditionStepPreview(c, triggerKey, condOrg, allowed);
+      if (c.elseIf) return preview.replace(/^If /, 'Else if ');
+      return preview;
     }
     case 'action': {
       const key = c.actionKey ?? '';
+      if (isLateAttendanceLeaveAction(key)) {
+        const leave = c.leaveTypeName ? ` (${c.leaveTypeName})` : '';
+        return `${lateAttendanceActionLabel(key)}${leave}`;
+      }
       if (isChecklistTemplateAction(key)) {
         const template = useChecklistTemplateStore.getState().getTemplateById(c.checklistTemplateId ?? '');
         const label = actionLabel(key);
@@ -224,7 +236,8 @@ export function defaultConfigForType(type: StepType): StepConfig {
   }
 }
 
-export function stepTypeLabel(type: StepType): string {
+export function stepTypeLabel(type: StepType, config?: StepConfig): string {
+  if (type === 'condition' && config?.elseIf) return 'ELSE IF CONDITION';
   const labels: Record<StepType, string> = {
     trigger: 'WHEN',
     condition: 'IF CONDITION',

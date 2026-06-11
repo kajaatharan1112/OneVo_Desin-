@@ -13,6 +13,7 @@ import {
 import { resolveSubItemId } from '../../shared/utils/nav-utils';
 import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
+import { RequestToast } from '../../shared/components/request-toast/request-toast';
 import { Navbar } from '../navbar/navbar';
 import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
 
@@ -44,11 +45,13 @@ export const Shell: React.FC<ShellProps> = ({
   onAddCompany,
   setupWizardOpen = false,
   onCloseSetupWizard,
+  onGoToLandingPage,
   children
 }) => {
   const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [subNavCollapsed, setSubNavCollapsed] = useState(false);
+  const [showActivationToast, setShowActivationToast] = useState(true);
 
   const allTenantItems = useMemo(
     () => [...TENANT_MAIN_ITEMS, ...TENANT_BOTTOM_ITEMS],
@@ -56,7 +59,9 @@ export const Shell: React.FC<ShellProps> = ({
   );
 
   const activeNavItem = useMemo(() => {
-    const items = currentView === 'tenant' ? allTenantItems : EMPLOYEE_ITEMS;
+    const items = currentView === 'tenant'
+      ? allTenantItems
+      : [...EMPLOYEE_ITEMS, ...TENANT_BOTTOM_ITEMS];
     return items.find(i => i.label === activeTab);
   }, [activeTab, currentView, allTenantItems]);
 
@@ -73,7 +78,9 @@ export const Shell: React.FC<ShellProps> = ({
     const firstItem = activeSubSections[0]?.items[0];
     setActiveSubItemId(firstItem?.id ?? '');
     setSubNavCollapsed(false);
-  }, [currentView, activeTab, activeSubSections, setActiveSubItemId, location.pathname]);
+    // Only reset sub-nav when the main section or workspace view changes — not on sub-item clicks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, activeTab]);
 
   useEffect(() => {
     if (activeSubSections.length === 0) {
@@ -141,6 +148,9 @@ export const Shell: React.FC<ShellProps> = ({
             selectedCompany={selectedCompany}
             onSelectCompany={onSelectCompany}
             onAddCompany={onAddCompany}
+            onGoToLandingPage={onGoToLandingPage}
+            onOpenSetupWizard={onAddCompany}
+            onOpenActivationToast={() => setShowActivationToast(true)}
           />
         </div>
 
@@ -212,6 +222,10 @@ export const Shell: React.FC<ShellProps> = ({
         </div>
 
       </div>
+
+      {showActivationToast && (
+        <RequestToast onClose={() => setShowActivationToast(false)} />
+      )}
     </NotificationPanelProvider>
   );
 };

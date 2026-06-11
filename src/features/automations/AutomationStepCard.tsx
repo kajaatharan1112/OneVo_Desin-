@@ -65,7 +65,7 @@ export const AutomationStepCard: React.FC<AutomationStepCardProps> = ({
     >
       <div className="auto-step-card__header">
         <span className="auto-step-card__icon"><Icon size={14} /></span>
-        <span className="auto-step-card__type">{stepTypeLabel(step.type)}</span>
+        <span className="auto-step-card__type">{stepTypeLabel(step.type, step.config)}</span>
         <div className="auto-step-card__actions" onClick={e => e.stopPropagation()}>
           <button type="button" className="cfg-icon-btn" title="Edit" onClick={onEdit}><Pencil size={12} /></button>
           {canDelete && step.type !== 'trigger' && (
@@ -73,7 +73,13 @@ export const AutomationStepCard: React.FC<AutomationStepCardProps> = ({
           )}
         </div>
       </div>
+      {step.config.ruleLabel && (
+        <span className="auto-step-card__rule-label">{String(step.config.ruleLabel)}</span>
+      )}
       <p className="auto-step-card__sentence">{stepToSentence(step, orgContext)}</p>
+      {step.type === 'condition' && step.config.flowHint && (
+        <p className="auto-step-card__hint">{String(step.config.flowHint)}</p>
+      )}
       {invalid && <p className="auto-step-card__warning">{STEP_MISMATCH_MESSAGE}</p>}
       {step.type === 'alert' && isAlertImmediatelyAfterApproval(steps, step.id) && (
         <p className="auto-step-card__warning">{ALERT_AFTER_APPROVAL_WARNING}</p>
