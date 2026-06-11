@@ -2,25 +2,24 @@
 .notification-toggle {
   position: relative;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface-panel);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
   color: var(--text-h);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .notification-toggle:hover,
 .notification-toggle--active {
-  background: var(--code-bg);
-  border-color: var(--accent-border);
-  color: var(--accent);
+  background: var(--surface-muted);
+  color: var(--text-h);
 }
 
 .notification-toggle:focus-visible {
@@ -42,7 +41,7 @@
   font-weight: 700;
   line-height: 16px;
   text-align: center;
-  border: 1.5px solid var(--surface-panel);
+  border: 1.5px solid var(--surface);
   box-sizing: border-box;
 }
 
