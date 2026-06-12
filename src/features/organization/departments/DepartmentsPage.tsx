@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { DepartmentTree } from './DepartmentTree';
 import { DepartmentFormPanel } from './DepartmentFormPanel';
@@ -10,17 +10,12 @@ export const DepartmentsPage: React.FC = () => {
 
   return (
     <div className="departments-page">
-      <header className="departments-page__header">
-        <div className="departments-page__title-row">
-          <span className="departments-page__icon" aria-hidden>
-            <Building size={22} />
-          </span>
-          <div>
-            <h1 className="departments-page__title">Departments</h1>
-            <p className="departments-page__subtitle">
-              Organizational units that positions belong to. Department heads resolve through position assignments.
-            </p>
-          </div>
+      <header className="cfg-page__header departments-page__header">
+        <div>
+          <h1 className="cfg-page__title">Departments</h1>
+          <p className="cfg-page__subtitle">
+            Organizational units that positions belong to. Department heads resolve through position assignments.
+          </p>
         </div>
 
         <button

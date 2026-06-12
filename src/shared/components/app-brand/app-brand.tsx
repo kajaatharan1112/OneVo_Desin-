@@ -32,7 +32,6 @@ export const AppBrand: React.FC<AppBrandProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasSwitcher = Boolean(onSelectCompany && selectedCompany) && !collapsed;
-  const displayName = hasSwitcher && selectedCompany ? selectedCompany : APP_NAME;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,9 +97,13 @@ export const AppBrand: React.FC<AppBrandProps> = ({
                 onClick={handleToggle}
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
-                aria-label={`Current company: ${displayName}. Open company menu`}
+                aria-label={
+                  selectedCompany
+                    ? `OneVo HRMS. Current company: ${selectedCompany}. Open company menu`
+                    : `OneVo HRMS. Open company menu`
+                }
               >
-                <span className="app-brand-name">{displayName}</span>
+                <span className="app-brand-name">{APP_NAME}</span>
                 <ChevronDown
                   size={14}
                   className={`app-brand-chevron${isOpen ? ' app-brand-chevron--open' : ''}`}
@@ -114,7 +117,7 @@ export const AppBrand: React.FC<AppBrandProps> = ({
                 onClick={onClick}
                 aria-label={APP_NAME}
               >
-                <span className={`app-brand-name app-title`}>{displayName}</span>
+                <span className="app-brand-name app-title">{APP_NAME}</span>
               </button>
             )}
           </>

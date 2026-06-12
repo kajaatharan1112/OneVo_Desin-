@@ -4,33 +4,22 @@ import { useTheme } from '../../../core/theme/theme-context';
 
 export const ThemeSwitcher: React.FC = () => {
   const { theme, setTheme } = useTheme();
+  const isLight = theme === 'light';
+  const nextLabel = isLight ? 'Switch to dark mode' : 'Switch to light mode';
 
   return (
-    <div
-      className="theme-switcher"
-      role="group"
-      aria-label="Color theme"
+    <button
+      type="button"
+      className="app-navbar__icon-btn"
+      onClick={() => setTheme(isLight ? 'dark' : 'light')}
+      aria-label={nextLabel}
+      title={nextLabel}
     >
-      <button
-        type="button"
-        className={`theme-switcher__btn${theme === 'light' ? ' theme-switcher__btn--active' : ''}`}
-        onClick={() => setTheme('light')}
-        aria-pressed={theme === 'light'}
-        aria-label="Light theme"
-        title="Light theme"
-      >
-        <Sun size={15} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        className={`theme-switcher__btn${theme === 'dark' ? ' theme-switcher__btn--active' : ''}`}
-        onClick={() => setTheme('dark')}
-        aria-pressed={theme === 'dark'}
-        aria-label="Dark theme"
-        title="Dark theme"
-      >
-        <Moon size={15} aria-hidden="true" />
-      </button>
-    </div>
+      {isLight ? (
+        <Moon size={15} strokeWidth={2.1} aria-hidden="true" />
+      ) : (
+        <Sun size={15} strokeWidth={2.1} aria-hidden="true" />
+      )}
+    </button>
   );
 };

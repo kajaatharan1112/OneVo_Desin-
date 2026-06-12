@@ -172,6 +172,15 @@
   color: #ef4444;
 }
 
+.org-form-hint--warning {
+  color: #d97706;
+}
+
+.org-form-preview--warning {
+  background: color-mix(in srgb, #f59e0b 8%, var(--surface-panel));
+  border-color: color-mix(in srgb, #f59e0b 35%, transparent);
+}
+
 .org-form-error {
   padding: 10px 12px;
   border-radius: var(--radius-md);
@@ -239,14 +248,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Departments page header */
-.departments-page__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
+/* Departments page header uses shared .cfg-page__header */
 
 /* Department tree table */
 .dept-tree-empty {
@@ -692,18 +694,6 @@
   font-weight: 700;
 }
 
-/* Position org chart toolbar */
-.position-org-chart {
-  flex-direction: column;
-  gap: 8px;
-}
-
-.position-org-chart__toolbar {
-  flex-shrink: 0;
-  display: flex;
-  gap: 8px;
-}
-
 .position-card__toolbar {
   display: flex;
   gap: 4px;
@@ -736,13 +726,86 @@
   cursor: grab;
 }
 
-.position-list__filter {
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
+.position-table-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.position-table {
+  min-width: 1040px;
+}
+
+.position-table .dept-table__th-actions,
+.position-table .dept-table__cell--actions {
+  width: 132px;
+  min-width: 132px;
+}
+
+.position-table__code-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--code-bg);
   border: 1px solid var(--border);
-  background: var(--surface-panel);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--nexus-text-secondary);
+  white-space: nowrap;
+}
+
+.position-table__cell--name {
+  font-weight: 600;
   color: var(--text-h);
-  font-size: 0.8rem;
+}
+
+.position-table__cell--assigned {
+  font-weight: 500;
+}
+
+.position-table__cell--vacant {
+  color: var(--nexus-text-muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.position-table__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.position-table__action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--nexus-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.position-table__action-btn:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.position-table__action-btn--blocked {
+  opacity: 0.55;
+}
+
+.position-table__row--menu-open {
+  position: relative;
+  z-index: 3;
+}
+
+.position-table__menu-wrap .dept-table__menu {
+  z-index: 30;
 }
 
 .position-list__group-row td {
@@ -796,26 +859,6 @@
 .position-list__occupants {
   font-size: 0.7rem;
   color: var(--nexus-text-muted);
-}
-
-.position-assignments__header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.position-assignments__controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.position-assignments__empty {
-  text-align: center;
-  color: var(--nexus-text-muted);
-  font-style: italic;
-  padding: 24px !important;
 }
 
 .departments-tree__status--inactive {

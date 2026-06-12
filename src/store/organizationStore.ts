@@ -254,9 +254,8 @@ const SEED_ASSIGNMENTS: PositionAssignment[] = [
   { id: 'asgn-9', employeeId: 'emp-9', positionId: 'pos-swe', effectiveFrom: '2024-06-01', effectiveTo: null, status: 'active' },
   { id: 'asgn-10', employeeId: 'emp-10', positionId: 'pos-fin-mgr', effectiveFrom: '2024-01-01', effectiveTo: null, status: 'active' },
   { id: 'asgn-11', employeeId: 'emp-12', positionId: 'pos-fe-eng', effectiveFrom: '2024-07-01', effectiveTo: null, status: 'active' },
-  { id: 'asgn-12', employeeId: 'emp-13', positionId: 'pos-qa-lead', effectiveFrom: '2024-01-01', effectiveTo: null, status: 'active' },
-  { id: 'asgn-13', employeeId: 'emp-14', positionId: 'pos-qa-eng', effectiveFrom: '2024-08-01', effectiveTo: null, status: 'active' },
-  { id: 'asgn-14', employeeId: 'emp-15', positionId: 'pos-acct', effectiveFrom: '2024-03-01', effectiveTo: null, status: 'active' }
+  { id: 'asgn-13', employeeId: 'emp-11', positionId: 'pos-qa-eng', effectiveFrom: '2024-08-01', effectiveTo: null, status: 'active' },
+  { id: 'asgn-14', employeeId: 'emp-3', positionId: 'pos-acct', effectiveFrom: '2024-03-01', effectiveTo: null, status: 'active' }
 ];
 
 interface OrganizationState {
@@ -311,7 +310,11 @@ interface OrganizationState {
 
   openAssignEmployee: (positionId: string) => void;
   closeAssignEmployee: () => void;
-  assignEmployee: (employeeId: string, positionId: string) => { ok: boolean; error?: string };
+  assignEmployee: (
+    employeeId: string,
+    positionId: string,
+    options?: { effectiveFrom?: string; notes?: string }
+  ) => { ok: boolean; error?: string };
 }
 
 export const useOrganizationStore = create<OrganizationState>((set, get) => ({
@@ -588,21 +591,37 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
   openAssignEmployee: positionId => set({ assignmentForm: { open: true, positionId } }),
   closeAssignEmployee: () => set({ assignmentForm: { open: false, positionId: null } }),
 
-  assignEmployee: (employeeId, positionId) => {
+  assignEmployee: (employeeId, positionId, options) => {
     const { positions, assignments } = get();
     const check = canAssignEmployeeToPosition(employeeId, positionId, positions, assignments);
     if (!check.ok) return { ok: false, error: check.error };
+
+    const effectiveFrom = options?.effectiveFrom ?? new Date().toISOString().slice(0, 10);
+    const notes = options?.notes?.trim() || undefined;
+
+    const updatedAssignments = assignments.map(a => {
+      if (
+        a.employeeId === employeeId &&
+        a.status === 'active' &&
+        a.effectiveTo === null &&
+        a.positionId !== positionId
+      ) {
+        return { ...a, effectiveTo: effectiveFrom, status: 'ended' as const };
+      }
+      return a;
+    });
 
     const newAssignment: PositionAssignment = {
       id: createId('asgn'),
       employeeId,
       positionId,
-      effectiveFrom: new Date().toISOString().slice(0, 10),
+      effectiveFrom,
       effectiveTo: null,
-      status: 'active'
+      status: 'active',
+      notes
     };
 
-    set({ assignments: [...assignments, newAssignment] });
+    set({ assignments: [...updatedAssignments, newAssignment] });
     get().closeAssignEmployee();
     get().showToast('Employee assigned successfully.');
     return { ok: true };

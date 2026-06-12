@@ -20,7 +20,7 @@ import ReactFlow, {
   Position as FlowHandlePosition
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { AlertCircle, Plus } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { PositionNode, getVisiblePositionIds } from './PositionNode';
 import {
@@ -61,8 +61,7 @@ export const PositionOrgChart: React.FC = () => {
     collapsedPositionIds,
     dragError,
     clearDragError,
-    reparentPosition,
-    openCreateRootPosition
+    reparentPosition
   } = useOrganizationStore();
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -144,17 +143,6 @@ export const PositionOrgChart: React.FC = () => {
 
   return (
     <div className={`position-org-chart${isGlobalDragging ? ' position-org-chart--dragging' : ''}`}>
-      <div className="position-org-chart__toolbar">
-        <button
-          type="button"
-          className="org-btn org-btn--secondary"
-          onClick={openCreateRootPosition}
-        >
-          <Plus size={15} />
-          Add Root Position
-        </button>
-      </div>
-
       {dragError && (
         <div className="position-org-chart__error" role="alert">
           <AlertCircle size={16} />

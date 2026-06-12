@@ -15,7 +15,7 @@ export const NotificationToggle: React.FC<NotificationToggleProps> = ({
   return (
     <button
       type="button"
-      className={`notification-toggle${isOpen ? ' notification-toggle--active' : ''}`}
+      className={`app-navbar__icon-btn notification-toggle${isOpen ? ' notification-toggle--active' : ''}`}
       onClick={onToggle}
       aria-expanded={isOpen}
       aria-controls="app-notification-panel"
@@ -26,7 +26,7 @@ export const NotificationToggle: React.FC<NotificationToggleProps> = ({
       }
       title={isOpen ? 'Close notifications' : 'Notifications'}
     >
-      <Bell size={18} strokeWidth={2.25} aria-hidden="true" />
+      <Bell size={15} strokeWidth={2.1} aria-hidden="true" />
       {unreadCount > 0 && (
         <span className="notification-toggle__badge" aria-hidden="true">
           {unreadCount > 9 ? '9+' : unreadCount}
