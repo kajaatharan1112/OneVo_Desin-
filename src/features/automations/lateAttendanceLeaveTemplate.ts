@@ -120,7 +120,7 @@ export function buildLateAttendanceLeaveSteps(): AutomationStep[] {
       type: 'end',
       sectionId: 'main',
       sortOrder: sort++,
-      config: { displaySentence: 'Stop if matched' }
+      config: { endReason: 'stop_if_matched', label: 'Stop if matched' }
     },
     condition(
       halfConditionId,
@@ -145,7 +145,7 @@ export function buildLateAttendanceLeaveSteps(): AutomationStep[] {
       type: 'end',
       sectionId: 'main',
       sortOrder: sort++,
-      config: { displaySentence: 'Stop if matched' }
+      config: { endReason: 'stop_if_matched', label: 'Stop if matched' }
     },
     condition(
       graceConditionId,
@@ -171,14 +171,14 @@ export function buildLateAttendanceLeaveSteps(): AutomationStep[] {
       type: 'end',
       sectionId: 'main',
       sortOrder: sort++,
-      config: { displaySentence: 'Stop if matched' }
+      config: { endReason: 'stop_if_matched', label: 'Stop if matched' }
     },
     {
       id: stepId(),
       type: 'end',
       sectionId: 'main',
       sortOrder: sort++,
-      config: { displaySentence: 'No leave deduction' }
+      config: { endReason: 'no_deduction', label: 'No leave deduction' }
     }
   ];
 }

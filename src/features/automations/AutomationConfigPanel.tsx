@@ -15,6 +15,7 @@ import { OneTimeTaskActionFields } from './OneTimeTaskActionFields';
 import { getDefaultOneTimeTaskConfig, isOneTimeTaskAction } from './oneTimeTaskUtils';
 import {
   buildAutomationSummary,
+  endStepSentence,
   stepToSentence
 } from './automationUtils';
 import { ConditionConfigPanel } from './ConditionConfigPanel';
@@ -30,6 +31,17 @@ import { LateAttendanceLeaveActionFields } from './LateAttendanceLeaveActionFiel
 import { isLateAttendanceLeaveAction } from './lateAttendanceLeaveTemplate';
 
 const AREAS = ['Employee Lifecycle', 'Leave', 'Attendance', 'Organization', 'Documents', 'Monitoring'];
+
+const STEP_TYPES_WITH_SETTINGS = new Set([
+  'trigger',
+  'condition',
+  'action',
+  'approval',
+  'notification',
+  'alert',
+  'delay',
+  'end'
+]);
 
 interface AutomationConfigPanelProps {
   automation: Automation;
@@ -126,6 +138,9 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
     onStepConfigChange(selectedStep.id, { ...selectedStep.config, [key]: value });
   };
 
+  const stepSentence = stepToSentence(selectedStep, orgContext);
+  const hasDedicatedSettings = STEP_TYPES_WITH_SETTINGS.has(selectedStep.type);
+
   return (
     <aside className="builder-config auto-config-panel">
       <h3 className="builder-config__title">
@@ -133,14 +148,17 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
           ? 'Trigger'
           : selectedStep.type === 'condition'
             ? (selectedStep.config.elseIf ? 'ELSE IF CONDITION' : 'IF CONDITION')
-            : selectedStep.type === 'end'
-              ? 'END'
-              : 'Step Settings'}
+            : 'Step Settings'}
       </h3>
-      {selectedStep.type !== 'condition' && (
+      {selectedStep.type === 'end' ? (
+        <div className="auto-preview-box">
+          <span className="auto-preview-box__label">END</span>
+          <p>{endStepSentence(selectedStep.config)}</p>
+        </div>
+      ) : selectedStep.type !== 'condition' && (
         <div className="auto-preview-box">
           <span className="auto-preview-box__label">Preview</span>
-          <p>{stepToSentence(selectedStep, orgContext)}</p>
+          <p>{stepSentence}</p>
         </div>
       )}
 
@@ -421,17 +439,30 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
       )}
 
       {selectedStep.type === 'end' && (
-        <Field label="End message">
-          <input
-            value={String(selectedStep.config.displaySentence ?? '')}
-            onChange={e => update('displaySentence', e.target.value)}
-            placeholder="End automation"
-          />
-          <p className="auto-condition-note">
-            Leave blank to use the default end message.
-          </p>
-        </Field>
+        <>
+          <Field label="End Label">
+            <input
+              value={String(selectedStep.config.label ?? endStepSentence(selectedStep.config))}
+              onChange={e => update('label', e.target.value)}
+              placeholder="End automation"
+            />
+            <p className="auto-condition-note">
+              {selectedStep.config.endReason === 'stop_if_matched'
+                ? 'Stops this automation path when the previous rule matches.'
+                : selectedStep.config.endReason === 'no_deduction'
+                  ? 'Ends the automation with no leave deduction.'
+                  : 'Customize how this end step appears in the flow.'}
+            </p>
+          </Field>
+          <p className="auto-config-panel__fallback">No additional settings for this step.</p>
+        </>
       )}
+
+      {!hasDedicatedSettings && (
+        <p className="auto-config-panel__fallback">No additional settings for this step.</p>
+      )}
+
+      <AutomationValidationPanel issues={validationIssues} />
     </aside>
   );
 };

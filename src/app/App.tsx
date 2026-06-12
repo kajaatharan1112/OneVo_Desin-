@@ -31,6 +31,9 @@ import { ChecklistTemplatesPage } from '../features/people/checklist-templates/C
 import { LeaveTypesPage } from '../features/leave/configuration/LeaveTypesPage';
 import { LeavePoliciesPage } from '../features/leave/configuration/LeavePoliciesPage';
 import { LeaveEntitlementsPage } from '../features/leave/configuration/LeaveEntitlementsPage';
+import { AdminUsersPage } from '../features/admin/AdminUsersPage';
+import { RolesPermissionsPage } from '../features/admin/RolesPermissionsPage';
+import { AuditLogPage } from '../features/admin/AuditLogPage';
 import {
   DEFAULT_TENANT_COMPANY,
   type TenantCompany
@@ -168,6 +171,17 @@ function App() {
           case 'leave-types':
           default:
             return <LeaveTypesPage />;
+        }
+      }
+      if (activeTab === 'Admin') {
+        switch (resolvedSubId) {
+          case 'roles-permissions':
+            return <RolesPermissionsPage />;
+          case 'audit-log':
+            return <AuditLogPage />;
+          case 'users':
+          default:
+            return <AdminUsersPage />;
         }
       }
       return renderSectionPage(activeTab, allTenantItems, resolvedSubId);

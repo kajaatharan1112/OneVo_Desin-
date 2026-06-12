@@ -18,6 +18,7 @@ import './styles/positions.css'
 import './styles/organization.css'
 import './styles/configuration.css'
 import './features/leave/configuration/leaveConfiguration.css'
+import './features/admin/admin.css'
 import { ThemeProvider } from './core/theme/theme-context'
 import App from './app/App.tsx'
 

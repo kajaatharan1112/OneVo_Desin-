@@ -109,6 +109,8 @@ export interface StepConfig {
   elseIf?: boolean;
   flowHint?: string;
   displaySentence?: string;
+  endReason?: 'stop_if_matched' | 'no_deduction';
+  label?: string;
   leaveTypeId?: string;
   leaveTypeName?: string;
   workdayHours?: number;

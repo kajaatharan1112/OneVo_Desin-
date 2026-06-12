@@ -140,7 +140,10 @@ function StepChain({
               selected={selectedStepId === step.id}
               invalid={stepInvalid}
               onSelect={() => onSelectStep(step.id)}
-              onEdit={() => (isTriggerStep ? onEditTrigger() : onSelectStep(step.id))}
+              onEdit={() => {
+                onSelectStep(step.id);
+                if (isTriggerStep) onEditTrigger();
+              }}
               onDelete={() => onDeleteStep(step.id)}
               canDelete={step.type !== 'trigger'}
             />
