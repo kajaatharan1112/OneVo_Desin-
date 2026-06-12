@@ -20,6 +20,7 @@ interface ConditionConfigPanelProps {
   step: AutomationStep;
   triggerKey: string;
   allowedFieldKeys: string[];
+  canUseElseIf?: boolean;
   onConfigChange: (config: StepConfig) => void;
   onToggleElseBranch: (enabled: boolean) => void;
 }
@@ -37,6 +38,7 @@ export const ConditionConfigPanel: React.FC<ConditionConfigPanelProps> = ({
   step,
   triggerKey,
   allowedFieldKeys,
+  canUseElseIf = false,
   onConfigChange,
   onToggleElseBranch
 }) => {
@@ -219,6 +221,22 @@ export const ConditionConfigPanel: React.FC<ConditionConfigPanelProps> = ({
       <button type="button" className="org-btn org-btn--ghost org-btn--sm auto-condition-add" onClick={addClause}>
         <Plus size={14} /> Add condition
       </button>
+
+      {canUseElseIf && (
+        <Field label="Condition type">
+          <label className="auto-toggle-row">
+            <input
+              type="checkbox"
+              checked={Boolean(config.elseIf)}
+              onChange={e => onConfigChange({ ...config, elseIf: e.target.checked })}
+            />
+            <span>Else if (previous condition was false)</span>
+          </label>
+          <p className="auto-condition-note">
+            Use else if for chained rules. Only the first matching condition runs.
+          </p>
+        </Field>
+      )}
 
       <Field label="ELSE branch">
         <label className="auto-toggle-row">

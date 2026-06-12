@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserPlus, UserMinus, Calendar, Clock, Briefcase, Activity, FileText, ClipboardCheck } from 'lucide-react';
+import { UserPlus, UserMinus, Calendar, Clock, Briefcase, Activity, FileText, ClipboardCheck, Timer } from 'lucide-react';
 import { CREATE_AUTOMATION_CARDS } from './automationContextRules';
 import type { TemplateId } from './automationTypes';
 
@@ -10,6 +10,7 @@ const ICONS: Record<TemplateId, React.ReactNode> = {
   leave_request_approval: <Calendar size={20} />,
   attendance_correction_approval: <ClipboardCheck size={20} />,
   late_attendance_alert: <Clock size={20} />,
+  late_attendance_leave_rule: <Timer size={20} />,
   position_change_check: <Briefcase size={20} />,
   monitoring_alert_escalation: <Activity size={20} />
 };

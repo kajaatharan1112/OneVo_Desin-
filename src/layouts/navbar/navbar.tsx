@@ -5,6 +5,7 @@ import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/
 import { UserProfile } from '../../shared/components/user-profile/user-profile';
 import { NotificationToggle } from '../../shared/components/notification-toggle/notification-toggle';
 import { ThemeSwitcher } from '../../shared/components/theme-switcher/theme-switcher';
+import { ControlPanel } from '../../shared/components/control-panel/control-panel';
 
 interface NavbarProps {
   currentView: 'employee' | 'tenant';
@@ -15,6 +16,9 @@ interface NavbarProps {
   selectedCompany?: TenantCompany;
   onSelectCompany?: (company: TenantCompany) => void;
   onAddCompany?: () => void;
+  onGoToLandingPage?: () => void;
+  onOpenSetupWizard?: () => void;
+  onOpenActivationToast?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,6 +30,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   selectedCompany,
   onSelectCompany,
   onAddCompany,
+  onGoToLandingPage,
+  onOpenSetupWizard,
+  onOpenActivationToast,
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -96,6 +103,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           onToggle={onToggleNotifications}
         />
 
+        <ControlPanel
+          currentView={currentView}
+          onToggle={onToggle}
+          onGoToLandingPage={onGoToLandingPage}
+          onOpenSetupWizard={onOpenSetupWizard ?? onAddCompany}
+        />
+
         <div className="app-navbar__divider" aria-hidden="true" />
 
         {/* Profile dropdown */}
@@ -117,7 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 className="navbar-profile__action"
                 role="menuitem"
-                onClick={() => { setProfileOpen(false); alert('Apply for Activation — submit your workspace activation request.'); }}
+                onClick={() => { setProfileOpen(false); onOpenActivationToast?.(); }}
               >
                 <KeyRound size={14} aria-hidden="true" />
                 Apply for Activation

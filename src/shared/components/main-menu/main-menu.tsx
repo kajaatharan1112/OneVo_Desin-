@@ -5,7 +5,7 @@ import {
   PieChart, Briefcase, Building2, Building, CalendarMinus, Zap, Activity,
   ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash, ListChecks,
   CalendarDays, TrendingUp, Shield, Eye, List, Bell, Palette, Lock,
-  CreditCard, Monitor, CalendarClock
+  CreditCard, Monitor, CalendarClock, ClipboardList
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
 
@@ -33,10 +33,11 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
     ]},
   ]},
-  { id: 'leave',       label: 'Leave',       icon: <CalendarMinus size={18} />,   subSections: [
-    { id: 'config', label: 'Configuration', collapsible: true, defaultOpen: true, items: [
+  { id: 'leave', label: 'Leave', icon: <CalendarMinus size={18} />, subSections: [
+    { id: 'main', items: [
+      { id: 'leave-types', label: 'Leave Types', icon: <Hash size={13} /> },
       { id: 'leave-policies', label: 'Leave Policies', icon: <FileText size={13} /> },
-      { id: 'leave-types',    label: 'Leave Types',    icon: <Hash size={13} />     },
+      { id: 'leave-entitlements', label: 'Entitlements', icon: <ClipboardList size={13} /> },
     ]},
   ]},
   { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: <CalendarClock size={18} />, subSections: [
@@ -72,7 +73,8 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   ]},
 ];
 
-export const TENANT_BOTTOM_ITEMS: NavItem[] = [
+/** Settings rail item — shown at the bottom for both employee and admin views. */
+export const SHARED_BOTTOM_ITEMS: NavItem[] = [
   { id: 'settings', label: 'Settings', icon: <Settings size={18} />, subSections: [
     { id: 'workspace', label: 'Workspace', collapsible: true, defaultOpen: true, items: [
       { id: 'general',  label: 'General',  icon: <Settings size={13} /> },
@@ -85,6 +87,9 @@ export const TENANT_BOTTOM_ITEMS: NavItem[] = [
     ]},
   ]},
 ];
+
+/** @deprecated Use SHARED_BOTTOM_ITEMS */
+export const TENANT_BOTTOM_ITEMS = SHARED_BOTTOM_ITEMS;
 
 export const EMPLOYEE_ITEMS: NavItem[] = [
   { id: 'dashboard',  label: 'Dashboard',  icon: <LayoutDashboard size={18} />, subSections: [] },
@@ -123,7 +128,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const mainItems = currentView === 'tenant' ? TENANT_MAIN_ITEMS : EMPLOYEE_ITEMS;
-  const bottomItems = currentView === 'tenant' ? TENANT_BOTTOM_ITEMS : [];
+  const bottomItems = SHARED_BOTTOM_ITEMS;
 
   useEffect(() => {
     if (!mainItems.find(i => i.label === activeTab) && !bottomItems.find(i => i.label === activeTab)) {

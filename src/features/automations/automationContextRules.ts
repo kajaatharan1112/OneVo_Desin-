@@ -8,6 +8,7 @@ import {
   conditionClausesMatchTrigger,
   validateConditionClauses
 } from './conditionFields';
+import { isLateAttendanceLeaveAction } from './lateAttendanceLeaveTemplate';
 
 function getMainChainSteps(steps: AutomationStep[]): AutomationStep[] {
   return steps.filter(s => s.sectionId === 'main').sort((a, b) => a.sortOrder - b.sortOrder);
@@ -26,6 +27,7 @@ export type TemplateId =
   | 'leave_request_approval'
   | 'attendance_correction_approval'
   | 'late_attendance_alert'
+  | 'late_attendance_leave_rule'
   | 'position_change_check'
   | 'monitoring_alert_escalation';
 
@@ -52,6 +54,7 @@ export const CREATE_AUTOMATION_CARDS: CreateAutomationCard[] = [
   { id: 'leave_request_approval', name: 'Leave Request Approval', description: 'Route leave requests for approval and notify the requester when a decision is made.' },
   { id: 'attendance_correction_approval', name: 'Attendance Correction Approval', description: 'Route attendance corrections for approval and notify the employee when a decision is made.' },
   { id: 'late_attendance_alert', name: 'Late Attendance Alert', description: 'Create an attendance alert when late check-ins exceed a threshold in a period.' },
+  { id: 'late_attendance_leave_rule', name: 'Late Attendance Leave Rule', description: 'Deduct late time or convert late attendance to half-day/full-day leave based on thresholds.' },
   { id: 'position_change_check', name: 'Position Change Check', description: 'Check reporting manager and department head rules when an employee moves position.' },
   { id: 'monitoring_alert_escalation', name: 'Monitoring Alert Escalation', description: 'Assign and escalate monitoring alerts when severity is high or critical.' }
 ];
@@ -141,7 +144,11 @@ export const ACTION_CATALOG: Record<string, { key: string; label: string }> = {
   create_offboarding_checklist_from_template: { key: 'create_offboarding_checklist_from_template', label: 'Create offboarding checklist from template' },
   create_one_time_task: { key: 'create_one_time_task', label: 'Create one-time task' },
   update_leave_status: { key: 'update_leave_status', label: 'Update leave request status' },
-  send_webhook: { key: 'send_webhook', label: 'Send webhook' }
+  send_webhook: { key: 'send_webhook', label: 'Send webhook' },
+  convert_attendance_to_full_day_leave: { key: 'convert_attendance_to_full_day_leave', label: 'Convert attendance to full-day leave' },
+  convert_attendance_to_half_day_leave: { key: 'convert_attendance_to_half_day_leave', label: 'Convert attendance to half-day leave' },
+  deduct_late_time_from_leave_balance: { key: 'deduct_late_time_from_leave_balance', label: 'Deduct late time from leave balance' },
+  create_attendance_alert: { key: 'create_attendance_alert', label: 'Create attendance alert' }
 };
 
 export const CHECKLIST_TEMPLATE_ACTIONS: Record<string, ChecklistTemplateType> = {
@@ -184,7 +191,7 @@ const ORG_DEPARTMENT_CONDITION = ['department', 'reporting_manager'] as const;
 const ORG_HEAD_CONDITION = ['department', 'department_head'] as const;
 const REPORTING_MANAGER_MISSING_CONDITION = ['department', 'position', 'reporting_manager'] as const;
 const LEAVE_CONDITION = ['leave_type', 'leave_days', 'department', 'reporting_manager'] as const;
-const ATTENDANCE_LATE_CONDITION = ['late_count_in_period', 'department', 'reporting_manager'] as const;
+const ATTENDANCE_LATE_CONDITION = ['late_minutes', 'department', 'position', 'reporting_manager'] as const;
 const ATTENDANCE_CORRECTION_CONDITION = ['department', 'employee_status', 'reporting_manager'] as const;
 const MONITORING_CONDITION = ['severity', 'department', 'reporting_manager'] as const;
 
@@ -197,7 +204,13 @@ const TRIGGER_ACTIONS: Record<DemoTriggerKey, string[]> = {
   reporting_manager_missing: ['create_one_time_task'],
   leave_request_submitted: ['update_leave_status', 'create_one_time_task'],
   attendance_correction_submitted: ['create_one_time_task'],
-  employee_checked_in_late: ['create_one_time_task'],
+  employee_checked_in_late: [
+    'convert_attendance_to_full_day_leave',
+    'convert_attendance_to_half_day_leave',
+    'deduct_late_time_from_leave_balance',
+    'create_attendance_alert',
+    'create_one_time_task'
+  ],
   app_usage_violation_detected: ['create_one_time_task', 'send_webhook'],
   idle_time_exceeded_threshold: ['create_one_time_task', 'send_webhook'],
   device_offline_too_long: ['create_one_time_task', 'send_webhook'],
@@ -288,10 +301,22 @@ export function getAllowedActions(triggerKey: string): { key: string; label: str
 export function getFilteredActionGroups(triggerKey: string): Record<string, { key: string; label: string }[]> {
   const actions = getAllowedActions(triggerKey);
   if (actions.length === 0) return {};
-  const groups: Record<string, { key: string; label: string }[]> = {
-    Actions: actions
-  };
-  return groups;
+  if (triggerKey === 'employee_checked_in_late') {
+    const attendanceLeave = actions.filter(a =>
+      [
+        'convert_attendance_to_full_day_leave',
+        'convert_attendance_to_half_day_leave',
+        'deduct_late_time_from_leave_balance',
+        'create_attendance_alert'
+      ].includes(a.key)
+    );
+    const tasks = actions.filter(a => a.key === 'create_one_time_task');
+    const groups: Record<string, { key: string; label: string }[]> = {};
+    if (attendanceLeave.length > 0) groups['Attendance & Leave'] = attendanceLeave;
+    if (tasks.length > 0) groups.Tasks = tasks;
+    return groups;
+  }
+  return { Actions: actions };
 }
 
 export function isActionAllowedForTrigger(triggerKey: string, actionKey: string): boolean {
@@ -459,6 +484,22 @@ export function validateStepForTrigger(step: AutomationStep, triggerKey: string)
         issues.push({ id: `checklist-template-${step.id}`, message: 'Choose an active checklist template.', stepId: step.id });
       } else if (!isValidChecklistTemplateForAction(String(step.config.actionKey), templateId)) {
         issues.push({ id: `checklist-template-invalid-${step.id}`, message: 'Choose an active template of the correct type.', stepId: step.id });
+      }
+    } else if (isLateAttendanceLeaveAction(String(step.config.actionKey))) {
+      if (!step.config.leaveTypeId) {
+        issues.push({
+          id: `late-action-leave-${step.id}`,
+          message: 'Leave type is required for this action.',
+          stepId: step.id
+        });
+      }
+      const workdayHours = Number(step.config.workdayHours ?? 0);
+      if (!workdayHours || workdayHours <= 0) {
+        issues.push({
+          id: `late-action-hours-${step.id}`,
+          message: 'Workday hours must be greater than 0.',
+          stepId: step.id
+        });
       }
     } else if (isOneTimeTaskAction(String(step.config.actionKey))) {
       issues.push(...validateOneTimeTaskConfig(step.id, step.config).map(i => ({ ...i, stepId: step.id })));

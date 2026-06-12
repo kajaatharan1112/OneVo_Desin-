@@ -28,6 +28,9 @@ import { TenantSectionPage } from '../features/tenant/pages/tenant-section-page/
 import { DepartmentsPage } from '../features/organization/departments/DepartmentsPage';
 import { PositionsPage } from '../features/organization/positions/PositionsPage';
 import { ChecklistTemplatesPage } from '../features/people/checklist-templates/ChecklistTemplatesPage';
+import { LeaveTypesPage } from '../features/leave/configuration/LeaveTypesPage';
+import { LeavePoliciesPage } from '../features/leave/configuration/LeavePoliciesPage';
+import { LeaveEntitlementsPage } from '../features/leave/configuration/LeaveEntitlementsPage';
 import {
   DEFAULT_TENANT_COMPANY,
   type TenantCompany
@@ -101,6 +104,13 @@ function App() {
     }
 
     if (view === 'employee') {
+      const allEmployeeItems = [...EMPLOYEE_ITEMS, ...TENANT_BOTTOM_ITEMS];
+      const employeeNavItem = findNavItem(allEmployeeItems, activeTab);
+      if ((employeeNavItem?.subSections.length ?? 0) > 0 && activeTab === 'Settings') {
+        const resolvedSubId = resolveSubItemId(employeeNavItem, activeSubItemId);
+        return renderSectionPage(activeTab, allEmployeeItems, resolvedSubId);
+      }
+
       switch (activeTab) {
         case 'Dashboard':
           return <EmployeeDashboard onNavigateTab={setActiveTab} />;
@@ -148,6 +158,17 @@ function App() {
           return <PositionsPage />;
         }
         return <DepartmentsPage />;
+      }
+      if (activeTab === 'Leave') {
+        switch (resolvedSubId) {
+          case 'leave-policies':
+            return <LeavePoliciesPage />;
+          case 'leave-entitlements':
+            return <LeaveEntitlementsPage />;
+          case 'leave-types':
+          default:
+            return <LeaveTypesPage />;
+        }
       }
       return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
     }

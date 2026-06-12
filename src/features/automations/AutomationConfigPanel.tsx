@@ -26,6 +26,8 @@ import { AlertTargetFields } from './AlertTargetFields';
 import { PersonTargetFields } from './PersonTargetFields';
 import { ApprovalStepFields } from './ApprovalStepFields';
 import { isAlertImmediatelyAfterApproval, ALERT_AFTER_APPROVAL_WARNING } from './approvalStepUtils';
+import { LateAttendanceLeaveActionFields } from './LateAttendanceLeaveActionFields';
+import { isLateAttendanceLeaveAction } from './lateAttendanceLeaveTemplate';
 
 const AREAS = ['Employee Lifecycle', 'Leave', 'Attendance', 'Organization', 'Documents', 'Monitoring'];
 
@@ -84,6 +86,16 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
     [triggerKey]
   );
 
+  const canUseElseIf = useMemo(() => {
+    if (!selectedStep || selectedStep.type !== 'condition') return false;
+    const mainSteps = automation.steps
+      .filter(s => s.sectionId === 'main')
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const index = mainSteps.findIndex(s => s.id === selectedStep.id);
+    if (index <= 0) return false;
+    return mainSteps.slice(0, index).some(s => s.type === 'condition');
+  }, [automation.steps, selectedStep]);
+
   if (!selectedStep) {
     return (
       <aside className="builder-config auto-config-panel">
@@ -117,7 +129,13 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
   return (
     <aside className="builder-config auto-config-panel">
       <h3 className="builder-config__title">
-        {selectedStep.type === 'condition' ? 'IF CONDITION' : 'Step Settings'}
+        {selectedStep.type === 'trigger'
+          ? 'Trigger'
+          : selectedStep.type === 'condition'
+            ? (selectedStep.config.elseIf ? 'ELSE IF CONDITION' : 'IF CONDITION')
+            : selectedStep.type === 'end'
+              ? 'END'
+              : 'Step Settings'}
       </h3>
       {selectedStep.type !== 'condition' && (
         <div className="auto-preview-box">
@@ -182,6 +200,7 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
           step={selectedStep}
           triggerKey={triggerKey}
           allowedFieldKeys={allowedConditionFields}
+          canUseElseIf={canUseElseIf}
           onConfigChange={config => onStepConfigChange(selectedStep.id, config)}
           onToggleElseBranch={enabled => onToggleElseBranch(selectedStep.id, enabled)}
         />
@@ -248,6 +267,12 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
                 ))}
               </select>
             </Field>
+          )}
+          {isLateAttendanceLeaveAction(String(selectedStep.config.actionKey ?? '')) && (
+            <LateAttendanceLeaveActionFields
+              config={selectedStep.config}
+              onChange={updates => onStepConfigChange(selectedStep.id, { ...selectedStep.config, ...updates })}
+            />
           )}
           {isOneTimeTaskAction(String(selectedStep.config.actionKey ?? '')) && (
             <OneTimeTaskActionFields
@@ -393,6 +418,19 @@ export const AutomationConfigPanel: React.FC<AutomationConfigPanelProps> = ({
             </select>
           </Field>
         </>
+      )}
+
+      {selectedStep.type === 'end' && (
+        <Field label="End message">
+          <input
+            value={String(selectedStep.config.displaySentence ?? '')}
+            onChange={e => update('displaySentence', e.target.value)}
+            placeholder="End automation"
+          />
+          <p className="auto-condition-note">
+            Leave blank to use the default end message.
+          </p>
+        </Field>
       )}
     </aside>
   );

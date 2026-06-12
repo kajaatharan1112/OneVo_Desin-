@@ -20,6 +20,7 @@ import { SEED_ALERTS, SEED_AUTOMATIONS, getTemplateById } from '../features/auto
 
 import { buildAutomationSummary, defaultConfigForType, triggerLabel } from '../features/automations/automationUtils';
 import { createEmptyConditionClause, getConditionClauses } from '../features/automations/conditionFields';
+import { buildLateAttendanceLeaveSteps } from '../features/automations/lateAttendanceLeaveTemplate';
 
 
 
@@ -287,7 +288,10 @@ export const useAutomationStore = create<AutomationStore>((set, get) => ({
 
     const id = createId();
 
-    const steps = assignStepIds(template.steps);
+    const steps =
+      templateId === 'late_attendance_leave_rule'
+        ? buildLateAttendanceLeaveSteps()
+        : assignStepIds(template.steps);
 
     const trigger = steps.find(s => s.type === 'trigger');
 
@@ -368,8 +372,6 @@ export const useAutomationStore = create<AutomationStore>((set, get) => ({
     }));
 
   },
-
-
 
   duplicateAutomation: (id) => {
 

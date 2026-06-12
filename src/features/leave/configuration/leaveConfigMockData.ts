@@ -1,0 +1,161 @@
+import type { LeaveEntitlement, LeavePolicy, LeaveType } from './leaveConfigTypes';
+
+export const SEED_LEAVE_TYPES: LeaveType[] = [
+  {
+    id: 'lt-annual',
+    name: 'Annual Leave',
+    code: 'ANNUAL',
+    category: 'Annual',
+    description: 'Paid time off for rest and recreation.',
+    paidLeave: true,
+    active: true,
+    status: 'active'
+  },
+  {
+    id: 'lt-sick',
+    name: 'Sick Leave',
+    code: 'SICK',
+    category: 'Sick',
+    description: 'Leave for illness or medical appointments.',
+    paidLeave: true,
+    active: true,
+    status: 'active'
+  },
+  {
+    id: 'lt-unpaid',
+    name: 'Unpaid Leave',
+    code: 'UNPAID',
+    category: 'Unpaid',
+    description: 'Unpaid time away from work.',
+    paidLeave: false,
+    active: true,
+    status: 'active'
+  },
+  {
+    id: 'lt-maternity',
+    name: 'Maternity Leave',
+    code: 'MAT',
+    category: 'Maternity',
+    description: 'Maternity leave for eligible employees.',
+    paidLeave: true,
+    active: true,
+    status: 'active'
+  },
+  {
+    id: 'lt-paternity',
+    name: 'Paternity Leave',
+    code: 'PAT',
+    category: 'Paternity',
+    description: 'Paternity leave for eligible employees.',
+    paidLeave: true,
+    active: true,
+    status: 'active'
+  },
+  {
+    id: 'lt-compassionate',
+    name: 'Compassionate Leave',
+    code: 'COMP',
+    category: 'Compassionate',
+    description: 'Leave for bereavement or family emergencies.',
+    paidLeave: true,
+    active: true,
+    status: 'active'
+  }
+];
+
+export const SEED_LEAVE_POLICIES: LeavePolicy[] = [
+  {
+    id: 'lp-company-annual',
+    name: 'Company Annual Leave',
+    leaveTypeId: 'lt-annual',
+    description: 'Default annual leave for all employees.',
+    effectiveFrom: '2025-01-01',
+    status: 'active',
+    appliesTo: 'company',
+    departmentIds: [],
+    positionIds: [],
+    daysPerYear: 14,
+    accrualMethod: 'yearly',
+    proRataNewJoiners: true,
+    carryForwardAllowed: true,
+    maxCarryForwardDays: 5,
+    carryForwardExpiryMonths: 3,
+    minNoticeDays: 7,
+    maxConsecutiveDays: 14,
+    minDaysPerRequest: 0.5,
+    blackoutPeriods: 'Dec 20 – Jan 5',
+    requiresDocument: false,
+    documentRequiredAfterDays: null
+  },
+  {
+    id: 'lp-eng-annual',
+    name: 'Engineering Annual Leave',
+    leaveTypeId: 'lt-annual',
+    description: 'Enhanced annual leave for Engineering departments.',
+    effectiveFrom: '2025-01-01',
+    status: 'active',
+    appliesTo: 'department',
+    departmentIds: ['dept-eng', 'dept-backend', 'dept-frontend'],
+    positionIds: [],
+    daysPerYear: 16,
+    accrualMethod: 'yearly',
+    proRataNewJoiners: true,
+    carryForwardAllowed: true,
+    maxCarryForwardDays: 5,
+    carryForwardExpiryMonths: 3,
+    minNoticeDays: 5,
+    maxConsecutiveDays: 14,
+    minDaysPerRequest: 0.5,
+    blackoutPeriods: '',
+    requiresDocument: false,
+    documentRequiredAfterDays: null
+  },
+  {
+    id: 'lp-cto-annual',
+    name: 'CTO Annual Leave',
+    leaveTypeId: 'lt-annual',
+    description: 'Executive annual leave for senior leadership positions.',
+    effectiveFrom: '2025-01-01',
+    status: 'active',
+    appliesTo: 'position',
+    departmentIds: [],
+    positionIds: ['pos-cto', 'pos-ceo'],
+    daysPerYear: 21,
+    accrualMethod: 'yearly',
+    proRataNewJoiners: false,
+    carryForwardAllowed: true,
+    maxCarryForwardDays: 7,
+    carryForwardExpiryMonths: 6,
+    minNoticeDays: 3,
+    maxConsecutiveDays: 21,
+    minDaysPerRequest: 1,
+    blackoutPeriods: '',
+    requiresDocument: false,
+    documentRequiredAfterDays: null
+  },
+  {
+    id: 'lp-company-sick',
+    name: 'Full Company Sick Leave Policy',
+    leaveTypeId: 'lt-sick',
+    description: 'Default sick leave for all employees.',
+    effectiveFrom: '2025-01-01',
+    status: 'active',
+    appliesTo: 'company',
+    departmentIds: [],
+    positionIds: [],
+    daysPerYear: 10,
+    accrualMethod: 'yearly',
+    proRataNewJoiners: true,
+    carryForwardAllowed: false,
+    maxCarryForwardDays: 0,
+    carryForwardExpiryMonths: 0,
+    minNoticeDays: 0,
+    maxConsecutiveDays: 10,
+    minDaysPerRequest: 0.5,
+    blackoutPeriods: '',
+    requiresDocument: true,
+    documentRequiredAfterDays: 2
+  }
+];
+
+export const SEED_ENTITLEMENTS: LeaveEntitlement[] = [];

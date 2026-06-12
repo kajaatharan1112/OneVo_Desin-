@@ -105,6 +105,17 @@ export interface StepConfig {
   taskDueMinutes?: number;
   taskPriority?: string;
   taskRelatedEmployeeFromTrigger?: boolean;
+  ruleLabel?: string;
+  elseIf?: boolean;
+  flowHint?: string;
+  displaySentence?: string;
+  leaveTypeId?: string;
+  leaveTypeName?: string;
+  workdayHours?: number;
+  approvalMode?: string;
+  deductionAmount?: number;
+  deductionSource?: string;
+  rounding?: string;
   [key: string]: unknown;
 }
 
@@ -123,6 +134,7 @@ export type TemplateId =
   | 'leave_request_approval'
   | 'attendance_correction_approval'
   | 'late_attendance_alert'
+  | 'late_attendance_leave_rule'
   | 'position_change_check'
   | 'monitoring_alert_escalation';
 

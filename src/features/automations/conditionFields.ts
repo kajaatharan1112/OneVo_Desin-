@@ -68,8 +68,9 @@ const POSITION_ASSIGNMENT_CHANGED_FIELDS: ConditionFieldDef[] = [
 ];
 
 const ATTENDANCE_LATE_FIELDS: ConditionFieldDef[] = [
-  { key: 'late_count_in_period', label: 'Late Count in Period', type: 'number' },
+  { key: 'late_minutes', label: 'Late Minutes', type: 'number' },
   { key: 'department', label: 'Department', type: 'department' },
+  { key: 'position', label: 'Position', type: 'position' },
   { key: 'reporting_manager', label: 'Reporting Manager', type: 'person' }
 ];
 
