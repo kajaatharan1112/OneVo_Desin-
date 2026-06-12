@@ -84,6 +84,16 @@ function App() {
     }
   };
 
+  const clearDeepLinkRoutes = () => {
+    if (
+      location.pathname.startsWith('/organization/') ||
+      location.pathname.startsWith('/automations') ||
+      location.pathname.startsWith('/people/')
+    ) {
+      navigate('/');
+    }
+  };
+
   const openSetupWizard = () => setSetupWizardOpen(true);
   const closeSetupWizard = () => setSetupWizardOpen(false);
 
@@ -98,7 +108,6 @@ function App() {
       <TenantSectionPage
         section={section}
         subSection={subLabel}
-        icon={navItem?.icon}
       />
     );
   };
@@ -161,7 +170,7 @@ function App() {
         return <ChecklistTemplatesPage />;
       }
       if (activeTab === 'Organization') {
-        if (resolvedSubId === 'positions' || location.pathname.includes('/positions')) {
+        if (resolvedSubId === 'positions') {
           return <PositionsPage />;
         }
         return <DepartmentsPage />;
@@ -177,15 +186,22 @@ function App() {
             return <LeaveTypesPage />;
         }
       }
-      if (activeTab === 'Admin') {
+      if (activeTab === 'Settings') {
         switch (resolvedSubId) {
+          case 'users':
+            return <AdminUsersPage />;
           case 'roles-permissions':
             return <RolesPermissionsPage />;
           case 'audit-log':
             return <AuditLogPage />;
-          case 'users':
+          case 'general':
+          case 'branding':
+          case 'security':
+          case 'notifications':
+          case 'billing':
+          case 'devices':
           default:
-            return <AdminUsersPage />;
+            return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
         }
       }
       return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
@@ -201,7 +217,7 @@ function App() {
       case 'Attendance':
         return <TenantAttendance />;
       default:
-        return <TenantSectionPage section={activeTab} icon={navItem?.icon} />;
+        return <TenantSectionPage section={activeTab} />;
     }
   };
 
@@ -220,7 +236,9 @@ function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeSubItemId={activeSubItemId}
-        setActiveSubItemId={handleSubItemSelect}
+        setActiveSubItemId={setActiveSubItemId}
+        onSubItemSelect={handleSubItemSelect}
+        onLeaveDeepLinkRoute={clearDeepLinkRoutes}
         selectedCompany={selectedCompany}
         onSelectCompany={setSelectedCompany}
         onAddCompany={openSetupWizard}

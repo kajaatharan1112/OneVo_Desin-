@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Plus, Search, Edit, Copy, Users, Eye, Ban, X, ChevronRight, Lock,
+  Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock,
 } from 'lucide-react';
 import {
   MOCK_ROLES,
@@ -17,7 +17,6 @@ import {
 } from './adminMockData';
 
 type DrawerMode = 'create' | 'edit' | 'assign' | 'view-users' | null;
-type FormStep = 'basic' | 'permissions' | 'review';
 
 const groupedPermissions = permissionsByModule(ENABLED_MODULES);
 
@@ -26,8 +25,9 @@ export const RolesPermissionsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [drawer, setDrawer] = useState<DrawerMode>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-  const [formStep, setFormStep] = useState<FormStep>('basic');
   const [permSearch, setPermSearch] = useState('');
+  const [includedPermsOpen, setIncludedPermsOpen] = useState(false);
+  const includedPermsRef = useRef<HTMLDivElement>(null);
 
   const [roleForm, setRoleForm] = useState({
     name: '',
@@ -63,8 +63,8 @@ export const RolesPermissionsPage: React.FC = () => {
   const openCreate = () => {
     setSelectedRoleId(null);
     setRoleForm({ name: '', description: '', permissionIds: [] });
-    setFormStep('basic');
     setPermSearch('');
+    setIncludedPermsOpen(false);
     setDrawer('create');
   };
 
@@ -77,8 +77,8 @@ export const RolesPermissionsPage: React.FC = () => {
       description: role.description,
       permissionIds: [...role.permissionIds],
     });
-    setFormStep('basic');
     setPermSearch('');
+    setIncludedPermsOpen(false);
     setDrawer('edit');
   };
 
@@ -91,8 +91,8 @@ export const RolesPermissionsPage: React.FC = () => {
       description: role.description,
       permissionIds: [...role.permissionIds],
     });
-    setFormStep('basic');
     setPermSearch('');
+    setIncludedPermsOpen(false);
     setDrawer('create');
   };
 
@@ -117,8 +117,20 @@ export const RolesPermissionsPage: React.FC = () => {
   const closeDrawer = () => {
     setDrawer(null);
     setSelectedRoleId(null);
-    setFormStep('basic');
+    setPermSearch('');
+    setIncludedPermsOpen(false);
   };
+
+  useEffect(() => {
+    if (!includedPermsOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (includedPermsRef.current && !includedPermsRef.current.contains(event.target as Node)) {
+        setIncludedPermsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [includedPermsOpen]);
 
   const togglePermission = (permId: string) => {
     setRoleForm(f => ({
@@ -129,15 +141,21 @@ export const RolesPermissionsPage: React.FC = () => {
     }));
   };
 
-  const toggleModuleAll = (module: string, select: boolean) => {
-    const modulePermIds = groupedPermissions[module]?.map(p => p.id) ?? [];
+  const toggleModuleAll = (permIds: string[], select: boolean) => {
     setRoleForm(f => {
-      const without = f.permissionIds.filter(id => !modulePermIds.includes(id));
+      const without = f.permissionIds.filter(id => !permIds.includes(id));
       return {
         ...f,
-        permissionIds: select ? [...without, ...modulePermIds] : without,
+        permissionIds: select ? [...without, ...permIds] : without,
       };
     });
+  };
+
+  const removeSelectedPermission = (permId: string) => {
+    setRoleForm(f => ({
+      ...f,
+      permissionIds: f.permissionIds.filter(id => id !== permId),
+    }));
   };
 
   const saveRole = () => {
@@ -202,23 +220,42 @@ export const RolesPermissionsPage: React.FC = () => {
   };
 
   const filteredModules = useMemo(() => {
-    const q = permSearch.toLowerCase();
-    if (!q) return groupedPermissions;
-    const result: Record<string, typeof GRANTABLE_PERMISSIONS> = {};
-    for (const [mod, perms] of Object.entries(groupedPermissions)) {
-      const matched = perms.filter(
-        p => p.code.includes(q) || p.description.toLowerCase().includes(q)
-      );
-      if (matched.length) result[mod] = matched;
+    const q = permSearch.toLowerCase().trim();
+    const entries: { module: string; perms: typeof GRANTABLE_PERMISSIONS }[] = [];
+    for (const mod of ENABLED_MODULES) {
+      const perms = groupedPermissions[mod];
+      if (!perms?.length) continue;
+      const matched = q
+        ? perms.filter(
+            p =>
+              p.code.includes(q) ||
+              p.description.toLowerCase().includes(q) ||
+              p.module.toLowerCase().includes(q)
+          )
+        : perms;
+      if (matched.length) entries.push({ module: mod, perms: matched });
     }
-    return result;
+    return entries;
   }, [permSearch]);
+
+  const selectedPermissions = useMemo(
+    () =>
+      roleForm.permissionIds
+        .map(id => GRANTABLE_PERMISSIONS.find(p => p.id === id))
+        .filter((p): p is (typeof GRANTABLE_PERMISSIONS)[number] => Boolean(p)),
+    [roleForm.permissionIds]
+  );
+
+  const canSaveRole =
+    roleForm.name.trim().length > 0 &&
+    roleForm.permissionIds.length > 0 &&
+    !isSystemEdit;
 
   const usersForRole = selectedRoleId
     ? MOCK_USERS.filter(u => u.roleIds.includes(selectedRoleId))
     : [];
 
-  const assignableUsers = MOCK_USERS.filter(u => u.status !== 'disabled');
+  const assignableUsers = MOCK_USERS.filter(u => u.accountStatus !== 'disabled');
 
   return (
     <div className="cfg-page">
@@ -328,7 +365,7 @@ export const RolesPermissionsPage: React.FC = () => {
       {(drawer === 'create' || drawer === 'edit') && (
         <div className="org-slideover-backdrop" onClick={closeDrawer}>
           <div
-            className="org-slideover org-slideover--wide"
+            className="org-slideover org-slideover--role-form"
             role="dialog"
             aria-modal="true"
             aria-label={drawer === 'edit' ? 'Edit role' : 'Create role'}
@@ -341,183 +378,176 @@ export const RolesPermissionsPage: React.FC = () => {
               </button>
             </header>
 
-            <div className="admin-role-form-steps">
-              {(['basic', 'permissions', 'review'] as FormStep[]).map(step => (
-                <button
-                  key={step}
-                  type="button"
-                  className={`admin-role-form-step${formStep === step ? ' admin-role-form-step--active' : ''}${(['basic', 'permissions', 'review'].indexOf(formStep) > ['basic', 'permissions', 'review'].indexOf(step)) ? ' admin-role-form-step--done' : ''}`}
-                  onClick={() => setFormStep(step)}
-                >
-                  {step === 'basic' ? '1. Basic Info' : step === 'permissions' ? '2. Permissions' : '3. Review'}
-                </button>
-              ))}
-            </div>
-
-            <div className="org-slideover__body">
-              {formStep === 'basic' && (
-                <>
-                  <div className="org-form-field">
-                    <label>Role Name</label>
+            <div className="org-slideover__body admin-role-form">
+              <section className="admin-section admin-section--compact">
+                <h3>Basic Info</h3>
+                <div className="admin-role-basic-row">
+                  <div className="org-form-field org-form-field--compact">
+                    <label htmlFor="role-name">Role Name</label>
                     <input
+                      id="role-name"
+                      type="text"
+                      required
                       value={roleForm.name}
                       onChange={e => setRoleForm(f => ({ ...f, name: e.target.value }))}
                       disabled={isSystemEdit}
+                      placeholder="e.g. People Administrator"
                     />
                   </div>
-                  <div className="org-form-field">
-                    <label>Description</label>
-                    <textarea
-                      rows={3}
+                  <div className="org-form-field org-form-field--compact">
+                    <label htmlFor="role-description">Description</label>
+                    <input
+                      id="role-description"
+                      type="text"
                       value={roleForm.description}
                       onChange={e => setRoleForm(f => ({ ...f, description: e.target.value }))}
                       disabled={isSystemEdit}
+                      placeholder="Short description"
                     />
                   </div>
-                  <div>
-                    <span className={`cfg-badge cfg-badge--${drawer === 'edit' && editingRole?.type === 'system' ? 'open' : 'active'}`}>
-                      {drawer === 'edit' && editingRole?.type === 'system' ? 'System' : 'Custom'}
-                    </span>
-                  </div>
-                </>
-              )}
+                </div>
+              </section>
 
-              {formStep === 'permissions' && (
-                <>
-                  <div className="admin-section">
-                    <h3>Universal Auto-Grants (read-only)</h3>
-                    <div className="admin-perm-list">
-                      {UNIVERSAL_PERMISSIONS.map(p => (
-                        <div key={p.id} className="admin-perm-item admin-perm-item--readonly">
-                          <Lock size={12} />
-                          <div>
-                            <div className="admin-perm-item__code">{p.code}</div>
-                            <div className="admin-perm-item__desc">{p.description}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="admin-perm-search cfg-search">
+              <section className="admin-section">
+                <h3>Permissions</h3>
+                <div className="admin-perm-toolbar">
+                  <div className="cfg-search admin-perm-toolbar__search">
                     <Search size={14} />
                     <input
                       placeholder="Search permissions…"
                       value={permSearch}
                       onChange={e => setPermSearch(e.target.value)}
+                      disabled={isSystemEdit}
                     />
                   </div>
+                  <span className="admin-selected-count admin-selected-count--inline">
+                    {roleForm.permissionIds.length} selected
+                  </span>
+                </div>
 
-                  <p className="admin-selected-count">
-                    {roleForm.permissionIds.length} permission{roleForm.permissionIds.length !== 1 ? 's' : ''} selected
-                  </p>
+                <div className="admin-universal-hint" ref={includedPermsRef}>
+                  <span>
+                    Basic self-service permissions are included automatically for every active employee.
+                  </span>
+                  <button
+                    type="button"
+                    className="admin-universal-hint__btn"
+                    onClick={() => setIncludedPermsOpen(open => !open)}
+                    aria-expanded={includedPermsOpen}
+                  >
+                    View included permissions
+                  </button>
+                  {includedPermsOpen && (
+                    <div className="admin-included-popover" role="dialog" aria-label="Included permissions">
+                      <ul className="admin-included-popover__list">
+                        {UNIVERSAL_PERMISSIONS.map(p => (
+                          <li key={p.id} className="admin-included-popover__item">
+                            <span className="admin-included-popover__code">{p.code}</span>
+                            <span className="admin-included-popover__desc">{p.description}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
 
-                  {Object.entries(filteredModules).map(([mod, perms]) => {
-                    const selectedInModule = perms.filter(p => roleForm.permissionIds.includes(p.id)).length;
-                    const allSelected = selectedInModule === perms.length;
-                    return (
-                      <div key={mod} className="admin-perm-module">
-                        <div className="admin-perm-module__header">
-                          <span className="admin-perm-module__title">{mod}</span>
-                          <span className="admin-perm-module__count">
-                            {selectedInModule}/{perms.length}
-                            {!isSystemEdit && (
+                {selectedPermissions.length > 0 && (
+                  <div className="admin-selected-strip" aria-label="Selected permissions">
+                    {selectedPermissions.map(p => (
+                      <span key={p.id} className="admin-review-chip">
+                        {p.code}
+                        {!isSystemEdit && (
+                          <button
+                            type="button"
+                            className="admin-review-chip__remove"
+                            aria-label={`Remove ${p.code}`}
+                            onClick={() => removeSelectedPermission(p.id)}
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {filteredModules.map(({ module: mod, perms }) => {
+                  const visibleIds = perms.map(p => p.id);
+                  const selectedInModule = perms.filter(p => roleForm.permissionIds.includes(p.id)).length;
+                  return (
+                    <div key={mod} className="admin-perm-module">
+                      <div className="admin-perm-module__header">
+                        <span className="admin-perm-module__title">{mod}</span>
+                        <div className="admin-perm-module__actions">
+                          <span className="admin-perm-module__count">{selectedInModule}/{perms.length}</span>
+                          {!isSystemEdit && (
+                            <>
                               <button
                                 type="button"
                                 className="cfg-action-btn"
-                                style={{ marginLeft: 8 }}
-                                onClick={() => toggleModuleAll(mod, !allSelected)}
+                                onClick={() => toggleModuleAll(visibleIds, true)}
                               >
-                                {allSelected ? 'Deselect all' : 'Select all'}
+                                Select all
                               </button>
-                            )}
-                          </span>
+                              <button
+                                type="button"
+                                className="cfg-action-btn"
+                                onClick={() => toggleModuleAll(visibleIds, false)}
+                                disabled={selectedInModule === 0}
+                              >
+                                Clear
+                              </button>
+                            </>
+                          )}
                         </div>
-                        <div className="admin-perm-list">
-                          {perms.map(p => (
-                            <label key={p.id} className="admin-perm-item">
-                              <input
-                                type="checkbox"
-                                checked={roleForm.permissionIds.includes(p.id)}
-                                onChange={() => togglePermission(p.id)}
-                                disabled={isSystemEdit}
-                              />
-                              <div>
-                                <div className="admin-perm-item__code">{p.code}</div>
-                                <div className="admin-perm-item__desc">{p.description}</div>
+                      </div>
+                      <div className="admin-perm-list">
+                        {perms.map(p => (
+                          <label key={p.id} className="admin-perm-item">
+                            <input
+                              type="checkbox"
+                              checked={roleForm.permissionIds.includes(p.id)}
+                              onChange={() => togglePermission(p.id)}
+                              disabled={isSystemEdit}
+                            />
+                            <div className="admin-perm-item__content">
+                              <div className="admin-perm-item__row">
+                                <span className="admin-perm-item__code">{p.code}</span>
+                                <span className="admin-perm-module-badge">{p.module}</span>
                               </div>
-                            </label>
-                          ))}
-                        </div>
+                              <div className="admin-perm-item__desc">{p.description}</div>
+                            </div>
+                          </label>
+                        ))}
                       </div>
-                    );
-                  })}
-                </>
-              )}
+                    </div>
+                  );
+                })}
 
-              {formStep === 'review' && (
-                <>
-                  <div className="admin-section">
-                    <h3>Role Summary</h3>
-                    <div className="admin-detail-grid">
-                      <div className="admin-detail-row">
-                        <span className="admin-detail-row__label">Name</span>
-                        <span className="admin-detail-row__value">{roleForm.name || '—'}</span>
-                      </div>
-                      <div className="admin-detail-row">
-                        <span className="admin-detail-row__label">Description</span>
-                        <span className="admin-detail-row__value">{roleForm.description || '—'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="admin-section">
-                    <h3>Permission Summary</h3>
-                    <div className="admin-review-list">
-                      {roleForm.permissionIds.map(pid => {
-                        const p = GRANTABLE_PERMISSIONS.find(x => x.id === pid);
-                        return p ? <span key={pid} className="admin-review-chip">{p.code}</span> : null;
-                      })}
-                    </div>
-                  </div>
-                  {drawer === 'edit' && editingRole && editingRole.userCount > 0 && (
-                    <p className="admin-hint admin-hint--warning">
-                      Editing this role affects {editingRole.userCount} user{editingRole.userCount !== 1 ? 's' : ''} who currently have it assigned. Changes propagate on next token refresh.
-                    </p>
-                  )}
-                </>
+                {filteredModules.length === 0 && (
+                  <p className="cfg-table__meta">No permissions match your search.</p>
+                )}
+              </section>
+
+              {drawer === 'edit' && editingRole && editingRole.userCount > 0 && (
+                <p className="admin-hint admin-hint--warning">
+                  Editing this role affects {editingRole.userCount} user{editingRole.userCount !== 1 ? 's' : ''} who currently have it assigned. Changes propagate on next token refresh.
+                </p>
               )}
             </div>
 
             <footer className="org-slideover__footer">
-              {formStep !== 'basic' && (
-                <button
-                  type="button"
-                  className="org-btn org-btn--secondary"
-                  onClick={() => setFormStep(formStep === 'review' ? 'permissions' : 'basic')}
-                >
-                  Back
-                </button>
-              )}
-              <div style={{ flex: 1 }} />
-              {formStep !== 'review' ? (
-                <button
-                  type="button"
-                  className="org-btn org-btn--primary"
-                  disabled={formStep === 'basic' && !roleForm.name.trim()}
-                  onClick={() => setFormStep(formStep === 'basic' ? 'permissions' : 'review')}
-                >
-                  Next <ChevronRight size={14} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="org-btn org-btn--primary"
-                  disabled={!roleForm.name.trim() || roleForm.permissionIds.length === 0 || isSystemEdit}
-                  onClick={saveRole}
-                >
-                  {drawer === 'edit' ? 'Save Changes' : 'Create Role'}
-                </button>
-              )}
+              <button type="button" className="org-btn org-btn--secondary" onClick={closeDrawer}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="org-btn org-btn--primary"
+                disabled={!canSaveRole}
+                onClick={saveRole}
+              >
+                {drawer === 'edit' ? 'Save Changes' : 'Create Role'}
+              </button>
             </footer>
           </div>
         </div>
@@ -659,8 +689,8 @@ export const RolesPermissionsPage: React.FC = () => {
                   <div key={u.id} className="admin-access-item">
                     <div className="admin-perm-item__code">{u.firstName} {u.lastName}</div>
                     <div className="admin-perm-item__desc">{u.email}</div>
-                    <span className={`cfg-badge cfg-badge--${u.status === 'active' ? 'active' : u.status}`}>
-                      {u.status}
+                    <span className={`cfg-badge cfg-badge--${u.accountStatus === 'active' ? 'active' : u.accountStatus}`}>
+                      {u.accountStatus === 'no_login_access' ? 'No Login Access' : u.accountStatus}
                     </span>
                   </div>
                 ))

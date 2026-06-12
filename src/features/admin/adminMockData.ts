@@ -1,4 +1,5 @@
-export type UserStatus = 'active' | 'invited' | 'disabled';
+export type AccountStatus = 'active' | 'disabled' | 'locked' | 'no_login_access';
+export type InviteStatus = 'sent' | 'accepted' | 'expired' | 'not_sent';
 export type AccessScope = 'own' | 'direct_reports' | 'reporting_tree' | 'department' | 'organization';
 export type RoleType = 'system' | 'custom';
 
@@ -9,12 +10,30 @@ export interface AdminUser {
   email: string;
   employeeId: string | null;
   employeeName: string | null;
+  position: string | null;
+  department: string | null;
   roleIds: string[];
-  status: UserStatus;
+  /** Roles derived from position assignment — awaiting admin confirmation. */
+  suggestedRoleIds: string[];
+  roleSources: Record<string, 'position' | 'manual'>;
+  accountStatus: AccountStatus;
+  inviteStatus: InviteStatus;
   mfaEnabled: boolean;
   lastLogin: string | null;
   accessScope: AccessScope;
   accessScopeDepartmentId: string | null;
+}
+
+/** Employees in People with no login account yet — edge-case Create Login Access source. */
+export interface EmployeeWithoutLogin {
+  id: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string | null;
+  position: string | null;
+  department: string | null;
+  suggestedRoleIds: string[];
+  confirmedRoleIds: string[];
 }
 
 export interface AdminRole {
@@ -104,6 +123,9 @@ export const DEPARTMENTS = [
   { id: 'dept-sales', name: 'Sales' },
   { id: 'dept-finance', name: 'Finance' },
 ];
+
+/** Resolved from tenant Settings → Security (read-only in Users flows). */
+export const TENANT_LOGIN_METHOD = 'Password + optional Google SSO';
 
 export const UNIVERSAL_PERMISSIONS: PermissionDef[] = [
   { id: 'u1', code: 'inbox:read', description: 'Read inbox messages', module: 'Universal', universal: true },
@@ -198,6 +220,39 @@ export const MOCK_ROLES: AdminRole[] = [
   },
 ];
 
+export const EMPLOYEES_WITHOUT_LOGIN: EmployeeWithoutLogin[] = [
+  {
+    id: 'emp-7',
+    firstName: 'Jordan',
+    lastName: 'Wright',
+    workEmail: 'jordan.wright@acme.com',
+    position: 'Backend Engineer',
+    department: 'Backend',
+    suggestedRoleIds: ['role-readonly'],
+    confirmedRoleIds: [],
+  },
+  {
+    id: 'emp-8',
+    firstName: 'Casey',
+    lastName: 'Morgan',
+    workEmail: 'casey.morgan@acme.com',
+    position: null,
+    department: null,
+    suggestedRoleIds: [],
+    confirmedRoleIds: [],
+  },
+  {
+    id: 'emp-9',
+    firstName: 'Riley',
+    lastName: 'Brooks',
+    workEmail: 'riley.brooks@contractor.com',
+    position: 'QA Analyst',
+    department: 'QA',
+    suggestedRoleIds: ['role-leave-approver'],
+    confirmedRoleIds: [],
+  },
+];
+
 export const MOCK_USERS: AdminUser[] = [
   {
     id: 'user-1',
@@ -206,8 +261,13 @@ export const MOCK_USERS: AdminUser[] = [
     email: 'priya.sharma@acme.com',
     employeeId: 'emp-1',
     employeeName: 'Priya Sharma',
+    position: 'Chief Executive Officer',
+    department: 'Executive',
     roleIds: ['role-owner'],
-    status: 'active',
+    suggestedRoleIds: [],
+    roleSources: { 'role-owner': 'manual' },
+    accountStatus: 'active',
+    inviteStatus: 'accepted',
     mfaEnabled: true,
     lastLogin: '2026-06-12T08:42:00Z',
     accessScope: 'organization',
@@ -220,8 +280,13 @@ export const MOCK_USERS: AdminUser[] = [
     email: 'james.chen@acme.com',
     employeeId: 'emp-2',
     employeeName: 'James Chen',
+    position: 'HR Manager',
+    department: 'Human Resources',
     roleIds: ['role-people-admin'],
-    status: 'active',
+    suggestedRoleIds: [],
+    roleSources: { 'role-people-admin': 'position' },
+    accountStatus: 'active',
+    inviteStatus: 'accepted',
     mfaEnabled: true,
     lastLogin: '2026-06-11T17:20:00Z',
     accessScope: 'department',
@@ -234,25 +299,16 @@ export const MOCK_USERS: AdminUser[] = [
     email: 'maria.lopez@acme.com',
     employeeId: 'emp-3',
     employeeName: 'Maria Lopez',
+    position: 'Engineering Manager',
+    department: 'Engineering',
     roleIds: ['role-leave-approver'],
-    status: 'active',
+    suggestedRoleIds: [],
+    roleSources: { 'role-leave-approver': 'position' },
+    accountStatus: 'active',
+    inviteStatus: 'accepted',
     mfaEnabled: false,
     lastLogin: '2026-06-10T09:05:00Z',
     accessScope: 'reporting_tree',
-    accessScopeDepartmentId: null,
-  },
-  {
-    id: 'user-4',
-    firstName: 'Alex',
-    lastName: 'Kim',
-    email: 'alex.kim@acme.com',
-    employeeId: null,
-    employeeName: null,
-    roleIds: [],
-    status: 'invited',
-    mfaEnabled: false,
-    lastLogin: null,
-    accessScope: 'own',
     accessScopeDepartmentId: null,
   },
   {
@@ -262,8 +318,13 @@ export const MOCK_USERS: AdminUser[] = [
     email: 'sam.taylor@acme.com',
     employeeId: 'emp-5',
     employeeName: 'Sam Taylor',
+    position: 'Finance Analyst',
+    department: 'Finance',
     roleIds: ['role-readonly'],
-    status: 'disabled',
+    suggestedRoleIds: [],
+    roleSources: { 'role-readonly': 'position' },
+    accountStatus: 'disabled',
+    inviteStatus: 'accepted',
     mfaEnabled: false,
     lastLogin: '2026-05-28T14:00:00Z',
     accessScope: 'organization',
@@ -276,11 +337,54 @@ export const MOCK_USERS: AdminUser[] = [
     email: 'nina.patel@acme.com',
     employeeId: 'emp-6',
     employeeName: 'Nina Patel',
-    roleIds: ['role-leave-approver'],
-    status: 'invited',
+    position: 'Frontend Engineer',
+    department: 'Frontend',
+    roleIds: [],
+    suggestedRoleIds: ['role-leave-approver'],
+    roleSources: {},
+    accountStatus: 'no_login_access',
+    inviteStatus: 'sent',
     mfaEnabled: false,
     lastLogin: null,
     accessScope: 'direct_reports',
+    accessScopeDepartmentId: null,
+  },
+  {
+    id: 'user-7',
+    firstName: 'David',
+    lastName: 'Nguyen',
+    email: 'david.nguyen@acme.com',
+    employeeId: 'emp-7b',
+    employeeName: 'David Nguyen',
+    position: 'Sales Representative',
+    department: 'Sales',
+    roleIds: ['role-readonly'],
+    suggestedRoleIds: [],
+    roleSources: { 'role-readonly': 'manual' },
+    accountStatus: 'locked',
+    inviteStatus: 'accepted',
+    mfaEnabled: true,
+    lastLogin: '2026-06-09T22:10:00Z',
+    accessScope: 'own',
+    accessScopeDepartmentId: null,
+  },
+  {
+    id: 'user-8',
+    firstName: 'Elena',
+    lastName: 'Ruiz',
+    email: 'elena.ruiz@acme.com',
+    employeeId: 'emp-8b',
+    employeeName: 'Elena Ruiz',
+    position: 'Operations Coordinator',
+    department: 'Human Resources',
+    roleIds: [],
+    suggestedRoleIds: ['role-people-admin'],
+    roleSources: {},
+    accountStatus: 'no_login_access',
+    inviteStatus: 'expired',
+    mfaEnabled: false,
+    lastLogin: null,
+    accessScope: 'own',
     accessScopeDepartmentId: null,
   },
 ];
@@ -491,7 +595,15 @@ export function permissionsByModule(modules: readonly string[] = ENABLED_MODULES
   return grouped;
 }
 
-export function resolveEffectivePermissions(roleIds: string[], userId: string): string[] {
+export function formatRoleSource(
+  position: string | null,
+  source: 'position' | 'manual'
+): string {
+  if (source === 'manual') return 'Manual';
+  return position ? `${position} position` : 'Position';
+}
+
+export function resolveEffectivePermissions(roleIds: string[]): string[] {
   const codes = new Set<string>();
   for (const u of UNIVERSAL_PERMISSIONS) codes.add(u.code);
   for (const roleId of roleIds) {
@@ -501,11 +613,6 @@ export function resolveEffectivePermissions(roleIds: string[], userId: string): 
       const perm = GRANTABLE_PERMISSIONS.find(p => p.id === pid);
       if (perm) codes.add(perm.code);
     }
-  }
-  const overrides = MOCK_USER_OVERRIDES[userId] ?? [];
-  for (const o of overrides) {
-    if (o.grantType === 'grant') codes.add(o.permissionCode);
-    else codes.delete(o.permissionCode);
   }
   return Array.from(codes).sort();
 }

@@ -143,7 +143,11 @@ export function getReportingManagerForEmployee(
 
   const parentAssignments = getActiveAssignmentsForPosition(parentPosition.id, assignments);
   if (parentAssignments.length === 0) {
-    return { manager: null, unresolved: true, reason: 'Reporting manager unresolved' };
+    return {
+      manager: null,
+      unresolved: true,
+      reason: 'Reporting manager cannot be resolved because parent position is vacant'
+    };
   }
 
   const manager = getEmployeeById(employees, parentAssignments[0].employeeId);
@@ -256,6 +260,100 @@ export function canMovePosition(
   return { ok: true };
 }
 
+export function getPositionAssignBlockReason(
+  position: Position,
+  assignments: PositionAssignment[]
+): string | null {
+  if (position.status === 'inactive') {
+    return 'Inactive position cannot be assigned';
+  }
+  const { isFull } = getPositionOccupancy(position.id, position, assignments);
+  if (isFull) {
+    return 'Position capacity is full';
+  }
+  return null;
+}
+
+export function getEmployeeActiveAssignment(
+  employeeId: string,
+  assignments: PositionAssignment[]
+): PositionAssignment | undefined {
+  return assignments.find(
+    a => a.employeeId === employeeId && a.status === 'active' && a.effectiveTo === null
+  );
+}
+
+export function getEmployeeCurrentPositionName(
+  employeeId: string,
+  positions: Position[],
+  assignments: PositionAssignment[]
+): string | null {
+  const assignment = getEmployeeActiveAssignment(employeeId, assignments);
+  if (!assignment) return null;
+  return positions.find(p => p.id === assignment.positionId)?.name ?? null;
+}
+
+export function getAssignableEmployeesForPosition(
+  positionId: string,
+  employees: Employee[],
+  assignments: PositionAssignment[]
+): Employee[] {
+  const assignedHere = new Set(
+    getActiveAssignmentsForPosition(positionId, assignments).map(a => a.employeeId)
+  );
+  return employees.filter(e => e.status !== 'inactive' && !assignedHere.has(e.id));
+}
+
+export function formatAssignedEmployeeLabel(
+  position: Position,
+  assignments: PositionAssignment[],
+  employees: Employee[]
+): string {
+  const count = getActiveAssignmentsForPosition(position.id, assignments).length;
+  if (position.type === 'unique') {
+    const occupants = getPositionOccupants(position.id, assignments, employees);
+    return occupants.length > 0
+      ? `${occupants[0].firstName} ${occupants[0].lastName}`
+      : 'Vacant';
+  }
+  return count > 0 ? `${count} assigned` : 'No employees';
+}
+
+export function getReportingManagerPreviewForPosition(
+  position: Position,
+  positions: Position[],
+  assignments: PositionAssignment[],
+  employees: Employee[]
+): { label: string; warning?: string } {
+  if (!position.reportsToPositionId) {
+    return { label: 'Not resolved' };
+  }
+
+  const parentPosition = positions.find(p => p.id === position.reportsToPositionId);
+  if (!parentPosition) {
+    return { label: 'Not resolved', warning: 'Parent position not found' };
+  }
+
+  if (parentPosition.type === 'pooled') {
+    return { label: 'Not resolved', warning: 'Parent is a pooled position' };
+  }
+
+  const parentAssignments = getActiveAssignmentsForPosition(parentPosition.id, assignments);
+  if (parentAssignments.length === 0) {
+    return {
+      label: 'Not resolved',
+      warning: 'Reporting manager cannot be resolved because parent position is vacant'
+    };
+  }
+
+  const manager = getEmployeeById(employees, parentAssignments[0].employeeId);
+  if (!manager) {
+    return { label: 'Not resolved' };
+  }
+
+  return { label: `${manager.firstName} ${manager.lastName}` };
+}
+
 export function canAssignEmployeeToPosition(
   employeeId: string,
   positionId: string,
@@ -264,8 +362,10 @@ export function canAssignEmployeeToPosition(
 ): { ok: boolean; error?: string } {
   const position = positions.find(p => p.id === positionId);
   if (!position) return { ok: false, error: 'Position not found.' };
-  if (position.status === 'inactive') {
-    return { ok: false, error: 'Cannot assign to an inactive position.' };
+
+  const blockReason = getPositionAssignBlockReason(position, assignments);
+  if (blockReason) {
+    return { ok: false, error: blockReason };
   }
 
   const existing = assignments.find(
@@ -277,19 +377,6 @@ export function canAssignEmployeeToPosition(
   );
   if (existing) {
     return { ok: false, error: 'Employee is already assigned to this position.' };
-  }
-
-  const activeCount = getActiveAssignmentsForPosition(positionId, assignments).length;
-  const capacity = position.type === 'unique' ? 1 : position.capacity;
-
-  if (activeCount >= capacity) {
-    return {
-      ok: false,
-      error:
-        position.type === 'unique'
-          ? 'Unique positions allow only one active employee.'
-          : `Pooled position is at capacity (${capacity}).`
-    };
   }
 
   return { ok: true };

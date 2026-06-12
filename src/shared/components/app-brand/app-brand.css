@@ -2,17 +2,6 @@
   position: relative;
 }
 
-.app-brand-container--switcher .app-brand {
-  padding: 4px 6px;
-  gap: 4px;
-}
-
-.app-brand-container--switcher .app-logo {
-  width: 24px;
-  height: 24px;
-  font-size: 0.95rem;
-}
-
 .app-brand-trigger {
   display: flex;
   align-items: center;

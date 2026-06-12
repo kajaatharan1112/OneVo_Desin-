@@ -24,6 +24,8 @@ interface ShellProps {
   setActiveTab: (tab: string) => void;
   activeSubItemId: string;
   setActiveSubItemId: (id: string) => void;
+  onSubItemSelect: (id: string) => void;
+  onLeaveDeepLinkRoute: () => void;
   selectedCompany?: TenantCompany;
   onSelectCompany?: (company: TenantCompany) => void;
   onAddCompany?: () => void;
@@ -40,14 +42,17 @@ export const Shell: React.FC<ShellProps> = ({
   setActiveTab,
   activeSubItemId,
   setActiveSubItemId,
+  onSubItemSelect,
+  onLeaveDeepLinkRoute,
   selectedCompany,
   onSelectCompany,
   onAddCompany,
   setupWizardOpen = false,
   onCloseSetupWizard,
-  onGoToLandingPage,
+  onGoToLandingPage: _onGoToLandingPage,
   children
 }) => {
+  void _onGoToLandingPage;
   const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [subNavCollapsed, setSubNavCollapsed] = useState(false);
@@ -148,9 +153,10 @@ export const Shell: React.FC<ShellProps> = ({
             selectedCompany={selectedCompany}
             onSelectCompany={onSelectCompany}
             onAddCompany={onAddCompany}
-            onGoToLandingPage={onGoToLandingPage}
-            onOpenSetupWizard={onAddCompany}
-            onOpenActivationToast={() => setShowActivationToast(true)}
+            onOpenSettings={() => {
+              setActiveTab('Settings');
+              setActiveSubItemId('general');
+            }}
           />
         </div>
 
@@ -175,6 +181,7 @@ export const Shell: React.FC<ShellProps> = ({
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
                   setActiveSubItemId={setActiveSubItemId}
+                  onLeaveDeepLinkRoute={onLeaveDeepLinkRoute}
                 />
               </div>
 
@@ -185,7 +192,7 @@ export const Shell: React.FC<ShellProps> = ({
                 sections={activeSubSections}
                 panelTitle={activeTab}
                 activeId={resolvedSubItemId}
-                onSelect={setActiveSubItemId}
+                onSelect={onSubItemSelect}
                 onCollapse={() => setSubNavCollapsed(true)}
               />
             )}

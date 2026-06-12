@@ -39,6 +39,7 @@ export interface PositionAssignment {
   effectiveFrom: string;
   effectiveTo: string | null;
   status: AssignmentStatus;
+  notes?: string;
 }
 
 export interface DepartmentTreeNode extends Department {
@@ -55,7 +56,7 @@ export interface ReportingManagerResult {
   reason?: string;
 }
 
-export type PositionTab = 'org-chart' | 'list' | 'assignments';
+export type PositionTab = 'org-chart' | 'list';
 
 export type DepartmentFormMode = 'create' | 'edit';
 
