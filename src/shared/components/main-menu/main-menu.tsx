@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderOpen, Calendar, Users, Clock, MessageSquare,
   PieChart, Briefcase, Building2, Building, CalendarMinus, Zap, Activity,
   ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash, ListChecks,
-  CalendarDays, TrendingUp, Shield, Eye, List, Bell, Palette, Lock,
+  CalendarDays, TrendingUp, Shield, Eye, List, Palette, Lock,
   CreditCard, Monitor, CalendarClock, ClipboardList
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
@@ -63,12 +63,10 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
     ]},
   ]},
   { id: 'admin',       label: 'Admin',       icon: <ShieldCheck size={18} />,     subSections: [
-    { id: 'access', label: 'Access Control', collapsible: true, defaultOpen: true, items: [
-      { id: 'roles', label: 'Roles & Permissions', icon: <ShieldCheck size={13} /> },
-      { id: 'users', label: 'Users',               icon: <Users size={13} />       },
-    ]},
-    { id: 'config', label: 'Configuration', collapsible: true, defaultOpen: true, items: [
-      { id: 'notifications', label: 'Notifications', icon: <Bell size={13} /> },
+    { id: 'main', items: [
+      { id: 'users',             label: 'Users',               icon: <Users size={13} />        },
+      { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} />  },
+      { id: 'audit-log',         label: 'Audit Log',           icon: <ClipboardList size={13} />},
     ]},
   ]},
 ];

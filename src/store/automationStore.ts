@@ -128,6 +128,13 @@ function resolveConditionParentForNestedAdd(
   return null;
 }
 
+function pickFallbackStepId(steps: AutomationStep[], preferredId?: string | null): string | null {
+  if (preferredId && steps.some(s => s.id === preferredId)) return preferredId;
+  const mainSteps = steps.filter(s => s.sectionId === 'main').sort((a, b) => a.sortOrder - b.sortOrder);
+  const trigger = mainSteps.find(s => s.type === 'trigger') ?? steps.find(s => s.type === 'trigger');
+  return trigger?.id ?? mainSteps[0]?.id ?? steps[0]?.id ?? null;
+}
+
 function syncAlertCounts(automation: Automation, alerts: AutomationAlert[]): Automation {
 
   const created = alerts.filter(a => a.automationId === automation.id).length;
@@ -624,23 +631,35 @@ export const useAutomationStore = create<AutomationStore>((set, get) => ({
 
   deleteStep: (automationId, stepId) => {
 
-    set(s => ({
+    set(s => {
+      const automation = s.automations.find(a => a.id === automationId);
+      const steps = automation
+        ? automation.steps.filter(st => st.id !== stepId && !st.sectionId.includes(stepId))
+        : [];
 
-      automations: s.automations.map(a => {
+      const deletedOnMain = automation?.steps
+        .filter(st => st.sectionId === 'main')
+        .sort((a, b) => a.sortOrder - b.sortOrder) ?? [];
+      const deletedIndex = deletedOnMain.findIndex(st => st.id === stepId);
+      const mainAfterDelete = steps.filter(st => st.sectionId === 'main').sort((a, b) => a.sortOrder - b.sortOrder);
 
-        if (a.id !== automationId) return a;
+      let nextSelectedId = s.selectedStepId;
+      if (s.selectedStepId === stepId) {
+        const neighbor = mainAfterDelete[deletedIndex] ?? mainAfterDelete[deletedIndex - 1];
+        nextSelectedId = pickFallbackStepId(steps, neighbor?.id);
+      } else if (s.selectedStepId && !steps.some(st => st.id === s.selectedStepId)) {
+        nextSelectedId = pickFallbackStepId(steps);
+      }
 
-        const steps = a.steps.filter(st => st.id !== stepId && !st.sectionId.includes(stepId));
-
-        const merged = { ...a, steps, updatedAt: now() };
-
-        return { ...merged, summary: buildAutomationSummary(merged) };
-
-      }),
-
-      selectedStepId: s.selectedStepId === stepId ? null : s.selectedStepId
-
-    }));
+      return {
+        automations: s.automations.map(a => {
+          if (a.id !== automationId) return a;
+          const merged = { ...a, steps, updatedAt: now() };
+          return { ...merged, summary: buildAutomationSummary(merged) };
+        }),
+        selectedStepId: nextSelectedId
+      };
+    });
 
   },
 

@@ -77,7 +77,6 @@ export function stepToSentence(
   }
 ): string {
   const c = step.config;
-  if (c.displaySentence) return String(c.displaySentence);
   switch (step.type) {
     case 'trigger':
       return triggerLabel(c.triggerKey ?? '') === 'Choose a trigger'
@@ -134,7 +133,7 @@ export function stepToSentence(
     case 'delay':
       return `Wait ${c.delayAmount ?? '1'} ${c.delayUnit ?? 'hours'}`;
     case 'end':
-      return 'End automation';
+      return endStepSentence(c);
     default:
       return step.type;
   }
@@ -149,6 +148,14 @@ export function buildAutomationSummary(automation: Automation): string {
   if (actions.length === 0) return `When ${triggerText}`;
   const actionText = actions.map(s => stepToSentence(s).toLowerCase()).join(', then ');
   return `When ${triggerText}, then ${actionText}`;
+}
+
+export function endStepSentence(config: StepConfig): string {
+  if (config.label) return String(config.label);
+  if (config.endReason === 'stop_if_matched') return 'Stop if matched';
+  if (config.endReason === 'no_deduction') return 'No leave deduction';
+  if (config.displaySentence) return String(config.displaySentence);
+  return 'End automation';
 }
 
 export function getMainChainSteps(steps: AutomationStep[]): AutomationStep[] {
