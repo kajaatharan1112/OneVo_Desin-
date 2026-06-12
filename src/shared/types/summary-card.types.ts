@@ -4,6 +4,14 @@ export type EmployeeSummaryCardId =
   | 'activity'
   | 'my-calendar';
 
+export type CeoSummaryCardId =
+  | 'workforce-availability'
+  | 'company-performance'
+  | 'productivity'
+  | 'my-priorities'
+  | 'project-health'
+  | 'schedule';
+
 export type TenantKpiCardId =
   | 'total-employees'
   | 'departments'
@@ -18,7 +26,13 @@ export type TenantSummaryCardId =
   | 'total-revenue'
   | 'open-requests';
 
-export type SummaryCardId = EmployeeSummaryCardId | TenantSummaryCardId | TenantKpiCardId;
+export type SummaryCardId =
+  | EmployeeSummaryCardId
+  | CeoSummaryCardId
+  | TenantSummaryCardId
+  | TenantKpiCardId;
+
+export type SummaryCardStatus = 'green' | 'amber' | 'red';
 
 export interface SummaryCardData {
   id: SummaryCardId;
@@ -26,6 +40,11 @@ export interface SummaryCardData {
   value: string;
   desc: string;
   color: string;
+  variant?: 'employee' | 'ceo';
+  delta?: string;
+  status?: SummaryCardStatus;
+  actionLabel?: string;
+  actionTab?: string;
 }
 
 export interface TenantKpiCardData {

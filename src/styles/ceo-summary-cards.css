@@ -1,0 +1,93 @@
+:root {
+  --ceo-project-color: color-mix(in srgb, var(--accent) 55%, #7c3aed);
+  --ceo-performance-color: color-mix(in srgb, var(--accent) 45%, var(--nexus-info, var(--accent)));
+  --ceo-kpi-height: 96px;
+}
+
+.summarize-tabs-root--ceo .summarize-tabs--ceo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.summary-card--ceo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--ceo-kpi-height);
+  min-height: var(--ceo-kpi-height);
+  max-height: var(--ceo-kpi-height);
+  padding: 14px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.summary-card--ceo .summary-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.summary-card--ceo .summary-card__title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--nexus-text-secondary);
+  letter-spacing: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary-card--ceo .summary-card__value {
+  display: block;
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary-card--ceo .summary-card__subtitle {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--nexus-text-secondary);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.summary-card--ceo .summary-card__icon--ceo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.summary-card--ceo[data-summary-card-id='company-performance'] .summary-card__icon--ceo {
+  color: var(--ceo-performance-color);
+  background: color-mix(in srgb, var(--ceo-performance-color) 14%, transparent);
+}
+
+.summary-card--ceo[data-summary-card-id='my-priorities'] .summary-card__icon--ceo {
+  color: var(--ceo-performance-color);
+  background: color-mix(in srgb, var(--ceo-performance-color) 14%, transparent);
+}
+
+.summary-card--ceo.summary-card--active {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-theme='light'] .summary-card--ceo {
+  background: var(--surface-panel);
+}

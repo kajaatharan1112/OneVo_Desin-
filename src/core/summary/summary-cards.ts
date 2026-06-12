@@ -1,4 +1,6 @@
 import type { SummaryCardData, TenantKpiCardData } from '../../shared/types/summary-card.types';
+import { getEmployeeData } from '../../features/employees/data/employee-data.registry';
+import type { EmployeeId } from '../../features/employees/types/employee.types';
 
 export const employeeSummaryCards: SummaryCardData[] = [
   {
@@ -102,6 +104,41 @@ export const tenantSummaryCards: SummaryCardData[] = [
   }
 ];
 
-export function getSummaryCardsForView(view: 'employee' | 'tenant'): SummaryCardData[] {
-  return view === 'tenant' ? tenantSummaryCards : employeeSummaryCards;
+export function getCeoSummaryCards(): SummaryCardData[] {
+  const { ceoSummaryCards } = getEmployeeData('marcus');
+
+  return (ceoSummaryCards ?? []).map((card) => ({
+    id: card.id,
+    title: card.title,
+    value: card.value,
+    desc: card.desc,
+    delta: card.delta,
+    status: card.status,
+    color: card.color,
+    actionLabel: card.actionLabel,
+    actionTab: card.actionTab,
+    variant: 'ceo' as const
+  }));
+}
+
+export function getSummaryCardsForView(
+  view: 'employee' | 'tenant',
+  employeeId: EmployeeId = 'alex'
+): SummaryCardData[] {
+  if (view === 'tenant') {
+    return tenantSummaryCards;
+  }
+
+  return employeeId === 'marcus' ? getCeoSummaryCards() : employeeSummaryCards;
+}
+
+export function isCeoSummaryCardId(id: SummaryCardData['id']): boolean {
+  return (
+    id === 'workforce-availability' ||
+    id === 'company-performance' ||
+    id === 'productivity' ||
+    id === 'my-priorities' ||
+    id === 'project-health' ||
+    id === 'schedule'
+  );
 }
