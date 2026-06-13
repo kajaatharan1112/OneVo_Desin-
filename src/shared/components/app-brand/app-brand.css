@@ -38,6 +38,43 @@
   max-width: 100%;
 }
 
+.app-brand-trigger--split {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 4px 4px 6px;
+}
+
+.app-brand-name-btn,
+.app-brand-chevron-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-md, 8px);
+  transition: background-color 0.2s ease;
+}
+
+.app-brand-name-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  text-align: left;
+}
+
+.app-brand-chevron-btn {
+  flex-shrink: 0;
+  padding: 4px;
+}
+
+.app-brand-name-btn:hover,
+.app-brand-chevron-btn:hover {
+  background-color: var(--code-bg);
+}
+
+
 .app-brand-chevron {
   flex-shrink: 0;
   color: var(--nexus-text-secondary);

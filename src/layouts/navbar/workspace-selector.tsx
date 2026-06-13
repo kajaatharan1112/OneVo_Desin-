@@ -3,7 +3,7 @@ import { Briefcase, Check, ChevronDown, UserRound } from 'lucide-react';
 
 const WORKSPACES = [
   { id: 'employee' as const, label: 'Employee Workspace', Icon: UserRound },
-  { id: 'tenant' as const, label: 'Management Workspace', Icon: Briefcase },
+  { id: 'tenant' as const, label: 'Configuration application', Icon: Briefcase },
 ];
 
 interface WorkspaceSelectorProps {

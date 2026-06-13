@@ -16,6 +16,7 @@ const APP_NAME = DEFAULT_TENANT_COMPANY;
 
 interface AppBrandProps {
   onClick?: () => void;
+  onBrandNameClick?: () => void;
   selectedCompany?: TenantCompany;
   onSelectCompany?: (company: TenantCompany) => void;
   onAddCompany?: () => void;
@@ -24,6 +25,7 @@ interface AppBrandProps {
 
 export const AppBrand: React.FC<AppBrandProps> = ({
   onClick,
+  onBrandNameClick,
   selectedCompany,
   onSelectCompany,
   onAddCompany,
@@ -73,6 +75,11 @@ export const AppBrand: React.FC<AppBrandProps> = ({
     setIsOpen((open) => !open);
   };
 
+  const handleBrandNameClick = () => {
+    onBrandNameClick?.();
+    onClick?.();
+  };
+
   const containerClass = [
     'app-brand-container',
     hasSwitcher && 'app-brand-container--switcher',
@@ -91,31 +98,40 @@ export const AppBrand: React.FC<AppBrandProps> = ({
         {!collapsed && (
           <>
             {hasSwitcher ? (
-              <button
-                type="button"
-                className="app-brand-trigger"
-                onClick={handleToggle}
-                aria-expanded={isOpen}
-                aria-haspopup="listbox"
-                aria-label={
-                  selectedCompany
-                    ? `OneVo HRMS. Current company: ${selectedCompany}. Open company menu`
-                    : `OneVo HRMS. Open company menu`
-                }
-              >
-                <span className="app-brand-name">{APP_NAME}</span>
-                <ChevronDown
-                  size={14}
-                  className={`app-brand-chevron${isOpen ? ' app-brand-chevron--open' : ''}`}
-                  aria-hidden
-                />
-              </button>
+              <div className="app-brand-trigger app-brand-trigger--split">
+                <button
+                  type="button"
+                  className="app-brand-name-btn"
+                  onClick={handleBrandNameClick}
+                  aria-label={`${APP_NAME}. Open quick actions`}
+                >
+                  <span className="app-brand-name">{APP_NAME}</span>
+                </button>
+                <button
+                  type="button"
+                  className="app-brand-chevron-btn"
+                  onClick={handleToggle}
+                  aria-expanded={isOpen}
+                  aria-haspopup="listbox"
+                  aria-label={
+                    selectedCompany
+                      ? `Current company: ${selectedCompany}. Open company menu`
+                      : 'Open company menu'
+                  }
+                >
+                  <ChevronDown
+                    size={14}
+                    className={`app-brand-chevron${isOpen ? ' app-brand-chevron--open' : ''}`}
+                    aria-hidden
+                  />
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
                 className="app-brand-trigger app-brand-trigger--static"
-                onClick={onClick}
-                aria-label={APP_NAME}
+                onClick={handleBrandNameClick}
+                aria-label={`${APP_NAME}. Open quick actions`}
               >
                 <span className="app-brand-name app-title">{APP_NAME}</span>
               </button>
