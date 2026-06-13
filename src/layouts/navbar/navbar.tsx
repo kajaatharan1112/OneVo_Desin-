@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-import { Calendar, LogOut, Settings, User } from 'lucide-react';
+import { Calendar, LogOut, Settings, Shield, User } from 'lucide-react';
+import { MySecurityDrawer } from '../../shared/components/my-security/my-security-drawer';
 
 import { NavbarSearch } from './navbar-search';
 
@@ -67,6 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mySecurityOpen, setMySecurityOpen] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -223,6 +225,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   setProfileOpen(false);
 
+                  setMySecurityOpen(true);
+
+                }}
+
+              >
+
+                <Shield size={14} aria-hidden="true" />
+
+                My Security
+
+              </button>
+
+              <button
+
+                className="navbar-profile__action"
+
+                role="menuitem"
+
+                onClick={() => {
+
+                  setProfileOpen(false);
+
                   onOpenSettings?.();
 
                 }}
@@ -260,6 +284,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
       </div>
+
+      {mySecurityOpen && (
+        <MySecurityDrawer onClose={() => setMySecurityOpen(false)} />
+      )}
 
     </header>
 

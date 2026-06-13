@@ -4,10 +4,11 @@ import {
   LayoutDashboard, FolderKanban, Calendar, Users, UsersRound, Clock, MessageSquare,
   PieChart, Briefcase, Building2, Building, CalendarMinus, Workflow, Activity,
   ChartNoAxesCombined, ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash,
-  ListChecks, CalendarDays, TrendingUp, Shield, Eye, List, Palette, Lock, Bell,
+  ListChecks, CalendarDays, TrendingUp, Shield, Eye, List, Palette, Bell,
   CreditCard, Monitor, CalendarClock, ClipboardList, type LucideIcon,
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
+import { TENANT_DEVICE_CAPABILITY } from '../../../features/settings/settingsConfig';
 
 const RAIL_ICON_PROPS = { size: 18, strokeWidth: 2.2 } as const;
 
@@ -24,24 +25,31 @@ export interface NavItem {
   subSections: SubNavSection[];
 }
 
-export const SETTINGS_NAV_ITEM: NavItem = {
-  id: 'settings',
-  label: 'Settings',
-  icon: railIcon(Settings),
-  subSections: [
-    { id: 'main', items: [
-      { id: 'general',           label: 'General',             icon: <Settings size={13} />      },
-      { id: 'branding',          label: 'Branding',            icon: <Palette size={13} />       },
-      { id: 'users',             label: 'Users',               icon: <Users size={13} />         },
-      { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} />   },
-      { id: 'security',          label: 'Security',            icon: <Lock size={13} />          },
-      { id: 'notifications',     label: 'Notifications',       icon: <Bell size={13} />          },
-      { id: 'audit-log',         label: 'Audit Log',           icon: <ClipboardList size={13} /> },
-      { id: 'billing',           label: 'Billing',             icon: <CreditCard size={13} />    },
-      { id: 'devices',           label: 'Devices',             icon: <Monitor size={13} />       },
-    ]},
-  ],
-};
+const SETTINGS_SUB_ITEMS = [
+  { id: 'general',           label: 'General',             icon: <Settings size={13} />      },
+  { id: 'branding',          label: 'Branding',            icon: <Palette size={13} />       },
+  { id: 'users',             label: 'Users',               icon: <Users size={13} />         },
+  { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} />   },
+  { id: 'notifications',     label: 'Notifications',       icon: <Bell size={13} />          },
+  { id: 'billing',           label: 'Billing',             icon: <CreditCard size={13} />    },
+  { id: 'devices',           label: 'Devices',             icon: <Monitor size={13} />       },
+  { id: 'audit-log',         label: 'Audit Log',           icon: <ClipboardList size={13} /> },
+] as const;
+
+export function buildSettingsNavItem(): NavItem {
+  const items = SETTINGS_SUB_ITEMS.filter(
+    item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
+  );
+  return {
+    id: 'settings',
+    label: 'Settings',
+    icon: railIcon(Settings),
+    subSections: [{ id: 'main', items: [...items] }],
+  };
+}
+
+/** Tenant-wide administration — single main-rail entry (no separate Admin item). */
+export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
 
 export const TENANT_MAIN_ITEMS: NavItem[] = [
   { id: 'dashboard',   label: 'Dashboard',   icon: railIcon(LayoutDashboard), subSections: [] },
