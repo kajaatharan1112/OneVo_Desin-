@@ -6,7 +6,7 @@ import { NavbarSearch } from './navbar-search';
 
 import { WorkspaceSelector } from './workspace-selector';
 
-import { appNavDateLabel } from '../../features/employees/data/employee-task-overview.data';
+import { appNavDateLabel } from '../../shared/constants/app-nav';
 
 import { AppBrand, type TenantCompany } from '../../shared/components/app-brand/app-brand';
 
@@ -40,6 +40,8 @@ interface NavbarProps {
 
   onOpenSettings?: () => void;
 
+  onOpenBrandActions?: () => void;
+
 }
 
 
@@ -63,6 +65,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onAddCompany,
 
   onOpenSettings,
+
+  onOpenBrandActions,
 
 }) => {
 
@@ -108,6 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           selectedCompany={isTenant ? selectedCompany : undefined}
           onSelectCompany={isTenant ? onSelectCompany : undefined}
           onAddCompany={isTenant ? onAddCompany : undefined}
+          onBrandNameClick={onOpenBrandActions}
           collapsed={false}
         />
 

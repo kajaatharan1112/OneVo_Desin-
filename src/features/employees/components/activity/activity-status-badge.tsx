@@ -1,9 +1,8 @@
 import React from 'react';
-import type {
-  ActivityTimelineStatus,
-  PunctualityChip,
-  WeeklyDayStatus
-} from '../../types/employee-activity.types';
+
+export type ActivityTimelineStatus = 'Completed' | 'Pending' | 'Upcoming';
+export type WeeklyDayStatus = 'Office' | 'Remote' | 'Off' | 'Leave';
+export type PunctualityChip = 'on-time' | 'late' | 'remote';
 
 const TIMELINE_LABELS: Record<ActivityTimelineStatus, string> = {
   Completed: 'Completed',
@@ -27,25 +26,21 @@ interface ActivityStatusBadgeProps {
   status: ActivityTimelineStatus;
 }
 
-export const ActivityStatusBadge: React.FC<ActivityStatusBadgeProps> = ({ status }) => {
-  return (
-    <span className={`eac-status-badge eac-status-badge--${TIMELINE_SLUG[status]}`}>
-      {TIMELINE_LABELS[status]}
-    </span>
-  );
-};
+export const ActivityStatusBadge: React.FC<ActivityStatusBadgeProps> = ({ status }) => (
+  <span className={`eac-status-badge eac-status-badge--${TIMELINE_SLUG[status]}`}>
+    {TIMELINE_LABELS[status]}
+  </span>
+);
 
 interface PunctualityBadgeProps {
   status: PunctualityChip;
 }
 
-export const PunctualityBadge: React.FC<PunctualityBadgeProps> = ({ status }) => {
-  return (
-    <span className={`eac-punctuality-badge eac-punctuality-badge--${status}`}>
-      {PUNCTUALITY_LABELS[status]}
-    </span>
-  );
-};
+export const PunctualityBadge: React.FC<PunctualityBadgeProps> = ({ status }) => (
+  <span className={`eac-punctuality-badge eac-punctuality-badge--${status}`}>
+    {PUNCTUALITY_LABELS[status]}
+  </span>
+);
 
 interface WeeklyStatusBadgeProps {
   status: WeeklyDayStatus;

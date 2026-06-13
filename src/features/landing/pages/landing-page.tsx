@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { LandingHero } from '../components';
 import './landing-page.css';
@@ -8,10 +8,6 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGoToApp }) => {
-  useEffect(() => {
-    // Smooth scrolling and GSAP removed
-  }, []);
-
   return (
     <div className="landing-page-root dark-theme">
       {/* Top Navigation / Go To App */}

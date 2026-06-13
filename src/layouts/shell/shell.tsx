@@ -13,7 +13,7 @@ import {
 import { resolveSubItemId } from '../../shared/utils/nav-utils';
 import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
-import { RequestToast } from '../../shared/components/request-toast/request-toast';
+import { BrandActionsToast } from '../../shared/components/brand-actions-toast/brand-actions-toast';
 import { Navbar } from '../navbar/navbar';
 import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
 
@@ -49,14 +49,13 @@ export const Shell: React.FC<ShellProps> = ({
   onAddCompany,
   setupWizardOpen = false,
   onCloseSetupWizard,
-  onGoToLandingPage: _onGoToLandingPage,
+  onGoToLandingPage,
   children
 }) => {
-  void _onGoToLandingPage;
   const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [subNavCollapsed, setSubNavCollapsed] = useState(false);
-  const [showActivationToast, setShowActivationToast] = useState(true);
+  const [brandActionsOpen, setBrandActionsOpen] = useState(false);
 
   const allTenantItems = useMemo(
     () => [...TENANT_MAIN_ITEMS, ...TENANT_BOTTOM_ITEMS],
@@ -157,6 +156,7 @@ export const Shell: React.FC<ShellProps> = ({
               setActiveTab('Settings');
               setActiveSubItemId('general');
             }}
+            onOpenBrandActions={() => setBrandActionsOpen((open) => !open)}
           />
         </div>
 
@@ -230,8 +230,11 @@ export const Shell: React.FC<ShellProps> = ({
 
       </div>
 
-      {showActivationToast && (
-        <RequestToast onClose={() => setShowActivationToast(false)} />
+      {brandActionsOpen && (
+        <BrandActionsToast
+          onClose={() => setBrandActionsOpen(false)}
+          onGoToLandingPage={onGoToLandingPage}
+        />
       )}
     </NotificationPanelProvider>
   );

@@ -1,0 +1,95 @@
+.brand-actions-toast {
+  position: fixed;
+  top: calc(var(--nexus-header-height, 72px) + 12px);
+  right: 24px;
+  z-index: 1100;
+  width: min(320px, calc(100vw - 32px));
+  padding: 24px;
+  background: var(--nexus-surface-elevated, rgba(255, 255, 255, 0.97));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--nexus-border, rgba(15, 23, 42, 0.08));
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.15);
+  color: var(--nexus-text-primary, #0f172a);
+  animation: brandActionsSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  font-family: var(--nexus-font, inherit);
+}
+
+@keyframes brandActionsSlideDown {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.brand-actions-toast__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--nexus-text-muted, #94a3b8);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.brand-actions-toast__close:hover {
+  background: var(--nexus-surface-muted, rgba(15, 23, 42, 0.06));
+  color: var(--nexus-text-primary, #0f172a);
+}
+
+.brand-actions-toast__content h4 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--nexus-text-primary, #0f172a);
+}
+
+.brand-actions-toast__content p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--nexus-text-secondary, #475569);
+}
+
+.brand-actions-toast__apply-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--nexus-primary, #1e4fc0);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-shadow: 0 4px 12px rgba(30, 79, 192, 0.3);
+}
+
+.brand-actions-toast__apply-btn:hover {
+  background: var(--nexus-primary-hover, #1a3f9a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(30, 79, 192, 0.4);
+}
+
+.brand-actions-toast__apply-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .brand-actions-toast {
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+}
