@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Search, Download, Ban, CheckCircle, Eye, Shield, ShieldOff, Send, X,
-  KeyRound, Unlock, LogOut, Plus, Trash2,
+  Unlock, LogOut, Plus, Trash2,
 } from 'lucide-react';
 import {
   MOCK_USERS,
@@ -278,15 +278,15 @@ export const AdminUsersPage: React.FC = () => {
         <div>
           <h1 className="cfg-page__title">Users</h1>
           <p className="cfg-page__subtitle">
-            Manage login access, account status, and access review for employees.
+            Manage login access, invite status, MFA status, and active sessions for employee accounts.
           </p>
         </div>
         <div className="cfg-page__actions">
           <button type="button" className="org-btn org-btn--secondary" onClick={exportCsv}>
             <Download size={14} /> Export
           </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={openCreateAccess}>
-            <KeyRound size={14} /> Create Login Access
+          <button type="button" className="org-btn org-btn--primary" onClick={openCreateAccess}>
+            <Plus size={14} /> Create Login Access
           </button>
         </div>
       </div>
@@ -297,7 +297,7 @@ export const AdminUsersPage: React.FC = () => {
           <strong>{summary.activeLogins}</strong>
         </div>
         <div className="admin-summary-card">
-          <span className="admin-summary-card__label">Invites Pending</span>
+          <span className="admin-summary-card__label">Pending Invites</span>
           <strong>{summary.invitesPending}</strong>
         </div>
         <div className="admin-summary-card">
@@ -356,7 +356,7 @@ export const AdminUsersPage: React.FC = () => {
           <table className="cfg-table">
             <thead>
               <tr>
-                <th>User / Employee</th>
+                <th>User</th>
                 <th>Email</th>
                 <th>Position</th>
                 <th>Department</th>
@@ -445,7 +445,7 @@ export const AdminUsersPage: React.FC = () => {
                       )}
                       {u.accountStatus === 'locked' && (
                         <button type="button" className="cfg-action-btn" onClick={() => unlockAccount(u.id)}>
-                          <Unlock size={13} /> Unlock
+                          <Unlock size={13} /> Unlock Account
                         </button>
                       )}
                       {(sessions[u.id] ?? []).length > 0 && (
@@ -531,10 +531,10 @@ export const AdminUsersPage: React.FC = () => {
                       <span className="admin-detail-row__value">{selectedEmployee.department ?? '—'}</span>
                     </div>
                     <div className="admin-detail-row">
-                      <span className="admin-detail-row__label">Assigned Roles</span>
+                      <span className="admin-detail-row__label">Confirmed Roles / Access</span>
                       <span className="admin-detail-row__value">
                         {selectedEmployee.confirmedRoleIds.length === 0
-                          ? 'None'
+                          ? 'None confirmed'
                           : selectedEmployee.confirmedRoleIds
                               .map(id => MOCK_ROLES.find(r => r.id === id)?.name)
                               .filter(Boolean)
@@ -549,12 +549,12 @@ export const AdminUsersPage: React.FC = () => {
 
                   {!selectedEmployee.position && (
                     <p className="admin-hint admin-hint--warning">
-                      This employee has no position assignment. Position-based access may be unavailable.
+                      This employee has no position assignment. Reporting and access scope may not resolve correctly.
                     </p>
                   )}
                   {selectedEmployee.confirmedRoleIds.length === 0 && (
                     <p className="admin-hint admin-hint--warning">
-                      This user may only receive self-service access until a role is assigned.
+                      No confirmed access is available for this employee. Confirm role access before creating login access.
                     </p>
                   )}
                 </div>

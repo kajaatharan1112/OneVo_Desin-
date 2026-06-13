@@ -16,7 +16,7 @@ const ACTION_OPTIONS = [
   'auth.login.failed',
 ];
 
-const MODULE_OPTIONS = ['Users', 'Roles', 'Security', 'Employees', 'Leave'];
+const CATEGORY_OPTIONS = ['Users', 'Roles', 'Security', 'Employees', 'Leave', 'Settings'];
 const RESOURCE_TYPES = ['User', 'Role', 'UserRole', 'Session'];
 
 export const AuditLogPage: React.FC = () => {
@@ -26,29 +26,13 @@ export const AuditLogPage: React.FC = () => {
   const [actorFilter, setActorFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
   const [resourceFilter, setResourceFilter] = useState('all');
-  const [moduleFilter, setModuleFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [detailEntry, setDetailEntry] = useState<AuditLogEntry | null>(null);
 
   const actors = useMemo(() => {
     const names = new Set(MOCK_AUDIT_LOG.map(e => e.actorName).filter(Boolean));
     return Array.from(names).sort();
   }, []);
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  const summary = useMemo(() => {
-    const todayEntries = MOCK_AUDIT_LOG.filter(e => e.timestamp.startsWith(today));
-    return {
-      changesToday: todayEntries.length,
-      accessChanges: MOCK_AUDIT_LOG.filter(e =>
-        e.action.includes('permission') || e.action.includes('role') || e.action.includes('login')
-      ).length,
-      securityEvents: MOCK_AUDIT_LOG.filter(e =>
-        e.module === 'Security' || e.action.includes('auth.')
-      ).length,
-      failedActions: MOCK_AUDIT_LOG.filter(e => e.status === 'failed').length,
-    };
-  }, [today]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -62,19 +46,18 @@ export const AuditLogPage: React.FC = () => {
       if (actorFilter !== 'all' && e.actorName !== actorFilter) return false;
       if (actionFilter !== 'all' && e.action !== actionFilter) return false;
       if (resourceFilter !== 'all' && e.resourceType !== resourceFilter) return false;
-      if (moduleFilter !== 'all' && e.module !== moduleFilter) return false;
+      if (categoryFilter !== 'all' && e.module !== categoryFilter) return false;
       return true;
     });
-  }, [search, dateFrom, dateTo, actorFilter, actionFilter, resourceFilter, moduleFilter]);
+  }, [search, dateFrom, dateTo, actorFilter, actionFilter, resourceFilter, categoryFilter]);
 
   const exportCsv = () => {
-    const headers = ['Time', 'Actor', 'Action', 'Resource', 'Module', 'IP Address', 'Status'];
+    const headers = ['Timestamp', 'Actor', 'Action', 'Resource', 'IP Address', 'Status'];
     const rows = filtered.map(e => [
       formatDateTime(e.timestamp),
       e.actorName,
       e.action,
       `${e.resourceType}: ${e.resourceName}`,
-      e.module,
       e.ipAddress,
       e.status,
     ]);
@@ -94,31 +77,12 @@ export const AuditLogPage: React.FC = () => {
         <div>
           <h1 className="cfg-page__title">Audit Log</h1>
           <p className="cfg-page__subtitle">
-            Read-only compliance history of important system and admin actions.
+            Review tenant activity, security changes, and configuration history.
           </p>
         </div>
         <button type="button" className="org-btn org-btn--secondary" onClick={exportCsv}>
           <Download size={14} /> Export CSV
         </button>
-      </div>
-
-      <div className="admin-summary-row">
-        <div className="admin-summary-card">
-          <span className="admin-summary-card__label">Changes Today</span>
-          <strong>{summary.changesToday}</strong>
-        </div>
-        <div className="admin-summary-card">
-          <span className="admin-summary-card__label">Access Changes</span>
-          <strong>{summary.accessChanges}</strong>
-        </div>
-        <div className="admin-summary-card">
-          <span className="admin-summary-card__label">Security Events</span>
-          <strong>{summary.securityEvents}</strong>
-        </div>
-        <div className="admin-summary-card">
-          <span className="admin-summary-card__label">Failed Actions</span>
-          <strong>{summary.failedActions}</strong>
-        </div>
       </div>
 
       <div className="cfg-page__toolbar">
@@ -158,9 +122,9 @@ export const AuditLogPage: React.FC = () => {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-        <select className="cfg-filter-select" value={moduleFilter} onChange={e => setModuleFilter(e.target.value)}>
-          <option value="all">All modules</option>
-          {MODULE_OPTIONS.map(m => (
+        <select className="cfg-filter-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+          <option value="all">All categories</option>
+          {CATEGORY_OPTIONS.map(m => (
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
@@ -171,11 +135,10 @@ export const AuditLogPage: React.FC = () => {
           <table className="cfg-table">
             <thead>
               <tr>
-                <th>Time</th>
+                <th>Timestamp</th>
                 <th>Actor</th>
                 <th>Action</th>
                 <th>Resource</th>
-                <th>Module</th>
                 <th>IP Address</th>
                 <th>Status</th>
                 <th>Details</th>
@@ -191,7 +154,6 @@ export const AuditLogPage: React.FC = () => {
                     <div className="cfg-table__name">{e.resourceName}</div>
                     <div className="cfg-table__meta">{e.resourceType}</div>
                   </td>
-                  <td>{e.module}</td>
                   <td>{e.ipAddress}</td>
                   <td>
                     <span className={`cfg-badge cfg-badge--${e.status === 'success' ? 'success' : 'failed'}`}>
@@ -241,13 +203,9 @@ export const AuditLogPage: React.FC = () => {
                   <span className="admin-detail-row__value admin-detail-row__value--mono">{detailEntry.action}</span>
                 </div>
                 <div className="admin-detail-row">
-                  <span className="admin-detail-row__label">Resource Type</span>
-                  <span className="admin-detail-row__value">{detailEntry.resourceType}</span>
-                </div>
-                <div className="admin-detail-row">
                   <span className="admin-detail-row__label">Resource</span>
                   <span className="admin-detail-row__value">
-                    {detailEntry.resourceName} ({detailEntry.resourceId})
+                    {detailEntry.resourceType}: {detailEntry.resourceName} ({detailEntry.resourceId})
                   </span>
                 </div>
                 <div className="admin-detail-row">

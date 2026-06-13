@@ -37,6 +37,12 @@ import { LeaveEntitlementsPage } from '../features/leave/configuration/LeaveEnti
 import { AdminUsersPage } from '../features/admin/AdminUsersPage';
 import { RolesPermissionsPage } from '../features/admin/RolesPermissionsPage';
 import { AuditLogPage } from '../features/admin/AuditLogPage';
+import { GeneralSettingsPage } from '../features/settings/GeneralSettingsPage';
+import { BrandingSettingsPage } from '../features/settings/BrandingSettingsPage';
+import { NotificationsSettingsPage } from '../features/settings/NotificationsSettingsPage';
+import { BillingSettingsPage } from '../features/settings/BillingSettingsPage';
+import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
+import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
 import {
   DEFAULT_TENANT_COMPANY,
   type TenantCompany
@@ -124,7 +130,18 @@ function App() {
       const employeeNavItem = findNavItem(allEmployeeItems, activeTab);
       if ((employeeNavItem?.subSections.length ?? 0) > 0 && activeTab === 'Settings') {
         const resolvedSubId = resolveSubItemId(employeeNavItem, activeSubItemId);
-        return renderSectionPage(activeTab, allEmployeeItems, resolvedSubId);
+        switch (resolvedSubId) {
+          case 'general': return <GeneralSettingsPage />;
+          case 'branding': return <BrandingSettingsPage />;
+          case 'users': return <AdminUsersPage />;
+          case 'roles-permissions': return <RolesPermissionsPage />;
+          case 'notifications': return <NotificationsSettingsPage />;
+          case 'billing': return <BillingSettingsPage />;
+          case 'devices':
+            return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
+          case 'audit-log': return <AuditLogPage />;
+          default: return <GeneralSettingsPage />;
+        }
       }
 
       switch (activeTab) {
@@ -188,20 +205,24 @@ function App() {
       }
       if (activeTab === 'Settings') {
         switch (resolvedSubId) {
+          case 'general':
+            return <GeneralSettingsPage />;
+          case 'branding':
+            return <BrandingSettingsPage />;
           case 'users':
             return <AdminUsersPage />;
           case 'roles-permissions':
             return <RolesPermissionsPage />;
+          case 'notifications':
+            return <NotificationsSettingsPage />;
+          case 'billing':
+            return <BillingSettingsPage />;
+          case 'devices':
+            return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
           case 'audit-log':
             return <AuditLogPage />;
-          case 'general':
-          case 'branding':
-          case 'security':
-          case 'notifications':
-          case 'billing':
-          case 'devices':
           default:
-            return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
+            return <GeneralSettingsPage />;
         }
       }
       return renderSectionPage(activeTab, allTenantItems, resolvedSubId);

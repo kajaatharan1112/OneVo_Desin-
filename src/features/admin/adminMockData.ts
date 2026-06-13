@@ -124,7 +124,7 @@ export const DEPARTMENTS = [
   { id: 'dept-finance', name: 'Finance' },
 ];
 
-/** Resolved from tenant Settings → Security (read-only in Users flows). */
+/** Resolved from operator platform login configuration (read-only in Users flows). */
 export const TENANT_LOGIN_METHOD = 'Password + optional Google SSO';
 
 export const UNIVERSAL_PERMISSIONS: PermissionDef[] = [

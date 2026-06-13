@@ -263,7 +263,7 @@ export const RolesPermissionsPage: React.FC = () => {
         <div>
           <h1 className="cfg-page__title">Roles &amp; Permissions</h1>
           <p className="cfg-page__subtitle">
-            Create tenant security roles and assign module-filtered permissions. Roles are tenant-defined permission bundles.
+            Create tenant security roles and assign module-filtered permissions.
           </p>
         </div>
         <button type="button" className="org-btn org-btn--primary" onClick={openCreate}>
