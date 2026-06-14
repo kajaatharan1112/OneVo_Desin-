@@ -2,29 +2,27 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { projectTasks, type WorkProject } from '../../workMockData';
 
-export interface AddCycleInput {
+export interface AddMilestoneInput {
   name: string;
-  startDate: string;
-  endDate: string;
-  goal: string;
-  workItemIds: string[];
+  description: string;
+  dueDate: string;
+  linkedWorkItemIds: string[];
 }
 
 interface Props {
   open: boolean;
   onClose: () => void;
   project: WorkProject;
-  onSubmit: (input: AddCycleInput) => void;
+  onSubmit: (input: AddMilestoneInput) => void;
 }
 
-export const AddCycleDrawer: React.FC<Props> = ({ open, onClose, project, onSubmit }) => {
+export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, onSubmit }) => {
   const projectTaskList = projectTasks(project.id);
   const [form, setForm] = useState({
     name: '',
-    startDate: '',
-    endDate: '',
-    goal: '',
-    workItemIds: [] as string[],
+    description: '',
+    dueDate: '',
+    linkedWorkItemIds: [] as string[],
   });
 
   if (!open) return null;
@@ -32,22 +30,21 @@ export const AddCycleDrawer: React.FC<Props> = ({ open, onClose, project, onSubm
   const toggleWorkItem = (id: string) => {
     setForm(f => ({
       ...f,
-      workItemIds: f.workItemIds.includes(id)
-        ? f.workItemIds.filter(wid => wid !== id)
-        : [...f.workItemIds, id],
+      linkedWorkItemIds: f.linkedWorkItemIds.includes(id)
+        ? f.linkedWorkItemIds.filter(wid => wid !== id)
+        : [...f.linkedWorkItemIds, id],
     }));
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim() || !form.startDate || !form.endDate) return;
+    if (!form.name.trim() || !form.dueDate) return;
     onSubmit({
       name: form.name.trim(),
-      startDate: form.startDate,
-      endDate: form.endDate,
-      goal: form.goal.trim(),
-      workItemIds: form.workItemIds,
+      description: form.description.trim(),
+      dueDate: form.dueDate,
+      linkedWorkItemIds: form.linkedWorkItemIds,
     });
-    setForm({ name: '', startDate: '', endDate: '', goal: '', workItemIds: [] });
+    setForm({ name: '', description: '', dueDate: '', linkedWorkItemIds: [] });
     onClose();
   };
 
@@ -57,63 +54,52 @@ export const AddCycleDrawer: React.FC<Props> = ({ open, onClose, project, onSubm
         className="org-slideover org-slideover--narrow"
         role="dialog"
         aria-modal="true"
-        aria-label="Add cycle"
+        aria-label="Add milestone"
         onClick={e => e.stopPropagation()}
       >
         <header className="org-slideover__header">
-          <h2>Add cycle</h2>
+          <h2>Add milestone</h2>
           <button type="button" className="org-slideover__close" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </header>
         <div className="org-slideover__body">
           <div className="org-form-field">
-            <label htmlFor="cyc-name">Cycle name</label>
+            <label htmlFor="ms-name">Milestone name</label>
             <input
-              id="cyc-name"
+              id="ms-name"
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              placeholder="Cycle 2: Feature delivery"
+              placeholder="Beta release"
             />
           </div>
-          <div className="settings-form-grid">
-            <div className="org-form-field">
-              <label htmlFor="cyc-start">Start date</label>
-              <input
-                id="cyc-start"
-                type="date"
-                value={form.startDate}
-                onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-              />
-            </div>
-            <div className="org-form-field">
-              <label htmlFor="cyc-end">End date</label>
-              <input
-                id="cyc-end"
-                type="date"
-                value={form.endDate}
-                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-              />
-            </div>
-          </div>
           <div className="org-form-field">
-            <label htmlFor="cyc-goal">Goal</label>
+            <label htmlFor="ms-desc">Description</label>
             <textarea
-              id="cyc-goal"
+              id="ms-desc"
               rows={3}
-              value={form.goal}
-              onChange={e => setForm(f => ({ ...f, goal: e.target.value }))}
-              placeholder="What should this cycle accomplish?"
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              placeholder="What does reaching this milestone mean?"
             />
           </div>
           <div className="org-form-field">
-            <label>Work items to include</label>
+            <label htmlFor="ms-due">Due date</label>
+            <input
+              id="ms-due"
+              type="date"
+              value={form.dueDate}
+              onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
+            />
+          </div>
+          <div className="org-form-field">
+            <label>Linked work items</label>
             <div className="work-checkbox-list">
               {projectTaskList.map(task => (
                 <label key={task.id} className="work-checkbox-item">
                   <input
                     type="checkbox"
-                    checked={form.workItemIds.includes(task.id)}
+                    checked={form.linkedWorkItemIds.includes(task.id)}
                     onChange={() => toggleWorkItem(task.id)}
                   />
                   <span className="work-task-key">{task.key}</span>
@@ -125,7 +111,7 @@ export const AddCycleDrawer: React.FC<Props> = ({ open, onClose, project, onSubm
         </div>
         <footer className="org-slideover__footer">
           <button type="button" className="org-btn org-btn--secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="org-btn org-btn--primary" onClick={handleSubmit}>Add cycle</button>
+          <button type="button" className="org-btn org-btn--primary" onClick={handleSubmit}>Add milestone</button>
         </footer>
       </div>
     </div>

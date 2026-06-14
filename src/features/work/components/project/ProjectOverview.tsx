@@ -14,8 +14,11 @@ import {
 import { useWork } from '../../context/work-context';
 import {
   healthBadgeClass,
+  healthLabel,
   projectTasks,
+  resolveRelatedProjectDisplay,
   statusBadgeClass,
+  visibleWorkspaceIds,
   type WorkProject,
 } from '../../workMockData';
 import { ProjectIcon } from './projectIcon';
@@ -77,14 +80,17 @@ function buildSlashBlock(cmd: SlashCommand): string {
 }
 
 export const ProjectOverview: React.FC<Props> = ({ project }) => {
-  const { tasks, updateProject } = useWork();
+  const { tasks, updateProject, workspaces, relatedProjects } = useWork();
   const projectTaskList = projectTasks(project.id, tasks);
   const doneCount = projectTaskList.filter(t => t.status === 'done').length;
   const totalCount = projectTaskList.length;
   const progressPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const projectRelated = relatedProjects
+    .filter(l => l.projectId === project.id)
+    .map(l => resolveRelatedProjectDisplay(l));
+  const visibleWsIds = new Set(visibleWorkspaceIds());
 
   const [projectName, setProjectName] = useState(project.name);
-  const [statesEnabled, setStatesEnabled] = useState(false);
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashPos, setSlashPos] = useState({ top: 0, left: 0 });
@@ -328,53 +334,91 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
           </div>
         </main>
 
-        <aside className="work-overview-doc__aside" aria-label="Project state">
+        <aside className="work-overview-doc__aside" aria-label="Project summary">
+          <div className="work-overview-doc__state-panel">
+            <div className="work-overview-doc__state-head">
+              <Link2 size={14} aria-hidden="true" />
+              <h3 className="work-overview-doc__state-title">Linked workspaces</h3>
+            </div>
+            <ul className="work-mini-list">
+              {project.linkedWorkspaces.map(lw => {
+                const ws = workspaces.find(w => w.id === lw.workspaceId);
+                const label = ws?.name ?? (lw.role?.startsWith('Request:') ? 'Pending workspace' : lw.workspaceId);
+                if (!ws && !visibleWsIds.has(lw.workspaceId)) {
+                  return (
+                    <li key={lw.workspaceId}>
+                      <span>Pending workspace</span>
+                      <span className="work-mini-list__meta">{lw.status}</span>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={lw.workspaceId}>
+                    <span>{label}</span>
+                    <span className="work-mini-list__meta">{lw.status}</span>
+                  </li>
+                );
+              })}
+              {project.linkedWorkspaces.length === 0 && (
+                <li><span className="admin-hint">No linked workspaces</span></li>
+              )}
+            </ul>
+          </div>
+
+          {projectRelated.length > 0 && (
+            <div className="work-overview-doc__state-panel">
+              <div className="work-overview-doc__state-head">
+                <Link2 size={14} aria-hidden="true" />
+                <h3 className="work-overview-doc__state-title">Related projects</h3>
+              </div>
+              <ul className="work-mini-list work-related-list">
+                {projectRelated.map(rp => (
+                  <li key={rp.id}>
+                    <span className={rp.restricted ? 'work-related-restricted' : ''}>
+                      {rp.restricted ? `${rp.label} — access required` : rp.label}
+                    </span>
+                    <span className="work-mini-list__meta">
+                      {rp.relationship}
+                      {!rp.restricted && rp.health ? ` · ${rp.health}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="work-overview-doc__state-panel">
             <div className="work-overview-doc__state-head">
               <ToggleRight size={14} aria-hidden="true" />
-              <h3 className="work-overview-doc__state-title">Project states</h3>
+              <h3 className="work-overview-doc__state-title">Project health</h3>
             </div>
+            <div className="work-overview-doc__state-meta">
+              <span className={`cfg-badge cfg-badge--${statusBadgeClass(project.status)}`}>
+                {project.status.replace('_', ' ')}
+              </span>
+              <span className={`cfg-badge cfg-badge--${healthBadgeClass(project.health)}`}>
+                {healthLabel(project.health)}
+              </span>
+            </div>
+          </div>
 
-            {statesEnabled ? (
-              <>
-                <div className="work-overview-doc__state-meta">
-                  <span className={`cfg-badge cfg-badge--${statusBadgeClass(project.status)}`}>
-                    {project.status.replace('_', ' ')}
-                  </span>
-                  <span className={`cfg-badge cfg-badge--${healthBadgeClass(project.health)}`}>
-                    {project.health.replace('_', ' ')}
-                  </span>
-                </div>
-                <div className="work-overview-doc__progress">
-                  <div className="work-overview-doc__progress-label">
-                    <span>Progress</span>
-                    <span>{progressPct}%</span>
-                  </div>
-                  <div className="work-overview-doc__progress-track">
-                    <div
-                      className="work-overview-doc__progress-fill"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                  <p className="work-overview-doc__progress-hint">
-                    {doneCount} of {totalCount} work items completed
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="work-overview-doc__state-desc">
-                  Track delivery progress with custom project states and compact status indicators.
-                </p>
-                <button
-                  type="button"
-                  className="org-btn org-btn--secondary org-btn--sm work-overview-doc__enable-states"
-                  onClick={() => setStatesEnabled(true)}
-                >
-                  Enable project states
-                </button>
-              </>
-            )}
+          <div className="work-overview-doc__state-panel">
+            <h3 className="work-overview-doc__state-title">Progress</h3>
+            <div className="work-overview-doc__progress">
+              <div className="work-overview-doc__progress-label">
+                <span>Completed</span>
+                <span>{progressPct}%</span>
+              </div>
+              <div className="work-overview-doc__progress-track">
+                <div
+                  className="work-overview-doc__progress-fill"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <p className="work-overview-doc__progress-hint">
+                {doneCount} of {totalCount} work items done
+              </p>
+            </div>
           </div>
         </aside>
       </div>

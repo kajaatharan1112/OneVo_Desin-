@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { getNotificationsForView } from '../../../core/notifications/notification-data';
+import {
+  INBOX_CURRENT_USER,
+  useInbox,
+} from '../../../core/notifications/inbox-context';
 import type { NotificationFilter } from '../../types/notification.types';
 import { NotificationFilterTabs } from './notification-filter';
 import { NotificationItem } from './notification-item';
@@ -14,6 +18,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   currentView,
   onClose
 }) => {
+  const { getInboxForUser, resolveInboxAction } = useInbox();
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>('new');
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 
@@ -22,9 +27,19 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     setDismissedIds(new Set());
   }, [currentView]);
 
-  const allNotifications = useMemo(
+  const staticNotifications = useMemo(
     () => getNotificationsForView(currentView),
-    [currentView]
+    [currentView],
+  );
+
+  const inboxNotifications = useMemo(() => {
+    if (currentView !== 'employee') return [];
+    return getInboxForUser(INBOX_CURRENT_USER);
+  }, [currentView, getInboxForUser]);
+
+  const allNotifications = useMemo(
+    () => [...inboxNotifications, ...staticNotifications],
+    [inboxNotifications, staticNotifications],
   );
 
   const visibleNotifications = useMemo(
@@ -43,11 +58,17 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   ).length;
 
   const handleAction = (notificationId: string, actionId: string) => {
-    if (actionId === 'cancel' || actionId === 'denied') {
+    const notification = allNotifications.find(n => n.id === notificationId);
+    if (notification?.workMeta) {
+      resolveInboxAction(notificationId, actionId);
+      return;
+    }
+
+    if (actionId === 'cancel' || actionId === 'denied' || actionId === 'decline' || actionId === 'reject') {
       setDismissedIds((prev) => new Set(prev).add(notificationId));
       return;
     }
-    if (actionId === 'approve' || actionId === 'accept' || actionId === 'join') {
+    if (actionId === 'approve' || actionId === 'accept' || actionId === 'join' || actionId === 'limit_access') {
       setDismissedIds((prev) => new Set(prev).add(notificationId));
       return;
     }
