@@ -55,23 +55,6 @@
   gap: 4px;
 }
 
-.admin-role-tag {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
-}
-
-.admin-role-tag--system {
-  background: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
-}
-
 .cfg-badge--invited {
   background: #dbeafe;
   color: #1e40af;
@@ -80,21 +63,6 @@
 .cfg-badge--disabled {
   background: #fee2e2;
   color: #991b1b;
-}
-
-.admin-mfa {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.72rem;
-}
-
-.admin-mfa--on {
-  color: #166534;
-}
-
-.admin-mfa--off {
-  color: var(--nexus-text-muted);
 }
 
 .admin-segmented {
@@ -453,19 +421,6 @@
   background: var(--accent-bg);
   color: var(--accent);
   border: 1px solid var(--accent-border);
-}
-
-.admin-role-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.admin-role-list__item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
 }
 
 .admin-role-access-list {

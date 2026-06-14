@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Search, Download, Ban, CheckCircle, Eye, Shield, ShieldOff, Send, X,
+  Search, Download, Ban, CheckCircle, Eye, Send, X,
   Unlock, LogOut, Plus, Trash2,
 } from 'lucide-react';
 import {
@@ -43,13 +43,6 @@ function accountBadgeClass(status: AccountStatus): string {
   if (status === 'active') return 'active';
   if (status === 'disabled') return 'disabled';
   if (status === 'locked') return 'failed';
-  return 'inactive';
-}
-
-function inviteBadgeClass(status: InviteStatus): string {
-  if (status === 'accepted') return 'success';
-  if (status === 'sent') return 'open';
-  if (status === 'expired') return 'failed';
   return 'inactive';
 }
 
@@ -357,14 +350,10 @@ export const AdminUsersPage: React.FC = () => {
             <thead>
               <tr>
                 <th>User</th>
-                <th>Email</th>
+                <th>Employee</th>
                 <th>Position</th>
-                <th>Department</th>
-                <th>Account Status</th>
-                <th>Invite Status</th>
-                <th>Assigned Roles</th>
-                <th>MFA</th>
-                <th>Last Login</th>
+                <th>Access status</th>
+                <th>Last active</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -382,45 +371,18 @@ export const AdminUsersPage: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td>{u.email}</td>
+                  <td>
+                    <div className="cfg-table__name">{u.employeeName ?? '—'}</div>
+                    {u.email && <div className="cfg-table__meta">{u.email}</div>}
+                  </td>
                   <td>{u.position ?? '—'}</td>
-                  <td>{u.department ?? '—'}</td>
                   <td>
                     <span className={`cfg-badge cfg-badge--${accountBadgeClass(u.accountStatus)}`}>
                       {ACCOUNT_STATUS_LABELS[u.accountStatus]}
                     </span>
-                  </td>
-                  <td>
-                    <span className={`cfg-badge cfg-badge--${inviteBadgeClass(u.inviteStatus)}`}>
-                      {INVITE_STATUS_LABELS[u.inviteStatus]}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-role-list">
-                      {u.roleIds.length === 0 ? (
-                        <span className="cfg-table__meta">None assigned</span>
-                      ) : (
-                        u.roleIds.map(rid => {
-                          const role = MOCK_ROLES.find(r => r.id === rid);
-                          if (!role) return null;
-                          return (
-                            <div key={rid} className="admin-role-list__item">
-                              <span
-                                className={`admin-role-tag${role.type === 'system' ? ' admin-role-tag--system' : ''}`}
-                              >
-                                {role.name}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`admin-mfa${u.mfaEnabled ? ' admin-mfa--on' : ' admin-mfa--off'}`}>
-                      {u.mfaEnabled ? <Shield size={13} /> : <ShieldOff size={13} />}
-                      {u.mfaEnabled ? 'On' : 'Off'}
-                    </span>
+                    {u.inviteStatus !== 'accepted' && (
+                      <div className="cfg-table__meta">Invite {INVITE_STATUS_LABELS[u.inviteStatus]}</div>
+                    )}
                   </td>
                   <td>{formatRelativeTime(u.lastLogin)}</td>
                   <td>
