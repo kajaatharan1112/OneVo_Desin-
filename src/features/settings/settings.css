@@ -15,7 +15,7 @@
 .settings-card__header {
   padding: 14px 18px;
   border-bottom: 1px solid var(--border);
-  background: var(--code-bg);
+  background: var(--surface-panel);
 }
 
 .settings-card__title {
