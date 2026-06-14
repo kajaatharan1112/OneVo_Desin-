@@ -89,7 +89,8 @@ export const BillingSettingsPage: React.FC = () => {
           <header className="settings-card__header">
             <h2 className="settings-card__title">Invoices</h2>
           </header>
-          <div className="cfg-table-wrap" style={{ border: 'none', borderRadius: 0 }}>
+          <div className="settings-card__body">
+            <div className="cfg-table-wrap">
             <table className="cfg-table">
               <thead>
                 <tr>
@@ -125,6 +126,7 @@ export const BillingSettingsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </section>
       </div>

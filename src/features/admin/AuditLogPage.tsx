@@ -78,27 +78,26 @@ export const AuditLogPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="cfg-page__toolbar">
+      <div className="cfg-page__toolbar audit-log-toolbar">
         <div className="cfg-search">
           <Search size={14} />
           <input placeholder="Search audit log…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="cfg-search" style={{ gap: 6 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--nexus-text-secondary)' }}>Date range</label>
+        <div className="cfg-date-range">
           <input
             type="date"
-            className="cfg-filter-select"
+            className="cfg-date-input"
             value={dateFrom}
             onChange={e => setDateFrom(e.target.value)}
-            title="From date"
+            aria-label="From date"
           />
-          <span style={{ color: 'var(--nexus-text-secondary)' }}>–</span>
+          <span className="cfg-date-range__sep">–</span>
           <input
             type="date"
-            className="cfg-filter-select"
+            className="cfg-date-input"
             value={dateTo}
             onChange={e => setDateTo(e.target.value)}
-            title="To date"
+            aria-label="To date"
           />
         </div>
         <select className="cfg-filter-select" value={actorFilter} onChange={e => setActorFilter(e.target.value)}>
@@ -133,19 +132,21 @@ export const AuditLogPage: React.FC = () => {
                 <tr key={e.id}>
                   <td>{formatDateTime(e.timestamp)}</td>
                   <td>{e.actorName || 'System'}</td>
-                  <td><code style={{ fontSize: '0.72rem' }}>{e.action}</code></td>
+                  <td>{e.action}</td>
                   <td>
                     <div className="cfg-table__name">{e.resourceName}</div>
                     <div className="cfg-table__meta">{e.resourceType}</div>
                   </td>
-                  <td>{e.ipAddress}</td>
+                  <td><span className="cfg-table__meta">{e.ipAddress}</span></td>
                   <td>
-                    <span className={`cfg-badge cfg-badge--${e.status === 'success' ? 'success' : 'failed'}`}>
-                      {e.status}
-                    </span>
-                    <button type="button" className="cfg-action-btn" onClick={() => setDetailEntry(e)}>
-                      <Eye size={13} /> View
-                    </button>
+                    <div className="audit-details-cell">
+                      {e.status === 'failed' && (
+                        <span className="cfg-badge cfg-badge--failed cfg-badge--sm">Failed</span>
+                      )}
+                      <button type="button" className="cfg-action-btn cfg-action-btn--ghost" onClick={() => setDetailEntry(e)}>
+                        <Eye size={13} /> View
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

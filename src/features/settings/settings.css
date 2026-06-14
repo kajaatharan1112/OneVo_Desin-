@@ -272,9 +272,8 @@
 }
 
 .notif-matrix-wrap {
-  border: none;
-  border-radius: 0;
   overflow-x: auto;
+  margin: 0 16px 16px;
 }
 
 .notif-matrix th,
