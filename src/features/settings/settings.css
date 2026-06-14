@@ -136,7 +136,7 @@
 
 .settings-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -174,34 +174,6 @@
   border-radius: 4px;
   background: currentColor;
   opacity: 0.9;
-}
-
-.settings-preview__sidebar {
-  display: flex;
-  min-height: 64px;
-}
-
-.settings-preview__sidebar-nav {
-  width: 48px;
-  padding: 8px 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.settings-preview__sidebar-item {
-  height: 6px;
-  border-radius: 3px;
-  opacity: 0.5;
-}
-
-.settings-preview__sidebar-item--active {
-  opacity: 1;
-}
-
-.settings-preview__content {
-  flex: 1;
-  background: var(--surface-muted);
 }
 
 .settings-preview--login {

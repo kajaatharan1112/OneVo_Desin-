@@ -1,20 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import { DEFAULT_BRANDING, type BrandingSettings } from './settingsMockData';
-
-function hexLuminance(hex: string): number {
-  const raw = hex.replace('#', '');
-  if (raw.length !== 6) return 0.5;
-  const r = parseInt(raw.slice(0, 2), 16) / 255;
-  const g = parseInt(raw.slice(2, 4), 16) / 255;
-  const b = parseInt(raw.slice(4, 6), 16) / 255;
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrastWarning(bg: string, fg: string): boolean {
-  return Math.abs(hexLuminance(bg) - hexLuminance(fg)) < 0.35;
-}
 
 export const BrandingSettingsPage: React.FC = () => {
   const [form, setForm] = useState<BrandingSettings>(DEFAULT_BRANDING);
@@ -24,11 +11,6 @@ export const BrandingSettingsPage: React.FC = () => {
     setForm(prev => ({ ...prev, [key]: value }));
     setSaved(false);
   };
-
-  const poorContrast = useMemo(
-    () => contrastWarning(form.sidebarBg, form.sidebarText),
-    [form.sidebarBg, form.sidebarText]
-  );
 
   const resetDefaults = () => {
     setForm(DEFAULT_BRANDING);
@@ -104,17 +86,10 @@ export const BrandingSettingsPage: React.FC = () => {
             <h2 className="settings-card__title">Brand Colors</h2>
           </header>
           <div className="settings-card__body">
-            {poorContrast && (
-              <p className="admin-hint admin-hint--warning">
-                Sidebar background and text colors may not meet contrast guidelines. Adjust for better readability.
-              </p>
-            )}
             <div className="settings-form-grid">
               {([
                 ['primaryColor', 'Primary Color'],
                 ['accentColor', 'Accent Color'],
-                ['sidebarBg', 'Sidebar Background'],
-                ['sidebarText', 'Sidebar Text'],
               ] as const).map(([key, label]) => (
                 <div key={key} className="org-form-field">
                   <label>{label}</label>
@@ -151,20 +126,6 @@ export const BrandingSettingsPage: React.FC = () => {
                 >
                   <span className="settings-preview__logo" />
                   {form.hasCustomLogo ? 'Acme' : 'OneVo'}
-                </div>
-              </div>
-              <div className="settings-preview">
-                <div className="settings-preview__label">Sidebar</div>
-                <div className="settings-preview__sidebar">
-                  <div
-                    className="settings-preview__sidebar-nav"
-                    style={{ background: form.sidebarBg, color: form.sidebarText }}
-                  >
-                    <span className="settings-preview__sidebar-item settings-preview__sidebar-item--active" style={{ background: form.sidebarText }} />
-                    <span className="settings-preview__sidebar-item" style={{ background: form.sidebarText }} />
-                    <span className="settings-preview__sidebar-item" style={{ background: form.sidebarText }} />
-                  </div>
-                  <div className="settings-preview__content" />
                 </div>
               </div>
               <div className="settings-preview">

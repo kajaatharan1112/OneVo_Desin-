@@ -25,16 +25,12 @@ export const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export interface BrandingSettings {
   primaryColor: string;
   accentColor: string;
-  sidebarBg: string;
-  sidebarText: string;
   hasCustomLogo: boolean;
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
   primaryColor: '#2563eb',
   accentColor: '#0ea5e9',
-  sidebarBg: '#0f172a',
-  sidebarText: '#f8fafc',
   hasCustomLogo: true,
 };
 
