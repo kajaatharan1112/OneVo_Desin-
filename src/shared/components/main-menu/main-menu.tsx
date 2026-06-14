@@ -5,7 +5,8 @@ import {
   PieChart, Briefcase, Building2, Building, CalendarMinus, Workflow, Activity,
   ChartNoAxesCombined, ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash,
   ListChecks, CalendarDays, TrendingUp, Shield, Eye, List, Palette, Bell,
-  CreditCard, Monitor, CalendarClock, ClipboardList, type LucideIcon,
+  CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo,
+  type LucideIcon,
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
 import { TENANT_DEVICE_CAPABILITY } from '../../../features/settings/settingsConfig';
@@ -51,8 +52,23 @@ export function buildSettingsNavItem(): NavItem {
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
 export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
 
+/** Unified work area — projects are the main container; workspace is a filter context. */
+export const WORK_NAV_ITEM: NavItem = {
+  id: 'work',
+  label: 'Work',
+  icon: railIcon(FolderKanban),
+  subSections: [{
+    id: 'main',
+    items: [
+      { id: 'my-work',   label: 'My Work',   icon: <ListTodo size={13} />      },
+      { id: 'projects',  label: 'Projects',  icon: <FolderKanban size={13} />  },
+      { id: 'documents', label: 'Documents', icon: <FileText size={13} />      },
+    ],
+  }],
+};
+
 export const TENANT_MAIN_ITEMS: NavItem[] = [
-  { id: 'dashboard',   label: 'Dashboard',   icon: railIcon(LayoutDashboard), subSections: [] },
+  { id: 'dashboard',   label: 'Dashboard',   railLabel: 'Home', icon: railIcon(LayoutDashboard), subSections: [] },
   { id: 'organization', label: 'Organization', railLabel: 'Org', icon: railIcon(Building2), subSections: [
     { id: 'main', items: [
       { id: 'departments', label: 'Departments', icon: <Building size={13} /> },
@@ -86,7 +102,7 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
       { id: 'overtime-rules', label: 'Overtime Rules', icon: <Activity size={13} /> },
     ]},
   ]},
-  { id: 'project',     label: 'Project',     icon: railIcon(FolderKanban),    subSections: [] },
+  WORK_NAV_ITEM,
   { id: 'automations', label: 'Automations', railLabel: 'Flow', icon: railIcon(Workflow), subSections: [] },
   { id: 'monitoring',  label: 'Monitoring',  railLabel: 'Monitor', icon: railIcon(ChartNoAxesCombined), subSections: [
     { id: 'settings', label: 'Settings', collapsible: true, defaultOpen: true, items: [
@@ -105,9 +121,8 @@ export const SHARED_BOTTOM_ITEMS: NavItem[] = [];
 export const TENANT_BOTTOM_ITEMS = SHARED_BOTTOM_ITEMS;
 
 export const EMPLOYEE_ITEMS: NavItem[] = [
-  { id: 'dashboard',  label: 'Dashboard',  icon: railIcon(LayoutDashboard), subSections: [] },
-  { id: 'project',    label: 'Project',    icon: railIcon(FolderKanban),    subSections: [] },
-  { id: 'workspace',  label: 'Workspace',  icon: railIcon(Briefcase),       subSections: [] },
+  { id: 'dashboard',  label: 'Dashboard',  railLabel: 'Home', icon: railIcon(LayoutDashboard), subSections: [] },
+  WORK_NAV_ITEM,
   { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock), subSections: [
     { id: 'main', items: [
       { id: 'calendar',   label: 'Calendar',   icon: <Calendar size={13} /> },

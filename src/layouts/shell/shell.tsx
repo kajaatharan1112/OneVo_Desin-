@@ -12,6 +12,7 @@ import {
 } from '../../shared/components/main-menu/main-menu';
 import { resolveSubItemId } from '../../shared/utils/nav-utils';
 import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel';
+import { WorkSubNavPanel } from '../../features/work/components/WorkSubNavPanel';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
 import { BrandActionsToast } from '../../shared/components/brand-actions-toast/brand-actions-toast';
 import { Navbar } from '../navbar/navbar';
@@ -79,7 +80,9 @@ export const Shell: React.FC<ShellProps> = ({
       setSubNavCollapsed(false);
       return;
     }
-    const firstItem = activeSubSections[0]?.items[0];
+    const firstItem = activeTab === 'Work'
+      ? (activeSubSections[0]?.items.find(i => i.id === 'projects') ?? activeSubSections[0]?.items[0])
+      : activeSubSections[0]?.items[0];
     setActiveSubItemId(firstItem?.id ?? '');
     setSubNavCollapsed(false);
     // Only reset sub-nav when the main section or workspace view changes — not on sub-item clicks.
@@ -112,6 +115,7 @@ export const Shell: React.FC<ShellProps> = ({
   );
 
   const hasSubNav = activeSubSections.length > 0;
+  const isWorkNav = activeTab === 'Work';
   const showSubNav = hasSubNav && !subNavCollapsed;
 
   const shellClassName = [
@@ -188,13 +192,21 @@ export const Shell: React.FC<ShellProps> = ({
             </div>
 
             {showSubNav && (
-              <SubNavPanel
-                sections={activeSubSections}
-                panelTitle={activeTab}
-                activeId={resolvedSubItemId}
-                onSelect={onSubItemSelect}
-                onCollapse={() => setSubNavCollapsed(true)}
-              />
+              isWorkNav ? (
+                <WorkSubNavPanel
+                  activeId={resolvedSubItemId}
+                  onSelect={onSubItemSelect}
+                  onCollapse={() => setSubNavCollapsed(true)}
+                />
+              ) : (
+                <SubNavPanel
+                  sections={activeSubSections}
+                  panelTitle={activeTab}
+                  activeId={resolvedSubItemId}
+                  onSelect={onSubItemSelect}
+                  onCollapse={() => setSubNavCollapsed(true)}
+                />
+              )
             )}
 
             {hasSubNav && subNavCollapsed && (

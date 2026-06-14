@@ -15,7 +15,6 @@ import {
 import { findNavItem, getSubItemLabel, resolveSubItemId } from '../shared/utils/nav-utils';
 
 import { EmployeeDashboard } from '../features/employees/pages/employee-dashboard/employee-dashboard';
-import { EmployeeWorkManagement } from '../features/employees/pages/employee-work-management/employee-work-management';
 import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/employee-calendar';
 import { EmployeePeople } from '../features/employees/pages/employee-people/employee-people';
 import { EmployeeAttendance } from '../features/employees/pages/employee-attendance/employee-attendance';
@@ -23,7 +22,6 @@ import { EmployeeChat } from '../features/employees/pages/employee-chat/employee
 import { EmployeeReports } from '../features/employees/pages/employee-reports/employee-reports';
 
 import { TenantDashboard } from '../features/tenant/pages/tenant-dashboard/tenant-dashboard';
-import { TenantProject } from '../features/tenant/pages/tenant-project/tenant-project';
 import { TenantCalendar } from '../features/tenant/pages/tenant-calendar/tenant-calendar';
 import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/tenant-attendance';
 import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
@@ -43,6 +41,8 @@ import { NotificationsSettingsPage } from '../features/settings/NotificationsSet
 import { BillingSettingsPage } from '../features/settings/BillingSettingsPage';
 import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
 import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
+import { WorkProvider } from '../features/work/context/work-context';
+import { WorkRoutes } from '../features/work/WorkRoutes';
 import {
   DEFAULT_TENANT_COMPANY,
   type TenantCompany
@@ -144,13 +144,15 @@ function App() {
         }
       }
 
+      if (activeTab === 'Work') {
+        const workNav = findNavItem(allEmployeeItems, activeTab);
+        const resolvedSubId = resolveSubItemId(workNav, activeSubItemId);
+        return <WorkRoutes activeSubItemId={resolvedSubId} />;
+      }
+
       switch (activeTab) {
         case 'Dashboard':
           return <EmployeeDashboard onNavigateTab={setActiveTab} />;
-        case 'Project':
-          return <EmployeeWorkManagement />;
-        case 'Workspace':
-          return <EmployeeWorkManagement />;
         case 'Time & Attendance': {
           const timeNav = findNavItem(EMPLOYEE_ITEMS, activeTab);
           const resolvedSubId = resolveSubItemId(timeNav, activeSubItemId);
@@ -225,14 +227,15 @@ function App() {
             return <GeneralSettingsPage />;
         }
       }
+      if (activeTab === 'Work') {
+        return <WorkRoutes activeSubItemId={resolvedSubId} />;
+      }
       return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
     }
 
     switch (activeTab) {
       case 'Dashboard':
         return <TenantDashboard />;
-      case 'Project':
-        return <TenantProject />;
       case 'Calendar':
         return <TenantCalendar />;
       case 'Attendance':
@@ -247,11 +250,12 @@ function App() {
   }
 
   return (
-    <EmployeeProvider
-      selectedEmployeeId={selectedEmployeeId}
-      onSelectEmployee={setSelectedEmployeeId}
-    >
-      <Shell
+    <WorkProvider onNavigateToList={setActiveSubItemId}>
+      <EmployeeProvider
+        selectedEmployeeId={selectedEmployeeId}
+        onSelectEmployee={setSelectedEmployeeId}
+      >
+        <Shell
         currentView={view}
         onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
         activeTab={activeTab}
@@ -269,7 +273,8 @@ function App() {
       >
         {renderActivePageContent()}
       </Shell>
-    </EmployeeProvider>
+      </EmployeeProvider>
+    </WorkProvider>
   );
 }
 

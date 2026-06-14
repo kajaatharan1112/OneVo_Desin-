@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Briefcase, Check, ChevronDown, UserRound } from 'lucide-react';
 
 const WORKSPACES = [
-  { id: 'employee' as const, label: 'Employee Workspace', Icon: UserRound },
-  { id: 'tenant' as const, label: 'Configuration application', Icon: Briefcase },
+  { id: 'employee' as const, label: 'Employee View', Icon: UserRound },
+  { id: 'tenant' as const, label: 'Management View', Icon: Briefcase },
 ];
 
 interface WorkspaceSelectorProps {
@@ -54,7 +54,7 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={`Workspace: ${active.label}`}
+        aria-label={`View: ${active.label}`}
       >
         <ActiveIcon size={14} className="app-navbar__workspace-trigger-icon" aria-hidden="true" />
         <span className="app-navbar__workspace-trigger-label">{active.label}</span>
@@ -66,7 +66,7 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
       </button>
 
       {open && (
-        <ul className="app-navbar__workspace-menu" role="listbox" aria-label="Select workspace">
+        <ul className="app-navbar__workspace-menu" role="listbox" aria-label="Select application view">
           {WORKSPACES.map((workspace) => {
             const Icon = workspace.Icon;
             const isActive = workspace.id === currentView;
