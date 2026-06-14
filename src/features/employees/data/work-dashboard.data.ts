@@ -33,13 +33,23 @@ export interface WorkDashboardReminder {
   type: WorkDashboardReminderType;
 }
 
+export type WorkDashboardWorkMode = 'onsite' | 'wfh';
+
+export interface WorkDashboardProfileWeekDay {
+  id: string;
+  dayLabel: string;
+  mode: WorkDashboardWorkMode;
+  clockInTime?: string;
+  isToday?: boolean;
+}
+
 export interface WorkDashboardProfileSnapshot {
   agentConnected: boolean;
   agentOnline: boolean;
   role: string;
   department: string;
-  clockInTime: string;
   sessionDuration: string;
+  weekSchedule: WorkDashboardProfileWeekDay[];
 }
 
 export type WorkDashboardYesterdayCategory =
@@ -120,8 +130,8 @@ export const workDashboardTodayTasks: WorkDashboardTodayTask[] = [
 ];
 
 export const workDashboardWorkHours: WorkDashboardHourMetric = {
-  target: 8,
-  actual: 5.5
+  target: 40,
+  actual: 28
 };
 
 export const workDashboardTaskHours: WorkDashboardHourMetric = {
@@ -173,8 +183,14 @@ export const workDashboardProfileSnapshot: WorkDashboardProfileSnapshot = {
   agentOnline: true,
   role: 'UI Engineer',
   department: 'Product Design',
-  clockInTime: '9:15 AM',
-  sessionDuration: '3h 40m'
+  sessionDuration: '3h 40m',
+  weekSchedule: [
+    { id: 'mon', dayLabel: 'Mon', mode: 'onsite', clockInTime: '9:02 AM' },
+    { id: 'tue', dayLabel: 'Tue', mode: 'wfh', clockInTime: '9:08 AM' },
+    { id: 'wed', dayLabel: 'Wed', mode: 'wfh', clockInTime: '9:15 AM', isToday: true },
+    { id: 'thu', dayLabel: 'Thu', mode: 'wfh' },
+    { id: 'fri', dayLabel: 'Fri', mode: 'onsite' }
+  ]
 };
 
 export const workDashboardTodayHighlight = {

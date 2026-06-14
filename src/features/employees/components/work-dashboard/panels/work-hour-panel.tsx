@@ -13,9 +13,9 @@ export const WorkHourPanel: React.FC<WorkHourPanelProps> = ({ data }) => (
       actual={data.actual}
       target={data.target}
       centerPrimary={`${data.actual}h`}
-      centerSecondary={`of ${data.target}h`}
-      centerTertiary="completed"
-      ariaLabel={`Work hours: ${data.actual} of ${data.target} target hours logged`}
+      centerSecondary="Total clock in"
+      centerTertiary={`Weekly Target ${data.target}h`}
+      ariaLabel={`Work hours: ${data.actual}h total clock in this week of ${data.target}h weekly target`}
     />
   </WorkDashboardPanel>
 );
