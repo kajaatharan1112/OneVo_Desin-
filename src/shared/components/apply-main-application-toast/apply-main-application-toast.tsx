@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import './brand-actions-toast.css';
+import './apply-main-application-toast.css';
 
-interface BrandActionsToastProps {
+interface ApplyMainApplicationToastProps {
   onClose: () => void;
-  onGoToLandingPage: () => void;
+  onOpenApplicationForm: () => void;
 }
 
-export const BrandActionsToast: React.FC<BrandActionsToastProps> = ({
+export const ApplyMainApplicationToast: React.FC<ApplyMainApplicationToastProps> = ({
   onClose,
-  onGoToLandingPage
+  onOpenApplicationForm
 }) => {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -23,24 +23,32 @@ export const BrandActionsToast: React.FC<BrandActionsToastProps> = ({
 
   const handleApply = () => {
     onClose();
-    onGoToLandingPage();
+    onOpenApplicationForm();
   };
 
   return createPortal(
-    <div className="brand-actions-toast" role="dialog" aria-labelledby="brand-actions-title">
+    <div
+      className="apply-main-application-toast"
+      role="dialog"
+      aria-labelledby="apply-main-application-title"
+    >
       <button
         type="button"
-        className="brand-actions-toast__close"
+        className="apply-main-application-toast__close"
         onClick={onClose}
         aria-label="Close"
       >
         <X size={16} />
       </button>
 
-      <div className="brand-actions-toast__content">
-        <h4 id="brand-actions-title">Apply for Main Application</h4>
+      <div className="apply-main-application-toast__content">
+        <h4 id="apply-main-application-title">Apply for Main Application</h4>
         <p>Get full access to all the main application features by applying now!</p>
-        <button type="button" className="brand-actions-toast__apply-btn" onClick={handleApply}>
+        <button
+          type="button"
+          className="apply-main-application-toast__apply-btn"
+          onClick={handleApply}
+        >
           Apply for Main Application
         </button>
       </div>

@@ -15,7 +15,9 @@ import { resolveSubItemId } from '../../shared/utils/nav-utils';
 import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel';
 import { WorkSubNavPanel } from '../../features/work/components/WorkSubNavPanel';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
-import { BrandActionsToast } from '../../shared/components/brand-actions-toast/brand-actions-toast';
+import { BrandMenuToast } from '../../shared/components/brand-menu-toast/brand-menu-toast';
+import { ApplyMainApplicationToast } from '../../shared/components/apply-main-application-toast/apply-main-application-toast';
+import { ApplicationFormModal } from '../../shared/components/application-form-modal/application-form-modal';
 import { Navbar } from '../navbar/navbar';
 import { TenantSetupWizard } from '../../features/tenant/components/tenant-setup-wizard';
 
@@ -54,10 +56,13 @@ export const Shell: React.FC<ShellProps> = ({
   onGoToLandingPage,
   children
 }) => {
+  void onGoToLandingPage;
   const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [subNavCollapsed, setSubNavCollapsed] = useState(false);
-  const [brandActionsOpen, setBrandActionsOpen] = useState(false);
+  const [brandMenuOpen, setBrandMenuOpen] = useState(false);
+  const [applyToastOpen, setApplyToastOpen] = useState(false);
+  const [applicationFormOpen, setApplicationFormOpen] = useState(false);
 
   const allTenantItems = useMemo(
     () => [...TENANT_MAIN_ITEMS, ...TENANT_BOTTOM_ITEMS],
@@ -164,7 +169,7 @@ export const Shell: React.FC<ShellProps> = ({
               setActiveTab('Settings');
               setActiveSubItemId('general');
             }}
-            onOpenBrandActions={() => setBrandActionsOpen((open) => !open)}
+            onOpenBrandActions={() => setBrandMenuOpen((open) => !open)}
           />
         </div>
 
@@ -246,11 +251,25 @@ export const Shell: React.FC<ShellProps> = ({
 
       </div>
 
-      {brandActionsOpen && (
-        <BrandActionsToast
-          onClose={() => setBrandActionsOpen(false)}
-          onGoToLandingPage={onGoToLandingPage}
+      {brandMenuOpen && (
+        <BrandMenuToast
+          onClose={() => setBrandMenuOpen(false)}
+          onOpenApplicationToast={() => setApplyToastOpen(true)}
         />
+      )}
+
+      {applyToastOpen && (
+        <ApplyMainApplicationToast
+          onClose={() => setApplyToastOpen(false)}
+          onOpenApplicationForm={() => {
+            setApplyToastOpen(false);
+            setApplicationFormOpen(true);
+          }}
+        />
+      )}
+
+      {applicationFormOpen && (
+        <ApplicationFormModal onClose={() => setApplicationFormOpen(false)} />
       )}
     </NotificationPanelProvider>
   );

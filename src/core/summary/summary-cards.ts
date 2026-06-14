@@ -1,34 +1,36 @@
 import type { SummaryCardData, TenantKpiCardData } from '../../shared/types/summary-card.types';
 import { getEmployeeData } from '../../features/employees/data/employee-data.registry';
+import { EMPLOYEE_DASHBOARD_EMPTY } from '../../features/employees/config/employee-dashboard.config';
+import { workDashboardSummary } from '../../features/employees/data/work-dashboard.data';
 import type { EmployeeId } from '../../features/employees/types/employee.types';
 
 export const employeeSummaryCards: SummaryCardData[] = [
   {
     id: 'task-overview',
     title: 'Work',
-    value: '12/15 sprint done',
-    desc: '6 open · 2 due today · 1 blocked',
+    value: `${workDashboardSummary.totalTasks}/${workDashboardSummary.pendingTasks}`,
+    desc: `Today · Sprint ${workDashboardSummary.sprintCompletedPercent}% complete`,
     color: 'var(--accent)'
   },
   {
     id: 'requests-approval',
     title: 'Requests',
-    value: '7 waiting',
-    desc: '24 days leave left · 1 action needed',
+    value: '—',
+    desc: 'New design in progress',
     color: 'var(--accent)'
   },
   {
     id: 'activity',
     title: 'Attendance',
-    value: '9:15 AM clocked in',
-    desc: '4h 30m worked · On time',
+    value: '—',
+    desc: 'New design in progress',
     color: 'var(--accent)'
   },
   {
     id: 'my-calendar',
     title: 'Schedule',
-    value: '4 events today',
-    desc: 'Next: Sprint Review · No conflicts',
+    value: '—',
+    desc: 'New design in progress',
     color: 'var(--accent)'
   }
 ];
@@ -110,13 +112,13 @@ export function getCeoSummaryCards(): SummaryCardData[] {
   return (ceoSummaryCards ?? []).map((card) => ({
     id: card.id,
     title: card.title,
-    value: card.value,
-    desc: card.desc,
-    delta: card.delta,
-    status: card.status,
+    value: EMPLOYEE_DASHBOARD_EMPTY ? '—' : card.value,
+    desc: EMPLOYEE_DASHBOARD_EMPTY ? 'New design in progress' : card.desc,
+    delta: EMPLOYEE_DASHBOARD_EMPTY ? undefined : card.delta,
+    status: EMPLOYEE_DASHBOARD_EMPTY ? undefined : card.status,
     color: card.color,
-    actionLabel: card.actionLabel,
-    actionTab: card.actionTab,
+    actionLabel: EMPLOYEE_DASHBOARD_EMPTY ? undefined : card.actionLabel,
+    actionTab: EMPLOYEE_DASHBOARD_EMPTY ? undefined : card.actionTab,
     variant: 'ceo' as const
   }));
 }

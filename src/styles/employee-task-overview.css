@@ -4,7 +4,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  gap: 8px;
+  gap: 4px;
 }
 
 .summary-card-content--work-filled {
@@ -19,14 +19,57 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Work tab — no scrollbars anywhere on this page */
+.main-scrollable:has(.summary-card-content--work-filled),
+.main-scrollable:has([data-summary-card='task-overview']),
+.dashboard-page--employee-overview:has(.summarize-tabs-root--task-overview),
+.summarize-tabs-root--task-overview,
+.summary-card-content--work-filled,
+.summary-card-content--work-filled .summary-card-content__inner,
+.work-dashboard,
+.work-dashboard * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Page background — calm app surface (WCAG · long-session comfort) */
+.main-scrollable:has(.dashboard-page--employee-overview) {
+  background: var(--ewd-app-bg, #f8fafc);
+}
+
+.main-scrollable:has([data-summary-card='task-overview']),
+.dashboard-page--employee-overview:has(.summarize-tabs-root--task-overview),
+.summarize-tabs-root--task-overview {
+  background: var(--ewd-app-bg, #f8fafc);
+}
+
+.main-scrollable:has(.summary-card-content--work-filled)::-webkit-scrollbar,
+.main-scrollable:has([data-summary-card='task-overview'])::-webkit-scrollbar,
+.dashboard-page--employee-overview:has(.summarize-tabs-root--task-overview)::-webkit-scrollbar,
+.summarize-tabs-root--task-overview::-webkit-scrollbar,
+.summary-card-content--work-filled::-webkit-scrollbar,
+.summary-card-content--work-filled *::-webkit-scrollbar,
+.work-dashboard::-webkit-scrollbar,
+.work-dashboard *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .dashboard-page--employee-overview .summarize-tabs-root--task-overview .summarize-tabs {
-  gap: 8px;
+  gap: 4px;
 }
 
 .dashboard-page--employee-overview .summarize-tabs-root--task-overview .summary-card {
-  padding: 7px 11px;
+  padding: 6px 10px;
 }
 
 /* Work tab — fixed viewport grid (no page scroll) */
@@ -662,6 +705,10 @@
 /* One-view lock — Work tab never page-scrolls at common heights */
 .main-scrollable:has([data-summary-card='task-overview']),
 .main-scrollable:has(.summary-card-content--work-filled) {
+  overflow: hidden;
+}
+
+.dashboard-page--employee-overview:has(.summarize-tabs-root--task-overview) {
   overflow: hidden;
 }
 

@@ -17,6 +17,8 @@ import {
   getSummaryCardsForView,
   isCeoSummaryCardId
 } from '../../../core/summary/summary-cards';
+import { EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
+import { workDashboardSummary } from '../../../features/employees/data/work-dashboard.data';
 import { useEmployeeContext } from '../../../features/employees/context/employee-context';
 import type { EmployeeId } from '../../../features/employees/types/employee.types';
 import type { SummaryCardData, SummaryCardId } from '../../types/summary-card.types';
@@ -115,14 +117,25 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
     setSelectedId(card.id);
   };
 
-  const isTaskOverviewOpen = isEmployeeView && !isCeoView && selectedId === 'task-overview';
-  const isRequestsApprovalOpen = isEmployeeView && !isCeoView && selectedId === 'requests-approval';
-  const isActivityOpen = isEmployeeView && !isCeoView && selectedId === 'activity';
-  const isMyCalendarOpen = isEmployeeView && !isCeoView && selectedId === 'my-calendar';
+  const isTaskOverviewOpen =
+    WORK_DASHBOARD_ENABLED &&
+    isEmployeeView &&
+    !isCeoView &&
+    selectedId === 'task-overview';
+  const isRequestsApprovalOpen =
+    !EMPLOYEE_DASHBOARD_EMPTY && isEmployeeView && !isCeoView && selectedId === 'requests-approval';
+  const isActivityOpen =
+    !EMPLOYEE_DASHBOARD_EMPTY && isEmployeeView && !isCeoView && selectedId === 'activity';
+  const isMyCalendarOpen =
+    !EMPLOYEE_DASHBOARD_EMPTY && isEmployeeView && !isCeoView && selectedId === 'my-calendar';
   const isTenantProductivityOpen =
     currentView === 'tenant' && selectedId === 'today-productivity';
   const isCeoPanelOpen =
-    isEmployeeView && isCeoView && selectedId !== null && isCeoSummaryCardId(selectedId);
+    !EMPLOYEE_DASHBOARD_EMPTY &&
+    isEmployeeView &&
+    isCeoView &&
+    selectedId !== null &&
+    isCeoSummaryCardId(selectedId);
 
   return (
     <div
@@ -145,7 +158,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
               id={`dashboard-tab-${card.id}`}
               aria-controls={`dashboard-tabpanel-${card.id}`}
               aria-selected={isActive}
-              className={`summary-card${isActive ? ' summary-card--active' : ''}${isCeoCard ? ' summary-card--ceo' : ''}`}
+              className={`summary-card${isActive ? ' summary-card--active' : ''}${isCeoCard ? ' summary-card--ceo' : ''}${card.id === 'task-overview' && WORK_DASHBOARD_ENABLED ? ' summary-card--work-tab' : ''}`}
               data-summary-card-id={card.id}
               onClick={() => handleCardClick(card)}
               aria-label={isCeoCard ? `${card.title}. ${card.desc}` : `${card.title}: ${card.value}. ${card.desc}`}
@@ -153,7 +166,16 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
             >
               <div className="summary-card__body">
                 <span className="summary-card__title">{card.title}</span>
-                {isCeoCard ? (
+                {card.id === 'task-overview' && WORK_DASHBOARD_ENABLED ? (
+                  <>
+                    <span className="summary-card__eyebrow">Today</span>
+                    <span className="summary-card__value">{card.value}</span>
+                    <span className="summary-card__subtitle">
+                      Total / pending tasks · Sprint {workDashboardSummary.sprintCompletedPercent}%
+                      complete
+                    </span>
+                  </>
+                ) : isCeoCard ? (
                   <>
                     <span className="summary-card__value">{card.value}</span>
                     <span className="summary-card__subtitle">{card.desc}</span>
