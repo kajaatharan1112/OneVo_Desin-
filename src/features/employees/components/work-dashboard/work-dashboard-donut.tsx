@@ -35,18 +35,18 @@ export const WorkDashboardDonut: React.FC<WorkDashboardDonutProps> = ({
     <div className="wd-donut-wrap" role="img" aria-label={ariaLabel}>
       <div className="wd-donut">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+          <PieChart margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
             <Pie
               data={segments}
               dataKey="value"
-              innerRadius="63%"
-              outerRadius="88%"
+              innerRadius="76%"
+              outerRadius="90%"
               startAngle={90}
               endAngle={-270}
               paddingAngle={0}
               stroke="none"
               strokeWidth={0}
-              cornerRadius={10}
+              cornerRadius={6}
               isAnimationActive={false}
             >
               <Cell fill={fillColor} />
