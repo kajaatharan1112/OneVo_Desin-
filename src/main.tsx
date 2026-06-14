@@ -25,6 +25,7 @@ import './styles/configuration.css'
 import './features/leave/configuration/leaveConfiguration.css'
 import './features/admin/admin.css'
 import './features/settings/settings.css'
+import './features/work/work.css'
 import { ThemeProvider } from './core/theme/theme-context'
 import App from './app/App.tsx'
 

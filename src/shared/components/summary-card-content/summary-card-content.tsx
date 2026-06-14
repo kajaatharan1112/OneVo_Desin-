@@ -88,7 +88,7 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
         <Suspense fallback={<TabLoadingFallback />}>
           {isTaskOverview ? (
             <EmployeeTaskOverviewDashboard
-              onNavigateToTasks={() => onNavigateTab?.('Workspace')}
+              onNavigateToTasks={() => onNavigateTab?.('Work')}
             />
           ) : null}
           {isRequestsApproval ? <RequestApprovalTab /> : null}
