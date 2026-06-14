@@ -42,6 +42,7 @@ import { BillingSettingsPage } from '../features/settings/BillingSettingsPage';
 import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
 import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
 import { WorkProvider } from '../features/work/context/work-context';
+import { InboxProvider } from '../core/notifications/inbox-context';
 import { WorkRoutes } from '../features/work/WorkRoutes';
 import {
   DEFAULT_TENANT_COMPANY,
@@ -250,6 +251,7 @@ function App() {
   }
 
   return (
+    <InboxProvider>
     <WorkProvider onNavigateToList={setActiveSubItemId}>
       <EmployeeProvider
         selectedEmployeeId={selectedEmployeeId}
@@ -275,6 +277,7 @@ function App() {
       </Shell>
       </EmployeeProvider>
     </WorkProvider>
+    </InboxProvider>
   );
 }
 

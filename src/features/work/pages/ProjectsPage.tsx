@@ -3,14 +3,17 @@ import { LayoutGrid, List, Plus, Search, Settings } from 'lucide-react';
 import { useWork } from '../context/work-context';
 import {
   accessibleProjects,
-  formatWorkDate,
   healthBadgeClass,
+  healthLabel,
+  isProjectAdmin,
   statusBadgeClass,
+  visibilityBadgeShort,
+  visibleWorkspaceIds,
   workspaceName,
 } from '../workMockData';
 
 type ViewMode = 'cards' | 'table';
-type SortOrder = 'newest' | 'oldest';
+type SortOrder = 'newest' | 'oldest' | 'due-date' | 'name';
 
 export const ProjectsPage: React.FC = () => {
   const { workspaceFilterId, workspaces, projects, openProject, openModal, openProjectSettings } = useWork();
@@ -19,6 +22,8 @@ export const ProjectsPage: React.FC = () => {
   const [healthFilter, setHealthFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+
+  const visibleWs = useMemo(() => new Set(visibleWorkspaceIds()), []);
 
   const filtered = useMemo(() => {
     let list = accessibleProjects(workspaceFilterId, undefined, projects);
@@ -33,6 +38,12 @@ export const ProjectsPage: React.FC = () => {
     if (statusFilter !== 'all') list = list.filter(p => p.status === statusFilter);
     if (healthFilter !== 'all') list = list.filter(p => p.health === healthFilter);
     list = [...list].sort((a, b) => {
+      if (sortOrder === 'due-date') {
+        const aDue = a.dueDate ?? '9999-12-31';
+        const bDue = b.dueDate ?? '9999-12-31';
+        return aDue.localeCompare(bDue);
+      }
+      if (sortOrder === 'name') return a.name.localeCompare(b.name);
       const cmp = a.startDate.localeCompare(b.startDate);
       return sortOrder === 'newest' ? -cmp : cmp;
     });
@@ -65,6 +76,8 @@ export const ProjectsPage: React.FC = () => {
         <select className="cfg-filter-select" value={sortOrder} onChange={e => setSortOrder(e.target.value as SortOrder)}>
           <option value="newest">Created date · Newest</option>
           <option value="oldest">Created date · Oldest</option>
+          <option value="due-date">Due date</option>
+          <option value="name">Name</option>
         </select>
         <select className="cfg-filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="all">All statuses</option>
@@ -76,7 +89,7 @@ export const ProjectsPage: React.FC = () => {
           <option value="all">All health</option>
           <option value="on_track">On track</option>
           <option value="at_risk">At risk</option>
-          <option value="blocked">Blocked</option>
+          <option value="delayed">Delayed</option>
         </select>
         <div className="work-view-toggle admin-segmented">
           <button
@@ -107,37 +120,41 @@ export const ProjectsPage: React.FC = () => {
                 <div className="work-project-card__body">
                   <div className="work-project-card__header">
                     <div>
-                      <span className="work-project-card__key">{p.key}</span>
                       <h2 className="work-project-card__title">{p.name}</h2>
+                      <span className="work-project-card__key">{p.key}</span>
                     </div>
                     <div className="work-project-card__badges">
+                      <span className="work-visibility-badge">{visibilityBadgeShort(p.visibility)}</span>
                       <span className={`cfg-badge cfg-badge--${statusBadgeClass(p.status)}`}>{p.status.replace('_', ' ')}</span>
-                      <span className={`cfg-badge cfg-badge--${healthBadgeClass(p.health)}`}>{p.health.replace('_', ' ')}</span>
+                      <span className={`cfg-badge cfg-badge--${healthBadgeClass(p.health)}`}>{healthLabel(p.health)}</span>
                     </div>
                   </div>
                   <p className="work-project-card__desc">{p.description}</p>
                   <div className="work-project-card__ws-badges">
-                    {p.workspaceIds.map(wsId => (
-                      <span key={wsId} className="work-ws-badge">{workspaceName(wsId, workspaces)}</span>
-                    ))}
+                    {p.workspaceIds
+                      .filter(wsId => visibleWs.has(wsId))
+                      .map(wsId => (
+                        <span key={wsId} className="work-ws-badge">{workspaceName(wsId, workspaces)}</span>
+                      ))}
                   </div>
                   <dl className="work-project-card__meta">
-                    <div><dt>Members</dt><dd>{p.members.length}</dd></div>
+                    <div><dt>Members</dt><dd>{p.members.filter(m => m.status === 'active').length}</dd></div>
                     <div><dt>Open tasks</dt><dd>{p.openTasks}</dd></div>
-                    <div><dt>Due</dt><dd>{formatWorkDate(p.dueDate)}</dd></div>
                   </dl>
                   <div className="work-project-card__actions">
                     <button type="button" className="org-btn org-btn--primary org-btn--sm" onClick={() => openProject(p.id)}>
                       Open
                     </button>
-                    <button
-                      type="button"
-                      className="org-btn org-btn--secondary org-btn--sm org-btn--icon"
-                      onClick={() => { openProject(p.id, 'overview'); openProjectSettings(); }}
-                      aria-label="Project settings"
-                    >
-                      <Settings size={14} />
-                    </button>
+                    {isProjectAdmin(p) && (
+                      <button
+                        type="button"
+                        className="org-btn org-btn--secondary org-btn--sm org-btn--icon"
+                        onClick={() => { openProject(p.id, 'overview'); openProjectSettings(); }}
+                        aria-label="Project settings"
+                      >
+                        <Settings size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>
@@ -149,12 +166,12 @@ export const ProjectsPage: React.FC = () => {
               <thead>
                 <tr>
                   <th>Project</th>
+                  <th>Visibility</th>
                   <th>Status</th>
                   <th>Health</th>
                   <th>Workspaces</th>
                   <th>Members</th>
                   <th>Open tasks</th>
-                  <th>Due</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -165,22 +182,26 @@ export const ProjectsPage: React.FC = () => {
                       <div className="cfg-table__name">{p.name}</div>
                       <div className="cfg-table__meta">{p.key} · {p.description}</div>
                     </td>
+                    <td><span className="work-visibility-badge">{visibilityBadgeShort(p.visibility)}</span></td>
                     <td><span className={`cfg-badge cfg-badge--${statusBadgeClass(p.status)}`}>{p.status.replace('_', ' ')}</span></td>
-                    <td><span className={`cfg-badge cfg-badge--${healthBadgeClass(p.health)}`}>{p.health.replace('_', ' ')}</span></td>
+                    <td><span className={`cfg-badge cfg-badge--${healthBadgeClass(p.health)}`}>{healthLabel(p.health)}</span></td>
                     <td>
                       <div className="work-project-card__ws-badges">
-                        {p.workspaceIds.map(wsId => (
-                          <span key={wsId} className="work-ws-badge">{workspaceName(wsId, workspaces)}</span>
-                        ))}
+                        {p.workspaceIds
+                          .filter(wsId => visibleWs.has(wsId))
+                          .map(wsId => (
+                            <span key={wsId} className="work-ws-badge">{workspaceName(wsId, workspaces)}</span>
+                          ))}
                       </div>
                     </td>
-                    <td>{p.members.length}</td>
+                    <td>{p.members.filter(m => m.status === 'active').length}</td>
                     <td>{p.openTasks}</td>
-                    <td>{formatWorkDate(p.dueDate)}</td>
                     <td>
                       <div className="work-table-actions">
                         <button type="button" className="cfg-action-btn" onClick={() => openProject(p.id)}>Open</button>
-                        <button type="button" className="cfg-action-btn" onClick={() => { openProject(p.id, 'overview'); openProjectSettings(); }}>Settings</button>
+                        {isProjectAdmin(p) && (
+                          <button type="button" className="cfg-action-btn" onClick={() => { openProject(p.id, 'overview'); openProjectSettings(); }}>Settings</button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -8,14 +8,13 @@ import {
 import { useWork } from '../../context/work-context';
 import {
   CURRENT_USER_ID,
-  MOCK_CYCLES,
   TASK_STATUS_LABELS,
   cycleWorkItems,
   employeeName,
   formatWorkDate,
   formatWorkDateRange,
   priorityBadgeClass,
-  type ProjectCycle,
+  type ProjectCycle as ProjectCycleData,
   type TaskStatus,
   type WorkProject,
   type WorkTask,
@@ -85,8 +84,7 @@ function ProgressRing({ pct }: { pct: number }) {
 }
 
 export const ProjectCycle: React.FC<Props> = ({ project }) => {
-  const { addCycleSignal } = useWork();
-  const [cycles, setCycles] = useState<ProjectCycle[]>(MOCK_CYCLES);
+  const { addCycleSignal, cycles, addCycle, tasks } = useWork();
   const [activeExpanded, setActiveExpanded] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -99,8 +97,8 @@ export const ProjectCycle: React.FC<Props> = ({ project }) => {
   const active = activeCycles[0];
 
   const cycleTasks = useMemo(
-    () => (active ? cycleWorkItems(active) : []),
-    [active]
+    () => (active ? cycleWorkItems(active, tasks) : []),
+    [active, tasks]
   );
 
   const doneCount = cycleTasks.filter(t => t.status === 'done').length;
@@ -150,7 +148,7 @@ export const ProjectCycle: React.FC<Props> = ({ project }) => {
   }, [cycleTasks]);
 
   const handleAddCycle = (input: AddCycleInput) => {
-    const newCycle: ProjectCycle = {
+    const newCycle: ProjectCycleData = {
       id: `cyc-${Date.now()}`,
       name: input.name,
       projectId: project.id,
@@ -161,11 +159,7 @@ export const ProjectCycle: React.FC<Props> = ({ project }) => {
       ownerId: CURRENT_USER_ID,
       workItemIds: input.workItemIds,
     };
-    setCycles(prev =>
-      prev
-        .map(c => (c.projectId === project.id && c.status === 'active' ? { ...c, status: 'completed' as const } : c))
-        .concat(newCycle)
-    );
+    addCycle(newCycle);
     setActiveExpanded(true);
   };
 

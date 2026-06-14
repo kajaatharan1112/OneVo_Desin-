@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useWork, type WorkspaceRole } from '../context/work-context';
 import type { WorkWorkspace } from '../workMockData';
+import { CURRENT_USER_ID } from '../workMockData';
 
 const MEMBER_SOURCES = ['My Reporting Team', 'Existing Team', 'Manual Invite'] as const;
 type MemberSource = (typeof MEMBER_SOURCES)[number];
@@ -32,6 +33,7 @@ export const CreateWorkspaceDrawer: React.FC = () => {
       name: form.name.trim(),
       description: form.description,
       ownerName: 'You',
+      ownerId: CURRENT_USER_ID,
       memberCount: form.members.split(',').filter(Boolean).length,
       linkedProjectCount: 0,
       status: 'active',
