@@ -1,4 +1,4 @@
-.brand-actions-toast {
+.brand-menu-toast {
   position: fixed;
   top: calc(var(--nexus-header-height, 72px) + 12px);
   right: 24px;
@@ -12,11 +12,11 @@
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(15, 23, 42, 0.15);
   color: var(--nexus-text-primary, #0f172a);
-  animation: brandActionsSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: brandMenuSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   font-family: var(--nexus-font, inherit);
 }
 
-@keyframes brandActionsSlideDown {
+@keyframes brandMenuSlideDown {
   from {
     transform: translateY(-16px);
     opacity: 0;
@@ -27,7 +27,7 @@
   }
 }
 
-.brand-actions-toast__close {
+.brand-menu-toast__close {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -43,26 +43,26 @@
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.brand-actions-toast__close:hover {
+.brand-menu-toast__close:hover {
   background: var(--nexus-surface-muted, rgba(15, 23, 42, 0.06));
   color: var(--nexus-text-primary, #0f172a);
 }
 
-.brand-actions-toast__content h4 {
+.brand-menu-toast__content h4 {
   margin: 0 0 10px;
   font-size: 18px;
   font-weight: 600;
   color: var(--nexus-text-primary, #0f172a);
 }
 
-.brand-actions-toast__content p {
+.brand-menu-toast__content p {
   margin: 0 0 20px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--nexus-text-secondary, #475569);
 }
 
-.brand-actions-toast__apply-btn {
+.brand-menu-toast__action-btn {
   width: 100%;
   padding: 10px 16px;
   border: none;
@@ -76,18 +76,18 @@
   box-shadow: 0 4px 12px rgba(30, 79, 192, 0.3);
 }
 
-.brand-actions-toast__apply-btn:hover {
+.brand-menu-toast__action-btn:hover {
   background: var(--nexus-primary-hover, #1a3f9a);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(30, 79, 192, 0.4);
 }
 
-.brand-actions-toast__apply-btn:active {
+.brand-menu-toast__action-btn:active {
   transform: translateY(0);
 }
 
 @media (max-width: 640px) {
-  .brand-actions-toast {
+  .brand-menu-toast {
     right: 16px;
     left: 16px;
     width: auto;

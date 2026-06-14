@@ -70,9 +70,9 @@
   --nexus-surface-inset: #e2e8f0;
   --nexus-surface-muted: #f1f5f9;
   --nexus-border: rgba(100, 116, 139, 0.28);
-  --nexus-text-primary: #0f172a;
-  --nexus-text-secondary: #475569;
-  --nexus-text-muted: #64748b;
+  --nexus-text-primary: #101828;
+  --nexus-text-secondary: #475467;
+  --nexus-text-muted: #667085;
   --nexus-text-disabled: #94a3b8;
   --nexus-code-bg: #f1f5f9;
 
@@ -88,8 +88,8 @@
   --nexus-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
   --nexus-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
   --nexus-shadow-lg: 0 10px 24px rgba(15, 23, 42, 0.08);
-  --nexus-shadow-card: 0 4px 12px rgba(15, 23, 42, 0.05);
-  --nexus-shadow-card-hover: 0 10px 24px rgba(30, 79, 188, 0.08);
+  --nexus-shadow-card: 0 4px 24px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --nexus-shadow-card-hover: 0 8px 32px rgba(16, 24, 40, 0.08);
   --nexus-shadow-button: 0 4px 14px rgba(30, 79, 188, 0.2);
 
   --nexus-switch-glow: 0 0 10px rgba(6, 182, 212, 0.3);

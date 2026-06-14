@@ -4,19 +4,39 @@
 }
 
 .dashboard-page--employee-overview {
-  /* Unified employee workspace typography & spacing */
+  /* ── Enterprise SaaS design tokens (WCAG 2.2 AA · dark-mode ready) ── */
+  --ewd-app-bg: #f8fafc;
+  --ewd-bg-secondary: #f4f7fb;
+  --ewd-surface: #ffffff;
+  --ewd-hover-surface: #fcfcfd;
   --ewd-title: 0.875rem;
-  --ewd-body: 0.8125rem;
-  --ewd-meta: 0.75rem;
-  --ewd-label: 0.6875rem;
-  --ewd-value: 1.0625rem;
-  --ewd-gap: 14px;
-  --ewd-pad-x: 12px;
-  --ewd-pad-y: 10px;
-  --ewd-card-radius: var(--nexus-radius-lg, 20px);
-  --ewd-tab-strip-gap: 8px;
-  --ewd-tab-card-pad-y: 7px;
-  --ewd-tab-card-pad-x: 11px;
+  --ewd-body: 0.875rem;
+  --ewd-meta: 0.8125rem;
+  --ewd-label: 0.75rem;
+  --ewd-value: 1.125rem;
+  --ewd-gap-section: 16px;
+  --ewd-gap: 10px;
+  --ewd-gap-component: 6px;
+  --ewd-pad-x: 16px;
+  --ewd-pad-y: 16px;
+  --ewd-card-radius: 20px;
+  --ewd-tab-strip-gap: 10px;
+  --ewd-tab-card-pad-y: 10px;
+  --ewd-tab-card-pad-x: 14px;
+  --ewd-text-primary: #101828;
+  --ewd-text-secondary: #344054;
+  --ewd-text-tertiary: #667085;
+  --ewd-text-disabled: #98a2b3;
+  --ewd-brand: #2563eb;
+  --ewd-brand-hover: #1d4ed8;
+  --ewd-brand-light: #dbeafe;
+  --ewd-brand-subtle: #eff6ff;
+  --ewd-border: #eaecf0;
+  --ewd-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --ewd-shadow-hover: 0 12px 32px rgba(16, 24, 40, 0.08);
+  --ewd-motion: 200ms ease-out;
+  --ewd-font: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  --ewd-page-bg: var(--ewd-app-bg);
 
   display: flex;
   flex-direction: column;
@@ -24,6 +44,9 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
+  background: var(--ewd-page-bg);
+  font-family: var(--ewd-font);
+  color: var(--ewd-text-primary);
 }
 
 .dashboard-page--employee-overview .summarize-tabs-root {
@@ -41,32 +64,63 @@
   gap: var(--ewd-tab-strip-gap);
 }
 
-/* Top dashboard tab cards — same strip height on all 4 tabs */
+/* Top dashboard tab cards — premium floating style (no glass on data areas) */
 .dashboard-page--employee-overview .summary-card {
   padding: var(--ewd-tab-card-pad-y) var(--ewd-tab-card-pad-x);
-  min-height: 54px;
+  min-height: 50px;
+  border: 1px solid var(--ewd-border);
+  border-radius: var(--ewd-card-radius);
+  box-shadow: var(--ewd-shadow-card);
+  background: var(--ewd-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: box-shadow var(--ewd-motion), border-color var(--ewd-motion);
+}
+
+.dashboard-page--employee-overview .summary-card:hover {
+  box-shadow: var(--ewd-shadow-hover);
+  border-color: color-mix(in srgb, var(--ewd-brand) 18%, var(--ewd-border));
 }
 
 .dashboard-page--employee-overview .summary-card--active {
-  box-shadow: var(--shadow-card);
+  border-color: var(--ewd-brand-light);
+  background: var(--ewd-brand-subtle);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(37, 99, 235, 0.08);
+}
+
+.dashboard-page--employee-overview .summary-card__title {
+  font-size: var(--ewd-body);
+  font-weight: 600;
+  color: var(--ewd-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.dashboard-page--employee-overview .summary-card__subtitle {
+  font-size: var(--ewd-meta);
+  font-weight: 500;
+  color: var(--ewd-text-secondary);
+  line-height: 1.5;
 }
 
 .dashboard-page--employee-overview .summary-card-content {
   animation: none;
 }
 
-.dashboard-page--employee-overview .summary-card__title {
-  font-size: var(--ewd-body);
-  font-weight: 600;
-}
-
-.dashboard-page--employee-overview .summary-card__subtitle {
-  font-size: var(--ewd-meta);
-}
-
 .dashboard-page--employee-overview .summary-card__value {
-  font-size: 1.125rem;
+  font-size: var(--ewd-value);
   font-weight: 700;
+  color: var(--ewd-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.dashboard-page--employee-overview .summarize-tabs-root--empty {
+  overflow: auto;
+}
+
+.dashboard-page--employee-overview:has(.summary-card-content--empty) .main-scrollable,
+.main-scrollable:has(.dashboard-page--employee-overview .summary-card-content--empty) {
+  overflow: auto;
 }
 
 .dashboard-page--employee-overview .summary-card-content--filled {
@@ -114,23 +168,52 @@
   --emc-gap: var(--ewd-gap);
 }
 
-/* Shared card shell — consistent padding & type across all tabs */
+/* Employee dashboard — scrollable areas hide scrollbar on all tabs */
+.dashboard-page--employee-overview .emp-dash-scroll,
+.dashboard-page--employee-overview .eac-widget__scroll,
+.dashboard-page--employee-overview .emc-widget__scroll,
+.dashboard-page--employee-overview .era-panel__scroll,
+.dashboard-page--employee-overview .work-dashboard-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboard-page--employee-overview .emp-dash-scroll::-webkit-scrollbar,
+.dashboard-page--employee-overview .eac-widget__scroll::-webkit-scrollbar,
+.dashboard-page--employee-overview .emc-widget__scroll::-webkit-scrollbar,
+.dashboard-page--employee-overview .era-panel__scroll::-webkit-scrollbar,
+.dashboard-page--employee-overview .work-dashboard-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Shared card shell — solid surfaces, no glass on dashboard content */
 .dashboard-page--employee-overview .emp-dash-card,
 .dashboard-page--employee-overview .eac-widget,
 .dashboard-page--employee-overview .emc-widget,
 .dashboard-page--employee-overview .era-panel:not(.era-hero-banner) {
   padding: var(--ewd-pad-y) var(--ewd-pad-x);
   font-size: var(--ewd-body);
-  line-height: 1.45;
+  line-height: 1.5;
   border-radius: var(--ewd-card-radius);
+  background: var(--ewd-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--ewd-border);
+  box-shadow: var(--ewd-shadow-card);
+}
+
+.dashboard-page--employee-overview .emp-dash-card:hover,
+.dashboard-page--employee-overview .eac-widget:hover,
+.dashboard-page--employee-overview .emc-widget:hover {
+  box-shadow: var(--ewd-shadow-hover);
 }
 
 /* Reusable enterprise card shell */
 .emp-dash-card {
-  background: var(--nexus-glass-bg, var(--surface-panel));
-  backdrop-filter: var(--nexus-glass-blur, none);
-  -webkit-backdrop-filter: var(--nexus-glass-blur, none);
-  border: 1px solid var(--nexus-glass-border, var(--border));
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
   border-radius: var(--emp-dash-card-radius);
   box-shadow: var(--shadow-card);
   box-sizing: border-box;
@@ -141,8 +224,14 @@
   overflow: hidden;
   font-family: var(--sans);
   font-size: var(--emp-dash-body-size);
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--text);
+}
+
+.dashboard-page--employee-overview .emp-dash-card {
+  background: var(--ewd-surface);
+  border-color: var(--ewd-border);
+  box-shadow: var(--ewd-shadow-card);
 }
 
 .emp-dash-card__head {
@@ -343,7 +432,7 @@
   border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
 }
 
-/* Internal scroll regions — fill card, no fixed empty space */
+/* Internal scroll regions — fill card, scrollbar hidden */
 .emp-dash-scroll {
   list-style: none;
   margin: 0;
@@ -352,7 +441,14 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.emp-dash-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .emp-dash-scroll--tasks,
