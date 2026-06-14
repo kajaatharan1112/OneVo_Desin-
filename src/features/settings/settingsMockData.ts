@@ -4,36 +4,21 @@ export { formatDateTime, formatRelativeTime };
 
 export interface GeneralSettings {
   companyName: string;
-  tenantSlug: string;
-  primaryContactEmail: string;
-  country: string;
+  displayName: string;
   timezone: string;
   dateFormat: string;
-  timeFormat: string;
+  weekStartDay: string;
   language: string;
-  currency: string;
-  fiscalYearStartMonth: number;
-  workWeekDays: string[];
 }
 
 export const DEFAULT_GENERAL: GeneralSettings = {
   companyName: 'Acme Corporation',
-  tenantSlug: 'acme-corp',
-  primaryContactEmail: 'admin@acme.com',
-  country: 'United Kingdom',
+  displayName: 'Acme',
   timezone: 'Europe/London',
   dateFormat: 'DD/MM/YYYY',
-  timeFormat: '24-hour',
+  weekStartDay: 'Mon',
   language: 'English (UK)',
-  currency: 'GBP',
-  fiscalYearStartMonth: 4,
-  workWeekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
 };
-
-export const MONTH_OPTIONS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 export const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
