@@ -1,7 +1,6 @@
 export interface NotificationDelivery {
   inApp: boolean;
   email: boolean;
-  inbox: boolean;
 }
 
 export interface NotificationTypeDef {
@@ -10,8 +9,6 @@ export interface NotificationTypeDef {
   name: string;
   description: string;
   eventKey: string;
-  /** Actionable items can use Inbox delivery. */
-  actionable: boolean;
   defaults: NotificationDelivery;
   preview: {
     inApp: string;
@@ -22,160 +19,331 @@ export interface NotificationTypeDef {
   };
 }
 
-type RowInput = {
+interface RowInput {
   category: string;
   name: string;
   description: string;
-  actionable: boolean;
   defaults: NotificationDelivery;
-  id?: string;
-  eventKey?: string;
-  preview?: Partial<NotificationTypeDef['preview']>;
-};
+  eventKey: string;
+  preview: NotificationTypeDef['preview'];
+}
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
 
 function row(input: RowInput): NotificationTypeDef {
-  const id = input.id ?? input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const eventKey = input.eventKey ?? `notifications.${id.replace(/-/g, '.')}`;
   return {
-    id,
+    id: slugify(input.name),
     category: input.category,
     name: input.name,
     description: input.description,
-    eventKey,
-    actionable: input.actionable,
+    eventKey: input.eventKey,
     defaults: { ...input.defaults },
-    preview: {
-      inApp: input.preview?.inApp ?? `${input.name} — in-app notification preview.`,
-      emailSubject: input.preview?.emailSubject ?? input.name,
-      emailBody: input.preview?.emailBody ?? input.description,
-      recipients: input.preview?.recipients ?? 'Affected users based on event context.',
-      rules: input.preview?.rules ?? 'Delivered according to tenant notification defaults.',
-    },
+    preview: { ...input.preview },
   };
 }
 
-const PEOPLE: NotificationTypeDef[] = [
+export const NOTIFICATION_CATALOG: NotificationTypeDef[] = [
   row({
-    category: 'Employee / People',
-    name: 'Employee invite',
-    description: 'Sent when login access is created for an employee.',
-    actionable: false,
-    defaults: { inApp: false, email: true, inbox: false },
+    category: 'Projects',
+    name: 'Project invite received',
+    description: 'Sent when someone is invited to join a project.',
+    eventKey: 'project.invite.received',
+    defaults: { inApp: true, email: true },
     preview: {
-      recipients: 'Invited employee',
-      emailSubject: 'You have been invited to OneVo',
-      emailBody: 'Use the link below to activate your account and set up sign-in.',
+      inApp: 'You were invited to join "Q3 Roadmap".',
+      emailSubject: 'You’ve been invited to a project',
+      emailBody: 'You have been invited to join the project "Q3 Roadmap". Open OneVo to accept or decline.',
+      recipients: 'Invited user',
+      rules: 'Sent once when a project invite is created.',
     },
   }),
-  row({ category: 'Employee / People', name: 'Onboarding task assigned', description: 'Notifies assignees when onboarding checklist tasks are created.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Employee / People', name: 'Offboarding task assigned', description: 'Notifies assignees when offboarding checklist tasks are created.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Employee / People', name: 'Employee transfer completed', description: 'Notifies affected managers when an employee moves position or department.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Employee / People', name: 'Employee promotion completed', description: 'Notifies the employee and affected manager after promotion confirmation.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Employee / People', name: 'Employee offboarding started', description: 'Notifies task assignees and responsible managers.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
+  row({
+    category: 'Projects',
+    name: 'Project invite accepted',
+    description: 'Sent when an invited user accepts a project invite.',
+    eventKey: 'project.invite.accepted',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Priya Sharma accepted your invite to "Q3 Roadmap".',
+      emailSubject: 'Project invite accepted',
+      emailBody: 'Priya Sharma accepted the invite to join "Q3 Roadmap".',
+      recipients: 'Project owner / inviter',
+      rules: 'Sent once when the invite is accepted.',
+    },
+  }),
+  row({
+    category: 'Projects',
+    name: 'Project invite declined',
+    description: 'Sent when an invited user declines a project invite.',
+    eventKey: 'project.invite.declined',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'James Chen declined your invite to "Q3 Roadmap".',
+      emailSubject: 'Project invite declined',
+      emailBody: 'James Chen declined the invite to join "Q3 Roadmap".',
+      recipients: 'Project owner / inviter',
+      rules: 'Sent once when the invite is declined.',
+    },
+  }),
+  row({
+    category: 'Workspaces',
+    name: 'Workspace participation requested',
+    description: 'Sent when an employee requests to join a workspace.',
+    eventKey: 'workspace.participation.requested',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: 'Maria Lopez requested to join the "Design" workspace.',
+      emailSubject: 'New workspace participation request',
+      emailBody: 'Maria Lopez has requested to join the "Design" workspace and is waiting for approval.',
+      recipients: 'Workspace admins',
+      rules: 'Sent once when a participation request is created.',
+    },
+  }),
+  row({
+    category: 'Workspaces',
+    name: 'Workspace participation approved',
+    description: 'Sent when a workspace participation request is approved.',
+    eventKey: 'workspace.participation.approved',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Your request to join "Design" was approved.',
+      emailSubject: 'Workspace request approved',
+      emailBody: 'Your request to join the "Design" workspace has been approved.',
+      recipients: 'Requesting employee',
+      rules: 'Sent once when the request is approved.',
+    },
+  }),
+  row({
+    category: 'Workspaces',
+    name: 'Workspace participation rejected',
+    description: 'Sent when a workspace participation request is rejected.',
+    eventKey: 'workspace.participation.rejected',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Your request to join "Design" was declined.',
+      emailSubject: 'Workspace request declined',
+      emailBody: 'Your request to join the "Design" workspace has been declined.',
+      recipients: 'Requesting employee',
+      rules: 'Sent once when the request is rejected.',
+    },
+  }),
+  row({
+    category: 'Projects',
+    name: 'Related project link requested',
+    description: 'Sent when a project requests to link with another project.',
+    eventKey: 'project.link.requested',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: '"Q3 Roadmap" requested to link with "Mobile App Launch".',
+      emailSubject: 'New related project link request',
+      emailBody: 'The project "Q3 Roadmap" has requested to be linked with "Mobile App Launch".',
+      recipients: 'Target project owner',
+      rules: 'Sent once when a link request is created.',
+    },
+  }),
+  row({
+    category: 'Projects',
+    name: 'Related project link approved',
+    description: 'Sent when a related project link request is approved.',
+    eventKey: 'project.link.approved',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Your link request with "Mobile App Launch" was approved.',
+      emailSubject: 'Project link approved',
+      emailBody: 'The request to link "Q3 Roadmap" with "Mobile App Launch" has been approved.',
+      recipients: 'Requesting project owner',
+      rules: 'Sent once when the request is approved.',
+    },
+  }),
+  row({
+    category: 'Projects',
+    name: 'Related project link rejected',
+    description: 'Sent when a related project link request is rejected.',
+    eventKey: 'project.link.rejected',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Your link request with "Mobile App Launch" was declined.',
+      emailSubject: 'Project link declined',
+      emailBody: 'The request to link "Q3 Roadmap" with "Mobile App Launch" has been declined.',
+      recipients: 'Requesting project owner',
+      rules: 'Sent once when the request is rejected.',
+    },
+  }),
+  row({
+    category: 'Work Items',
+    name: 'Work item assigned',
+    description: 'Sent when a work item is assigned to someone.',
+    eventKey: 'work_item.assigned',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: 'You were assigned "Fix login redirect bug".',
+      emailSubject: 'A work item was assigned to you',
+      emailBody: 'You have been assigned the work item "Fix login redirect bug" in "Mobile App Launch".',
+      recipients: 'Assignee',
+      rules: 'Sent once when the assignee changes.',
+    },
+  }),
+  row({
+    category: 'Work Items',
+    name: 'Work item mentioned',
+    description: 'Sent when someone is @mentioned on a work item.',
+    eventKey: 'work_item.mentioned',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'David Nguyen mentioned you on "Fix login redirect bug".',
+      emailSubject: 'You were mentioned',
+      emailBody: 'David Nguyen mentioned you in a comment on "Fix login redirect bug".',
+      recipients: 'Mentioned user',
+      rules: 'Sent once per mention.',
+    },
+  }),
+  row({
+    category: 'Work Items',
+    name: 'Work item due soon',
+    description: 'Reminder sent shortly before a work item is due.',
+    eventKey: 'work_item.due_soon',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: '"Fix login redirect bug" is due tomorrow.',
+      emailSubject: 'Upcoming due date',
+      emailBody: 'The work item "Fix login redirect bug" assigned to you is due tomorrow.',
+      recipients: 'Assignee',
+      rules: 'Sent once, 24 hours before the due date.',
+    },
+  }),
+  row({
+    category: 'Leave',
+    name: 'Leave request submitted',
+    description: 'Sent to approvers when an employee submits a leave request.',
+    eventKey: 'leave.request.submitted',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Priya Sharma requested 3 days of annual leave.',
+      emailSubject: 'New leave request awaiting approval',
+      emailBody: 'Priya Sharma has requested 3 days of annual leave from 20-22 Jun. Review and respond in OneVo.',
+      recipients: 'Direct manager / approver',
+      rules: 'Sent once when the request is submitted.',
+    },
+  }),
+  row({
+    category: 'Leave',
+    name: 'Leave request approved',
+    description: 'Sent to the employee when their leave request is approved.',
+    eventKey: 'leave.request.approved',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: 'Your leave request for 20-22 Jun was approved.',
+      emailSubject: 'Your leave request was approved',
+      emailBody: 'Your request for 3 days of annual leave from 20-22 Jun has been approved.',
+      recipients: 'Requesting employee',
+      rules: 'Sent once when the request is approved.',
+    },
+  }),
+  row({
+    category: 'Leave',
+    name: 'Leave request rejected',
+    description: 'Sent to the employee when their leave request is rejected.',
+    eventKey: 'leave.request.rejected',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: 'Your leave request for 20-22 Jun was declined.',
+      emailSubject: 'Your leave request was declined',
+      emailBody: 'Your request for 3 days of annual leave from 20-22 Jun has been declined. See manager comments in OneVo.',
+      recipients: 'Requesting employee',
+      rules: 'Sent once when the request is rejected.',
+    },
+  }),
+  row({
+    category: 'Attendance',
+    name: 'Attendance correction submitted',
+    description: 'Sent to approvers when an employee submits an attendance correction.',
+    eventKey: 'attendance.correction.submitted',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'James Chen submitted an attendance correction for 10 Jun.',
+      emailSubject: 'New attendance correction awaiting approval',
+      emailBody: 'James Chen has submitted an attendance correction for 10 Jun. Review and respond in OneVo.',
+      recipients: 'Direct manager / approver',
+      rules: 'Sent once when the correction is submitted.',
+    },
+  }),
+  row({
+    category: 'Documents',
+    name: 'Document requested',
+    description: 'Sent when an employee is asked to submit a document.',
+    eventKey: 'document.requested',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: 'HR requested your "Proof of Address" document.',
+      emailSubject: 'Document requested',
+      emailBody: 'HR has requested that you upload your "Proof of Address" document in OneVo.',
+      recipients: 'Employee',
+      rules: 'Sent once when the request is created.',
+    },
+  }),
+  row({
+    category: 'Documents',
+    name: 'Document approved',
+    description: 'Sent when a submitted document is reviewed and approved.',
+    eventKey: 'document.approved',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Your "Proof of Address" document was approved.',
+      emailSubject: 'Document approved',
+      emailBody: 'Your submitted document "Proof of Address" has been reviewed and approved.',
+      recipients: 'Employee',
+      rules: 'Sent once when the document is approved.',
+    },
+  }),
+  row({
+    category: 'Automations',
+    name: 'Automation alert created',
+    description: 'Sent when an automation rule creates a new alert.',
+    eventKey: 'automation.alert.created',
+    defaults: { inApp: true, email: false },
+    preview: {
+      inApp: 'Automation "Idle time exceeded" created a new alert for Maria Lopez.',
+      emailSubject: 'New automation alert',
+      emailBody: 'The automation rule "Idle time exceeded" created a new alert for Maria Lopez.',
+      recipients: 'Automation owner / admins',
+      rules: 'Sent once per alert created.',
+    },
+  }),
+  row({
+    category: 'Approvals',
+    name: 'Approval request assigned',
+    description: 'Sent when an approval step is assigned to someone.',
+    eventKey: 'approval.request.assigned',
+    defaults: { inApp: true, email: true },
+    preview: {
+      inApp: 'You have a new approval request: "Q3 Budget Increase".',
+      emailSubject: 'New approval request assigned to you',
+      emailBody: 'You have been assigned an approval step for "Q3 Budget Increase". Review and respond in OneVo.',
+      recipients: 'Assigned approver',
+      rules: 'Sent once when the approval step is assigned.',
+    },
+  }),
 ];
 
-const LEAVE: NotificationTypeDef[] = [
-  row({ category: 'Leave', name: 'Leave request submitted', description: 'Notifies assigned approver when an employee submits leave.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Leave', name: 'Leave request approved', description: 'Notifies employee when leave is approved.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Leave', name: 'Leave request rejected', description: 'Notifies employee when leave is rejected.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Leave', name: 'Leave request cancelled', description: 'Notifies employee/manager when a pending or approved leave is cancelled.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Leave', name: 'Leave approval reminder', description: 'Reminder to approver when leave remains pending.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Leave', name: 'Leave approval escalated', description: 'Notifies escalation recipient when leave approval SLA is missed.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Leave', name: 'Leave balance warning', description: 'Warns employee/admin when leave balance is low or over-utilized.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
+export const NOTIFICATION_CATEGORIES = [
+  'Projects',
+  'Workspaces',
+  'Work Items',
+  'Leave',
+  'Attendance',
+  'Documents',
+  'Automations',
+  'Approvals',
 ];
-
-const ATTENDANCE: NotificationTypeDef[] = [
-  row({ category: 'Attendance', name: 'Attendance correction submitted', description: 'Notifies approver when employee submits attendance correction.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Attendance', name: 'Attendance correction approved', description: 'Notifies employee when correction is approved.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Attendance', name: 'Attendance correction rejected', description: 'Notifies employee when correction is rejected.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Attendance', name: 'Late attendance alert', description: 'Notifies configured resolver when lateness crosses configured threshold.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Attendance', name: 'Missed punch alert', description: 'Notifies employee or resolver when clock-in/out is missing.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Attendance', name: 'Overtime request submitted', description: 'Notifies approver when overtime needs review.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Attendance', name: 'Overtime approved', description: 'Notifies employee after overtime approval.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Attendance', name: 'Overtime rejected', description: 'Notifies employee after overtime rejection.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-];
-
-const DOCUMENTS: NotificationTypeDef[] = [
-  row({ category: 'Documents', name: 'Document requires acknowledgement', description: 'Notifies employees that a policy/document requires acknowledgement.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Documents', name: 'Document acknowledgement reminder', description: 'Reminds employees who have not acknowledged required document.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Documents', name: 'Document acknowledgement overdue', description: 'Escalates overdue acknowledgement to manager/resolver.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Documents', name: 'New document published', description: 'Notifies affected employees when a new document is published.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Documents', name: 'Document version updated', description: 'Notifies employees when acknowledgement resets after document update.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-];
-
-const PAYROLL: NotificationTypeDef[] = [
-  row({ category: 'Payroll', name: 'Payslip available', description: 'Notifies employee when payslip is ready.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Payroll', name: 'Payroll run completed', description: 'Notifies payroll/admin users when payroll run completes.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Payroll', name: 'Payroll run failed', description: 'Notifies payroll/admin users when payroll processing fails.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Payroll', name: 'Payroll approval required', description: 'Notifies assigned approver when payroll requires approval.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-];
-
-const PERFORMANCE: NotificationTypeDef[] = [
-  row({ category: 'Performance', name: 'Review cycle launched', description: 'Notifies participants that review cycle has started.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Performance', name: 'Self-assessment due', description: 'Reminds employee to complete self-assessment.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Performance', name: 'Manager review due', description: 'Reminds manager to complete team review.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Performance', name: 'Peer feedback requested', description: 'Notifies employee they were asked to provide peer feedback.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Performance', name: 'Review completed', description: 'Notifies employee that review results are available.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Performance', name: 'Goal assigned', description: 'Notifies employee when a goal is assigned.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Performance', name: 'Improvement plan assigned', description: 'Notifies employee, mentor, and HR when improvement plan is assigned.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Performance', name: 'PIP check-in overdue', description: 'Notifies responsible users when improvement-plan check-in is overdue.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Performance', name: 'Recognition received', description: 'Notifies employee when recognition is received.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-];
-
-const MONITORING: NotificationTypeDef[] = [
-  row({ category: 'Exceptions / Monitoring', name: 'Exception alert created', description: 'Notifies resolver when a formal exception alert is created.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Exceptions / Monitoring', name: 'Exception alert escalated', description: 'Notifies escalation resolver when exception is escalated.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Exceptions / Monitoring', name: 'Agent offline too long', description: 'Notifies resolver when employee device/agent is offline longer than allowed.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Exceptions / Monitoring', name: 'Identity verification failed', description: 'Notifies resolver when identity verification fails.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'Exceptions / Monitoring', name: 'App usage violation detected', description: 'Notifies resolver when monitored app usage violates policy.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Exceptions / Monitoring', name: 'Location mismatch detected', description: 'Notifies resolver when employee work location evidence mismatches policy.', actionable: true, defaults: { inApp: true, email: false, inbox: true } }),
-  row({ category: 'Exceptions / Monitoring', name: 'Idle time exceeded threshold', description: 'Notifies resolver when idle time crosses configured threshold.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-];
-
-const REPORTS: NotificationTypeDef[] = [
-  row({ category: 'Reports / Analytics', name: 'Scheduled report ready', description: 'Notifies recipients when scheduled report is ready.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Reports / Analytics', name: 'Export ready', description: 'Notifies user when large data export is ready.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Reports / Analytics', name: 'Report delivery failed', description: 'Notifies report owner when scheduled delivery fails.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-];
-
-const SECURITY: NotificationTypeDef[] = [
-  row({ category: 'Security / Access', name: 'Role assigned', description: 'Notifies user when a security role is assigned.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Security / Access', name: 'Permission changed', description: 'Notifies affected user/admin when permissions change.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'Security / Access', name: 'Account invite sent', description: 'Sent when login access invite is created.', actionable: false, defaults: { inApp: false, email: true, inbox: false } }),
-  row({ category: 'Security / Access', name: 'Password reset requested', description: 'Sends password reset link.', actionable: false, defaults: { inApp: false, email: true, inbox: false } }),
-  row({ category: 'Security / Access', name: 'MFA changed', description: 'Notifies user when MFA is enabled, disabled, or reset.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Security / Access', name: 'User account locked', description: 'Notifies admin/user when account is locked.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'Security / Access', name: 'User account unlocked', description: 'Notifies user when account is unlocked.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-];
-
-const SYSTEM: NotificationTypeDef[] = [
-  row({ category: 'System', name: 'Settings changed', description: 'Notifies admins when tenant settings are changed.', actionable: false, defaults: { inApp: true, email: false, inbox: false } }),
-  row({ category: 'System', name: 'Billing invoice available', description: 'Notifies billing admins when invoice is available.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-  row({ category: 'System', name: 'Billing payment failed', description: 'Notifies billing admins when payment fails.', actionable: true, defaults: { inApp: true, email: true, inbox: true } }),
-  row({ category: 'System', name: 'Subscription changed', description: 'Notifies admins when subscription or modules change.', actionable: false, defaults: { inApp: true, email: true, inbox: false } }),
-];
-
-export function buildNotificationCatalog(includeMonitoring: boolean): NotificationTypeDef[] {
-  return [
-    ...PEOPLE,
-    ...LEAVE,
-    ...ATTENDANCE,
-    ...DOCUMENTS,
-    ...PAYROLL,
-    ...PERFORMANCE,
-    ...(includeMonitoring ? MONITORING : []),
-    ...REPORTS,
-    ...SECURITY,
-    ...SYSTEM,
-  ];
-}
 
 export function cloneDelivery(d: NotificationDelivery): NotificationDelivery {
   return { ...d };
 }
 
 export function deliveryKey(id: string, delivery: NotificationDelivery): string {
-  return `${id}:${delivery.inApp}:${delivery.email}:${delivery.inbox}`;
+  return `${id}:${delivery.inApp}:${delivery.email}`;
 }
 
 export function serializeDeliveries(catalog: NotificationTypeDef[], values: Record<string, NotificationDelivery>): string {
@@ -185,18 +353,3 @@ export function serializeDeliveries(catalog: NotificationTypeDef[], values: Reco
 export function buildInitialDeliveries(catalog: NotificationTypeDef[]): Record<string, NotificationDelivery> {
   return Object.fromEntries(catalog.map(n => [n.id, cloneDelivery(n.defaults)]));
 }
-
-export const NOTIFICATION_CATEGORIES = [
-  'Employee / People',
-  'Leave',
-  'Attendance',
-  'Documents',
-  'Payroll',
-  'Performance',
-  'Exceptions / Monitoring',
-  'Reports / Analytics',
-  'Security / Access',
-  'System',
-] as const;
-
-export type DeliveryMethodFilter = 'in-app' | 'email' | 'inbox';

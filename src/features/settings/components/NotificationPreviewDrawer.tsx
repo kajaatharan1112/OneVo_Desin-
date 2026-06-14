@@ -18,7 +18,6 @@ export const NotificationPreviewDrawer: React.FC<NotificationPreviewDrawerProps>
   const channels = [
     delivery.inApp && 'In-app',
     delivery.email && emailAvailable && 'Email',
-    delivery.inbox && 'Inbox',
   ].filter(Boolean);
 
   return (
