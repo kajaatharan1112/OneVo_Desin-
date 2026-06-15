@@ -112,19 +112,10 @@
   color: var(--text-h);
 }
 
-.schedules-cfg-readonly-value {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-muted);
-  font-size: 0.78rem;
-  color: var(--text);
-}
-
 .schedules-cfg-radio-group {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 20px;
 }
 
 .schedules-cfg-radio {
