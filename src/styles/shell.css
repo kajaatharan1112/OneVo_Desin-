@@ -7,10 +7,26 @@
   height: 100vh;
   min-height: 100vh;
   width: 100%;
-  padding: 0;
+  padding: var(--app-frame-gap);
   gap: 0;
   background: var(--shell-outer);
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Single unified app container: topbar, sidebar, sub-sidebar and
+   content all live inside this one rounded, clipped frame. */
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  background: var(--rail-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--app-frame-radius);
+  box-shadow: var(--nexus-shadow-lg);
   overflow: hidden;
 }
 
@@ -55,8 +71,8 @@
   backdrop-filter: var(--nexus-glass-blur);
   -webkit-backdrop-filter: var(--nexus-glass-blur);
   border: none;
-  border-radius: var(--nexus-radius-card, 20px);
-  height: calc(100vh - 2 * var(--shell-gap));
+  border-radius: 0;
+  height: 100%;
   box-sizing: border-box;
 }
 
@@ -282,6 +298,7 @@
   box-sizing: border-box;
   background: var(--surface);
   border-right: 1px solid var(--border);
+  border-radius: var(--app-frame-radius) 0 0 0;
   flex-shrink: 0;
 }
 
@@ -327,18 +344,12 @@
   z-index: 1;
 }
 
-/* Mirror top connector: sub-nav owns left curves; content stays square on that edge */
-.dashboard-shell--subnav-open .content-pane__body {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
 .dashboard-shell--subnav-open .main-content-slot {
   padding-left: var(--shell-gap);
 }
 
 .dashboard-shell--subnav-collapsed .content-pane__body {
-  border-top-left-radius: 16px;
+  border-top-left-radius: var(--app-frame-radius);
 }
 
 .sub-nav-panel__toolbar {
@@ -568,7 +579,9 @@
   overflow: visible;
 }
 
-/* The actual island: below the topbar, curves top-left and bottom-left */
+/* Floating white content card: top-left corner curves into the chrome.
+   When the sub-nav panel is open, the card sits flush against it
+   (sub-nav's own top-left curve takes over), so the card goes square. */
 .content-pane__body {
   position: relative;
   flex: 1 1 auto;
@@ -577,23 +590,26 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--content-island);
-  border-radius: 16px 0 0 16px;
-  border-bottom-left-radius: 16px;
+  border-radius: var(--app-frame-radius) 0 0 0;
+  box-shadow: var(--nexus-shadow-sm);
+}
+
+.dashboard-shell--subnav-open .content-pane__body {
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* ─────────────────────────────────────────────
    8. NAVBAR HEADER — blends with outer shell
    ───────────────────────────────────────────── */
 .content-panel--header {
+  position: relative;
   flex-shrink: 0;
   background: var(--topbar-bg, #f8fafc);
-  backdrop-filter: var(--nexus-topbar-blur);
-  -webkit-backdrop-filter: var(--nexus-topbar-blur);
   border: none;
-  border-radius: var(--nexus-radius-card, 20px);
+  border-radius: 0;
   overflow: visible;
   box-shadow: none;
-  z-index: 50;
 }
 
 [data-theme='dark'] .content-panel--header {
@@ -1817,6 +1833,11 @@ button.summary-card {
     flex-direction: column;
     height: auto;
     overflow: auto;
+  }
+
+  .app-frame {
+    height: auto;
+    min-height: calc(100vh - 2 * var(--app-frame-gap));
   }
 
   .sidebar-shell--wide,

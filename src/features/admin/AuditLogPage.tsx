@@ -16,17 +16,12 @@ const ACTION_OPTIONS = [
   'auth.login.failed',
 ];
 
-const CATEGORY_OPTIONS = ['Users', 'Roles', 'Security', 'Employees', 'Leave', 'Settings'];
-const RESOURCE_TYPES = ['User', 'Role', 'UserRole', 'Session'];
-
 export const AuditLogPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [actorFilter, setActorFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
-  const [resourceFilter, setResourceFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [detailEntry, setDetailEntry] = useState<AuditLogEntry | null>(null);
 
   const actors = useMemo(() => {
@@ -45,11 +40,9 @@ export const AuditLogPage: React.FC = () => {
       if (dateTo && e.timestamp.slice(0, 10) > dateTo) return false;
       if (actorFilter !== 'all' && e.actorName !== actorFilter) return false;
       if (actionFilter !== 'all' && e.action !== actionFilter) return false;
-      if (resourceFilter !== 'all' && e.resourceType !== resourceFilter) return false;
-      if (categoryFilter !== 'all' && e.module !== categoryFilter) return false;
       return true;
     });
-  }, [search, dateFrom, dateTo, actorFilter, actionFilter, resourceFilter, categoryFilter]);
+  }, [search, dateFrom, dateTo, actorFilter, actionFilter]);
 
   const exportCsv = () => {
     const headers = ['Timestamp', 'Actor', 'Action', 'Resource', 'IP Address', 'Status'];
@@ -85,25 +78,28 @@ export const AuditLogPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="cfg-page__toolbar">
+      <div className="cfg-page__toolbar audit-log-toolbar">
         <div className="cfg-search">
           <Search size={14} />
           <input placeholder="Search audit log…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <input
-          type="date"
-          className="cfg-filter-select"
-          value={dateFrom}
-          onChange={e => setDateFrom(e.target.value)}
-          title="From date"
-        />
-        <input
-          type="date"
-          className="cfg-filter-select"
-          value={dateTo}
-          onChange={e => setDateTo(e.target.value)}
-          title="To date"
-        />
+        <div className="cfg-date-range">
+          <input
+            type="date"
+            className="cfg-date-input"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            aria-label="From date"
+          />
+          <span className="cfg-date-range__sep">–</span>
+          <input
+            type="date"
+            className="cfg-date-input"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            aria-label="To date"
+          />
+        </div>
         <select className="cfg-filter-select" value={actorFilter} onChange={e => setActorFilter(e.target.value)}>
           <option value="all">All actors</option>
           {actors.map(a => (
@@ -111,21 +107,9 @@ export const AuditLogPage: React.FC = () => {
           ))}
         </select>
         <select className="cfg-filter-select" value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
-          <option value="all">All actions</option>
+          <option value="all">All events</option>
           {ACTION_OPTIONS.map(a => (
             <option key={a} value={a}>{a}</option>
-          ))}
-        </select>
-        <select className="cfg-filter-select" value={resourceFilter} onChange={e => setResourceFilter(e.target.value)}>
-          <option value="all">All resource types</option>
-          {RESOURCE_TYPES.map(r => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <select className="cfg-filter-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-          <option value="all">All categories</option>
-          {CATEGORY_OPTIONS.map(m => (
-            <option key={m} value={m}>{m}</option>
           ))}
         </select>
       </div>
@@ -135,12 +119,11 @@ export const AuditLogPage: React.FC = () => {
           <table className="cfg-table">
             <thead>
               <tr>
-                <th>Timestamp</th>
+                <th>Time</th>
                 <th>Actor</th>
-                <th>Action</th>
-                <th>Resource</th>
-                <th>IP Address</th>
-                <th>Status</th>
+                <th>Event</th>
+                <th>Target</th>
+                <th>Source</th>
                 <th>Details</th>
               </tr>
             </thead>
@@ -149,21 +132,21 @@ export const AuditLogPage: React.FC = () => {
                 <tr key={e.id}>
                   <td>{formatDateTime(e.timestamp)}</td>
                   <td>{e.actorName || 'System'}</td>
-                  <td><code style={{ fontSize: '0.72rem' }}>{e.action}</code></td>
+                  <td>{e.action}</td>
                   <td>
                     <div className="cfg-table__name">{e.resourceName}</div>
                     <div className="cfg-table__meta">{e.resourceType}</div>
                   </td>
-                  <td>{e.ipAddress}</td>
+                  <td><span className="cfg-table__meta">{e.ipAddress}</span></td>
                   <td>
-                    <span className={`cfg-badge cfg-badge--${e.status === 'success' ? 'success' : 'failed'}`}>
-                      {e.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button type="button" className="cfg-action-btn" onClick={() => setDetailEntry(e)}>
-                      <Eye size={13} /> View
-                    </button>
+                    <div className="audit-details-cell">
+                      {e.status === 'failed' && (
+                        <span className="cfg-badge cfg-badge--failed cfg-badge--sm">Failed</span>
+                      )}
+                      <button type="button" className="cfg-action-btn cfg-action-btn--ghost" onClick={() => setDetailEntry(e)}>
+                        <Eye size={13} /> View
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

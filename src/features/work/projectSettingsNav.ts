@@ -1,13 +1,11 @@
 export type ProjectSettingsSectionId =
   | 'general'
   | 'members'
+  | 'worklogs'
   | 'cycle'
   | 'planner'
   | 'work-items'
-  | 'states'
   | 'labels'
-  | 'approvals'
-  | 'visibility'
   | 'participating-workspaces'
   | 'related-projects';
 
@@ -22,6 +20,7 @@ export const PROJECT_SETTINGS_NAV: ProjectSettingsNavGroup[] = [
     items: [
       { id: 'general', label: 'General' },
       { id: 'members', label: 'Members' },
+      { id: 'worklogs', label: 'Worklogs' },
     ],
   },
   {
@@ -35,20 +34,21 @@ export const PROJECT_SETTINGS_NAV: ProjectSettingsNavGroup[] = [
   {
     title: 'Work structure',
     items: [
-      { id: 'states', label: 'States' },
       { id: 'labels', label: 'Labels' },
-      { id: 'approvals', label: 'Approvals' },
     ],
   },
   {
     title: 'Access',
     items: [
-      { id: 'visibility', label: 'Visibility' },
       { id: 'participating-workspaces', label: 'Participating workspaces' },
       { id: 'related-projects', label: 'Related projects' },
     ],
   },
 ];
+
+const VALID_SECTION_IDS = new Set(
+  PROJECT_SETTINGS_NAV.flatMap(group => group.items.map(item => item.id)),
+);
 
 export function projectSettingsSectionLabel(id: ProjectSettingsSectionId): string {
   for (const group of PROJECT_SETTINGS_NAV) {
@@ -56,4 +56,11 @@ export function projectSettingsSectionLabel(id: ProjectSettingsSectionId): strin
     if (item) return item.label;
   }
   return id;
+}
+
+export function normalizeSettingsSection(id: string): ProjectSettingsSectionId {
+  if (VALID_SECTION_IDS.has(id as ProjectSettingsSectionId)) {
+    return id as ProjectSettingsSectionId;
+  }
+  return 'general';
 }

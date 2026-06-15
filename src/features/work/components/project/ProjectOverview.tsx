@@ -22,6 +22,7 @@ import {
   type WorkProject,
 } from '../../workMockData';
 import { ProjectIcon } from './projectIcon';
+import { projectCoverStyle, projectIconSurfaceStyle } from './projectMedia';
 
 interface Props {
   project: WorkProject;
@@ -250,7 +251,7 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
     const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#0ea5e9'];
     const idx = colors.indexOf(project.coverColor);
     const next = colors[(idx + 1) % colors.length];
-    updateProject(project.id, { coverColor: next });
+    updateProject(project.id, { coverColor: next, coverImage: null });
   };
 
   return (
@@ -258,7 +259,7 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
       <div className="work-overview-doc__cover-wrap">
         <div
           className="work-overview-doc__cover"
-          style={{ background: `linear-gradient(135deg, ${project.coverColor} 0%, color-mix(in srgb, ${project.coverColor} 70%, #000) 100%)` }}
+          style={projectCoverStyle(project)}
           role="img"
           aria-label="Project cover"
         />
@@ -272,9 +273,9 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
           <div className="work-overview-doc__identity">
             <div
               className="work-overview-doc__avatar"
-              style={{ background: `color-mix(in srgb, ${project.coverColor} 18%, var(--surface-panel))` }}
+              style={projectIconSurfaceStyle(project)}
             >
-              <ProjectIcon icon={project.icon} size={22} />
+              <ProjectIcon icon={project.icon} size={24} />
             </div>
             <input
               type="text"
@@ -284,6 +285,9 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
               onBlur={handleTitleBlur}
               aria-label="Project name"
             />
+            {project.description && (
+              <p className="work-overview-doc__description">{project.description}</p>
+            )}
           </div>
 
           <div className="work-overview-doc__editor-wrap">

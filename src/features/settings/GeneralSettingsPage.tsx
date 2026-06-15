@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import {
+  DEFAULT_BRANDING,
   DEFAULT_GENERAL,
-  MONTH_OPTIONS,
   WEEKDAY_OPTIONS,
   type GeneralSettings,
 } from './settingsMockData';
@@ -10,34 +10,19 @@ import {
 export const GeneralSettingsPage: React.FC = () => {
   const [form, setForm] = useState<GeneralSettings>(DEFAULT_GENERAL);
   const [saved, setSaved] = useState(false);
-  const [fiscalWarning, setFiscalWarning] = useState(false);
-  const [workWeekWarning, setWorkWeekWarning] = useState(false);
 
   const patch = <K extends keyof GeneralSettings>(key: K, value: GeneralSettings[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
     setSaved(false);
-    if (key === 'fiscalYearStartMonth') setFiscalWarning(true);
-    if (key === 'workWeekDays') setWorkWeekWarning(true);
   };
 
-  const toggleWeekday = (day: string) => {
-    const next = form.workWeekDays.includes(day)
-      ? form.workWeekDays.filter(d => d !== day)
-      : [...form.workWeekDays, day];
-    patch('workWeekDays', next);
-  };
-
-  const handleSave = () => {
-    setSaved(true);
-    setFiscalWarning(false);
-    setWorkWeekWarning(false);
-  };
+  const handleSave = () => setSaved(true);
 
   return (
     <div className="cfg-page">
       <SettingsPageHeader
         title="General"
-        description="Manage company defaults used across dates, schedules, payroll, and reporting."
+        description="Basic company details used across OneVo."
         actions={
           <button type="button" className="org-btn org-btn--primary" onClick={handleSave}>
             Save Changes
@@ -46,14 +31,8 @@ export const GeneralSettingsPage: React.FC = () => {
       />
 
       <div className="settings-body">
-        {(fiscalWarning || workWeekWarning) && (
-          <p className="admin-hint admin-hint--warning">
-            Changing fiscal year or work week defaults may affect leave balances, payroll periods, and reporting cutoffs.
-            Review dependent configurations after saving.
-          </p>
-        )}
         {saved && (
-          <p className="admin-hint admin-hint--info">Company defaults saved successfully.</p>
+          <p className="admin-hint admin-hint--info">Company settings saved successfully.</p>
         )}
 
         <section className="settings-card">
@@ -71,31 +50,21 @@ export const GeneralSettingsPage: React.FC = () => {
                 />
               </div>
               <div className="org-form-field">
-                <label>Tenant URL / slug</label>
-                <div className="settings-readonly">onevo.io/{form.tenantSlug}</div>
-              </div>
-              <div className="org-form-field">
-                <label htmlFor="contact-email">Primary Contact Email</label>
+                <label htmlFor="company-display-name">Company Display Name</label>
                 <input
-                  id="contact-email"
-                  type="email"
-                  value={form.primaryContactEmail}
-                  onChange={e => patch('primaryContactEmail', e.target.value)}
+                  id="company-display-name"
+                  value={form.displayName}
+                  onChange={e => patch('displayName', e.target.value)}
                 />
               </div>
               <div className="org-form-field">
-                <label htmlFor="country">Country / Region</label>
-                <select
-                  id="country"
-                  value={form.country}
-                  onChange={e => patch('country', e.target.value)}
-                >
-                  <option>United Kingdom</option>
-                  <option>United States</option>
-                  <option>India</option>
-                  <option>Singapore</option>
-                  <option>Australia</option>
-                </select>
+                <label>Company Logo</label>
+                <div className="settings-logo-upload">
+                  <div className="settings-logo-preview" aria-hidden>
+                    {DEFAULT_BRANDING.hasCustomLogo ? 'ACME' : 'OneVo'}
+                  </div>
+                  <p className="admin-hint" style={{ margin: 0 }}>Managed in Branding settings.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -108,7 +77,7 @@ export const GeneralSettingsPage: React.FC = () => {
           <div className="settings-card__body">
             <div className="settings-form-grid settings-form-grid--3">
               <div className="org-form-field">
-                <label htmlFor="timezone">Default Timezone</label>
+                <label htmlFor="timezone">Timezone</label>
                 <select
                   id="timezone"
                   value={form.timezone}
@@ -133,14 +102,15 @@ export const GeneralSettingsPage: React.FC = () => {
                 </select>
               </div>
               <div className="org-form-field">
-                <label htmlFor="time-format">Time Format</label>
+                <label htmlFor="week-start">Week Start Day</label>
                 <select
-                  id="time-format"
-                  value={form.timeFormat}
-                  onChange={e => patch('timeFormat', e.target.value)}
+                  id="week-start"
+                  value={form.weekStartDay}
+                  onChange={e => patch('weekStartDay', e.target.value)}
                 >
-                  <option>24-hour</option>
-                  <option>12-hour</option>
+                  {WEEKDAY_OPTIONS.map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
                 </select>
               </div>
               <div className="org-form-field">
@@ -154,56 +124,6 @@ export const GeneralSettingsPage: React.FC = () => {
                   <option>English (US)</option>
                   <option>Tamil</option>
                 </select>
-              </div>
-              <div className="org-form-field">
-                <label htmlFor="currency">Currency</label>
-                <select
-                  id="currency"
-                  value={form.currency}
-                  onChange={e => patch('currency', e.target.value)}
-                >
-                  <option>GBP</option>
-                  <option>USD</option>
-                  <option>EUR</option>
-                  <option>INR</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="settings-card">
-          <header className="settings-card__header">
-            <h2 className="settings-card__title">Business Calendar Defaults</h2>
-          </header>
-          <div className="settings-card__body">
-            <div className="settings-form-grid">
-              <div className="org-form-field">
-                <label htmlFor="fiscal-month">Fiscal Year Start Month</label>
-                <select
-                  id="fiscal-month"
-                  value={form.fiscalYearStartMonth}
-                  onChange={e => patch('fiscalYearStartMonth', Number(e.target.value))}
-                >
-                  {MONTH_OPTIONS.map((m, i) => (
-                    <option key={m} value={i + 1}>{m}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="org-form-field">
-                <label>Work Week Days</label>
-                <div className="settings-weekdays">
-                  {WEEKDAY_OPTIONS.map(day => (
-                    <button
-                      key={day}
-                      type="button"
-                      className={`settings-weekday${form.workWeekDays.includes(day) ? ' settings-weekday--active' : ''}`}
-                      onClick={() => toggleWeekday(day)}
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           </div>

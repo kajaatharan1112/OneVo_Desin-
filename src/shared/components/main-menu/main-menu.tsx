@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, Calendar, Users, UsersRound, Clock, MessageSquare,
   PieChart, Briefcase, Building2, Building, CalendarMinus, Workflow, Activity,
   ChartNoAxesCombined, ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash,
-  ListChecks, CalendarDays, TrendingUp, Shield, Eye, List, Palette, Bell,
+  ListChecks, Shield, Eye, List, Palette, Bell,
   CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo,
   type LucideIcon,
 } from 'lucide-react';
@@ -90,16 +90,10 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
     ]},
   ]},
   { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock), subSections: [
-    { id: 'calendar', label: 'Calendar', collapsible: true, defaultOpen: true, items: [
-      { id: 'holiday-calendar', label: 'Holiday Calendar', icon: <CalendarDays size={13} /> },
-      { id: 'work-weeks',       label: 'Work Weeks',       icon: <Calendar size={13} />     },
-    ]},
-    { id: 'schedules', label: 'Schedules', collapsible: true, defaultOpen: true, items: [
-      { id: 'shift-schedules', label: 'Shift Schedules', icon: <Clock size={13} />       },
-      { id: 'work-patterns',   label: 'Work Patterns',   icon: <TrendingUp size={13} />  },
-    ]},
-    { id: 'rules', label: 'Rules', collapsible: true, defaultOpen: true, items: [
-      { id: 'overtime-rules', label: 'Overtime Rules', icon: <Activity size={13} /> },
+    { id: 'main', items: [
+      { id: 'schedules',         label: 'Schedules',         icon: <CalendarClock size={13} /> },
+      { id: 'clock-in-policy',   label: 'Clock-in Policy',   icon: <Clock size={13} />       },
+      { id: 'overtime-settings', label: 'Overtime Settings', icon: <Activity size={13} />      },
     ]},
   ]},
   WORK_NAV_ITEM,

@@ -41,6 +41,9 @@ import { NotificationsSettingsPage } from '../features/settings/NotificationsSet
 import { BillingSettingsPage } from '../features/settings/BillingSettingsPage';
 import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
 import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
+import { SchedulesPage } from '../features/time-attendance/configuration/SchedulesPage';
+import { ClockInPolicyPage } from '../features/time-attendance/clock-in-policy/ClockInPolicyPage';
+import { PeopleEmployeesRoutes } from '../features/people/employees/PeopleEmployeesRoutes';
 import { WorkProvider } from '../features/work/context/work-context';
 import { InboxProvider } from '../core/notifications/inbox-context';
 import { WorkRoutes } from '../features/work/WorkRoutes';
@@ -61,6 +64,12 @@ function App() {
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
 
   useEffect(() => {
+    if (location.pathname.startsWith('/people/employees')) {
+      setView('employee');
+      setActiveTab('People');
+      setActiveSubItemId('employees');
+      return;
+    }
     if (location.pathname.startsWith('/people/checklist-templates')) {
       setView('tenant');
       setActiveTab('People');
@@ -82,6 +91,10 @@ function App() {
 
   const handleSubItemSelect = (id: string) => {
     setActiveSubItemId(id);
+    if (activeTab === 'People' && id === 'employees') {
+      navigate('/people/employees');
+      return;
+    }
     if (activeTab === 'People' && id === 'checklist-templates') {
       navigate('/people/checklist-templates');
       return;
@@ -164,6 +177,9 @@ function App() {
         case 'People': {
           const peopleNav = findNavItem(EMPLOYEE_ITEMS, activeTab);
           const resolvedSubId = resolveSubItemId(peopleNav, activeSubItemId);
+          if (resolvedSubId === 'employees' || location.pathname.startsWith('/people/employees')) {
+            return <PeopleEmployeesRoutes />;
+          }
           if (resolvedSubId) return renderSectionPage(activeTab, EMPLOYEE_ITEMS, resolvedSubId);
           return <EmployeePeople />;
         }
@@ -230,6 +246,16 @@ function App() {
       }
       if (activeTab === 'Work') {
         return <WorkRoutes activeSubItemId={resolvedSubId} />;
+      }
+      if (activeTab === 'Time & Attendance') {
+        switch (resolvedSubId) {
+          case 'schedules':
+            return <SchedulesPage />;
+          case 'clock-in-policy':
+            return <ClockInPolicyPage />;
+          default:
+            return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
+        }
       }
       return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
     }

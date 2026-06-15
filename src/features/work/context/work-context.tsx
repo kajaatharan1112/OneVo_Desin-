@@ -40,6 +40,7 @@ import {
   workspaceLabelForRequest,
 } from '../workInboxHelpers';
 import { notifyVisibilityChange, useWorkInboxHandler } from '../useWorkInboxHandler';
+import { resolveProjectIconType } from '../components/project/projectMedia';
 import type { ProjectNavId } from '../projectNav';
 import type { ProjectSettingsSectionId } from '../projectSettingsNav';
 
@@ -57,7 +58,10 @@ interface CreateProjectInput {
   visibility: ProjectVisibility;
   leadId: string;
   icon: string;
+  iconType?: 'emoji' | 'icon';
+  iconColor: string | null;
   coverColor: string;
+  coverImage: string | null;
   invites: { employeeId: string; accessLevel: ProjectAccessLevel; workspaceSourceId: string | null }[];
 }
 
@@ -141,6 +145,7 @@ interface WorkContextValue {
   openProjectSettings: (section?: ProjectSettingsSectionId) => void;
   closeProjectSettings: () => void;
   setSettingsSectionId: (section: ProjectSettingsSectionId) => void;
+  switchSettingsProject: (projectId: string) => void;
 }
 
 const WorkContext = createContext<WorkContextValue | null>(null);
@@ -167,6 +172,7 @@ export const WorkProvider: React.FC<{
   const [addCycleSignal, setAddCycleSignal] = useState(0);
   const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
   const [settingsSectionId, setSettingsSectionId] = useState<ProjectSettingsSectionId>('general');
+  const [settingsReturnNavId, setSettingsReturnNavId] = useState<ProjectNavId>('work-items');
 
   useWorkInboxHandler(registerActionHandler, {
     projects,
@@ -207,12 +213,18 @@ export const WorkProvider: React.FC<{
   }, [onNavigateToList]);
 
   const openProjectSettings = useCallback((section: ProjectSettingsSectionId = 'general') => {
+    setSettingsReturnNavId(projectNavId);
     setSettingsSectionId(section);
     setProjectSettingsOpen(true);
-  }, []);
+  }, [projectNavId]);
 
   const closeProjectSettings = useCallback(() => {
     setProjectSettingsOpen(false);
+    setProjectNavId(settingsReturnNavId);
+  }, [settingsReturnNavId]);
+
+  const switchSettingsProject = useCallback((projectId: string) => {
+    setSelectedProjectId(projectId);
   }, []);
 
   const requestAddWorkItem = useCallback(() => {
@@ -268,7 +280,10 @@ export const WorkProvider: React.FC<{
       defaultPriority: 'Medium',
       timezone: 'UTC',
       icon: input.icon,
+      iconType: input.iconType ?? resolveProjectIconType(input.icon),
+      iconColor: input.iconColor,
       coverColor: input.coverColor,
+      coverImage: input.coverImage,
       leadId: input.leadId,
       labels: DEFAULT_PROJECT_LABELS.slice(0, 6),
       workItemStates: DEFAULT_WORK_ITEM_STATES,
@@ -656,6 +671,7 @@ export const WorkProvider: React.FC<{
     openProjectSettings,
     closeProjectSettings,
     setSettingsSectionId,
+    switchSettingsProject,
   }), [
     workspaceFilterId, workspaces, addWorkspace, projects, tasks, cycles, milestones, documents, relatedProjects,
     selectedProjectId, selectedTaskId, projectNavId, analyticsOpen, openProject, closeProject, returnToProjectList,
@@ -666,7 +682,7 @@ export const WorkProvider: React.FC<{
     addRelatedProject, requestRelatedProjectLink, removeRelatedProject,
     activeModal, workspaceFilterLabel, getProject, addWorkItemSignal, requestAddWorkItem,
     addCycleSignal, requestAddCycle,
-    projectSettingsOpen, settingsSectionId, openProjectSettings, closeProjectSettings, setSettingsSectionId,
+    projectSettingsOpen, settingsSectionId, openProjectSettings, closeProjectSettings, setSettingsSectionId, switchSettingsProject,
   ]);
 
   return <WorkContext.Provider value={value}>{children}</WorkContext.Provider>;

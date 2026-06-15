@@ -267,7 +267,7 @@
   flex: 1 1 auto;
   min-height: 0;
   gap: 0;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface-panel);
   overflow: hidden;
@@ -382,12 +382,12 @@
   text-align: left;
   padding: 8px 12px;
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--nexus-text-muted);
   border-bottom: 1px solid var(--border);
-  background: var(--code-bg);
+  background: var(--surface-panel);
   white-space: nowrap;
 }
 
@@ -428,7 +428,7 @@
 }
 
 .dept-table__row:hover {
-  background: color-mix(in srgb, var(--accent) 4%, var(--surface-panel));
+  background: var(--surface-muted);
 }
 
 .dept-table__row--parent .dept-table__name {

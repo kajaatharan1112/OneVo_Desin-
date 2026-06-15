@@ -89,7 +89,10 @@ export interface WorkProject {
   defaultPriority: TaskPriority;
   timezone: string;
   icon: string;
+  iconType: 'emoji' | 'icon';
+  iconColor: string | null;
   coverColor: string;
+  coverImage: string | null;
   leadId: string;
   labels: ProjectLabel[];
   workItemStates: WorkItemState[];
@@ -307,7 +310,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
       { id: 'pm-3', employeeId: 'user-4', accessLevel: 'member', status: 'active', workspaceSourceId: 'ws-product' },
     ],
     openTasks: 14, dueDate: '2026-08-15', startDate: '2026-05-01', endDate: '2026-08-30',
-    defaultPriority: 'High', timezone: 'America/New_York', icon: 'layers', coverColor: '#6366f1',
+    defaultPriority: 'High', timezone: 'America/New_York', icon: 'layers', iconType: 'icon', iconColor: null, coverColor: '#6366f1', coverImage: null,
     leadId: 'current-user', labels: DEFAULT_PROJECT_LABELS, workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: true, defaultApproverId: 'user-2',
     visibility: 'private', primaryWorkspaceId: 'ws-eng',
@@ -324,7 +327,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
       { id: 'pm-5', employeeId: 'user-3', accessLevel: 'admin', status: 'active', workspaceSourceId: 'ws-backend' },
     ],
     openTasks: 8, dueDate: '2026-07-20', startDate: '2026-04-10', endDate: '2026-07-31',
-    defaultPriority: 'Medium', timezone: 'UTC', icon: 'server', coverColor: '#f59e0b',
+    defaultPriority: 'Medium', timezone: 'UTC', icon: 'server', iconType: 'icon', iconColor: null, coverColor: '#f59e0b', coverImage: null,
     leadId: 'user-3', labels: DEFAULT_PROJECT_LABELS.slice(0, 8), workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: false, defaultApproverId: null,
     visibility: 'private', primaryWorkspaceId: 'ws-backend',
@@ -338,7 +341,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
       { id: 'pm-7', employeeId: 'user-5', accessLevel: 'admin', status: 'active', workspaceSourceId: 'ws-product' },
     ],
     openTasks: 22, dueDate: '2026-09-01', startDate: '2026-03-01', endDate: '2026-09-15',
-    defaultPriority: 'High', timezone: 'America/Los_Angeles', icon: 'smartphone', coverColor: '#10b981',
+    defaultPriority: 'High', timezone: 'America/Los_Angeles', icon: 'smartphone', iconType: 'icon', iconColor: null, coverColor: '#10b981', coverImage: null,
     leadId: 'user-5', labels: DEFAULT_PROJECT_LABELS.slice(0, 6), workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: false, defaultApproverId: null,
     visibility: 'public_workspace', primaryWorkspaceId: 'ws-product',
@@ -352,7 +355,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
       { id: 'pm-10', employeeId: 'user-3', accessLevel: 'admin', status: 'active', workspaceSourceId: 'ws-backend' },
     ],
     openTasks: 6, dueDate: '2026-07-05', startDate: '2026-05-15', endDate: '2026-07-15',
-    defaultPriority: 'Medium', timezone: 'UTC', icon: 'activity', coverColor: '#8b5cf6',
+    defaultPriority: 'Medium', timezone: 'UTC', icon: 'activity', iconType: 'icon', iconColor: null, coverColor: '#8b5cf6', coverImage: null,
     leadId: 'user-3', labels: DEFAULT_PROJECT_LABELS.filter(l => ['metrics', 'tracing', 'infra', 'backend', 'docs'].includes(l.name)),
     workItemStates: DEFAULT_WORK_ITEM_STATES, approvalRequired: false, defaultApproverId: null,
     visibility: 'private', primaryWorkspaceId: 'ws-backend',
@@ -369,7 +372,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
       { id: 'pm-fe-2', employeeId: 'user-4', accessLevel: 'member', status: 'active', workspaceSourceId: 'ws-product' },
     ],
     openTasks: 9, dueDate: '2026-08-01', startDate: '2026-05-15', endDate: '2026-08-15',
-    defaultPriority: 'High', timezone: 'America/New_York', icon: 'layers', coverColor: '#3b82f6',
+    defaultPriority: 'High', timezone: 'America/New_York', icon: 'layers', iconType: 'icon', iconColor: null, coverColor: '#3b82f6', coverImage: null,
     leadId: 'current-user', labels: DEFAULT_PROJECT_LABELS.slice(0, 5), workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: false, defaultApproverId: null,
     visibility: 'private', primaryWorkspaceId: 'ws-eng',
@@ -382,7 +385,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
       { id: 'pm-be-1', employeeId: 'user-3', accessLevel: 'admin', status: 'active', workspaceSourceId: 'ws-backend' },
     ],
     openTasks: 11, dueDate: '2026-07-30', startDate: '2026-05-15', endDate: '2026-07-31',
-    defaultPriority: 'High', timezone: 'UTC', icon: 'server', coverColor: '#0ea5e9',
+    defaultPriority: 'High', timezone: 'UTC', icon: 'server', iconType: 'icon', iconColor: null, coverColor: '#0ea5e9', coverImage: null,
     leadId: 'user-3', labels: DEFAULT_PROJECT_LABELS.slice(0, 4), workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: false, defaultApproverId: null,
     visibility: 'private', primaryWorkspaceId: 'ws-backend',
@@ -691,10 +694,11 @@ export function employeesInWorkspace(workspaceId: string): WorkEmployee[] {
 
 export function inviteableEmployees(workspaceIds: string[], excludeIds: string[], userId = CURRENT_USER_ID): WorkEmployee[] {
   const visibleWs = new Set(visibleWorkspaceIds(userId));
+  const scopeIds = workspaceIds.length > 0 ? workspaceIds : [...visibleWs];
   return MOCK_EMPLOYEES.filter(
     e =>
       !excludeIds.includes(e.id) &&
-      e.workspaceIds.some(wsId => workspaceIds.includes(wsId) && visibleWs.has(wsId)),
+      e.workspaceIds.some(wsId => scopeIds.includes(wsId) && visibleWs.has(wsId)),
   );
 }
 

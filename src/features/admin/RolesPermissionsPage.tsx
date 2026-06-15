@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock,
 } from 'lucide-react';
@@ -8,7 +8,6 @@ import {
   DEPARTMENTS,
   ACCESS_SCOPE_OPTIONS,
   ENABLED_MODULES,
-  UNIVERSAL_PERMISSIONS,
   GRANTABLE_PERMISSIONS,
   permissionsByModule,
   formatRelativeTime,
@@ -26,8 +25,6 @@ export const RolesPermissionsPage: React.FC = () => {
   const [drawer, setDrawer] = useState<DrawerMode>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [permSearch, setPermSearch] = useState('');
-  const [includedPermsOpen, setIncludedPermsOpen] = useState(false);
-  const includedPermsRef = useRef<HTMLDivElement>(null);
 
   const [roleForm, setRoleForm] = useState({
     name: '',
@@ -64,7 +61,6 @@ export const RolesPermissionsPage: React.FC = () => {
     setSelectedRoleId(null);
     setRoleForm({ name: '', description: '', permissionIds: [] });
     setPermSearch('');
-    setIncludedPermsOpen(false);
     setDrawer('create');
   };
 
@@ -78,7 +74,6 @@ export const RolesPermissionsPage: React.FC = () => {
       permissionIds: [...role.permissionIds],
     });
     setPermSearch('');
-    setIncludedPermsOpen(false);
     setDrawer('edit');
   };
 
@@ -92,7 +87,6 @@ export const RolesPermissionsPage: React.FC = () => {
       permissionIds: [...role.permissionIds],
     });
     setPermSearch('');
-    setIncludedPermsOpen(false);
     setDrawer('create');
   };
 
@@ -118,19 +112,7 @@ export const RolesPermissionsPage: React.FC = () => {
     setDrawer(null);
     setSelectedRoleId(null);
     setPermSearch('');
-    setIncludedPermsOpen(false);
   };
-
-  useEffect(() => {
-    if (!includedPermsOpen) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      if (includedPermsRef.current && !includedPermsRef.current.contains(event.target as Node)) {
-        setIncludedPermsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [includedPermsOpen]);
 
   const togglePermission = (permId: string) => {
     setRoleForm(f => ({
@@ -423,32 +405,6 @@ export const RolesPermissionsPage: React.FC = () => {
                   <span className="admin-selected-count admin-selected-count--inline">
                     {roleForm.permissionIds.length} selected
                   </span>
-                </div>
-
-                <div className="admin-universal-hint" ref={includedPermsRef}>
-                  <span>
-                    Basic self-service permissions are included automatically for every active employee.
-                  </span>
-                  <button
-                    type="button"
-                    className="admin-universal-hint__btn"
-                    onClick={() => setIncludedPermsOpen(open => !open)}
-                    aria-expanded={includedPermsOpen}
-                  >
-                    View included permissions
-                  </button>
-                  {includedPermsOpen && (
-                    <div className="admin-included-popover" role="dialog" aria-label="Included permissions">
-                      <ul className="admin-included-popover__list">
-                        {UNIVERSAL_PERMISSIONS.map(p => (
-                          <li key={p.id} className="admin-included-popover__item">
-                            <span className="admin-included-popover__code">{p.code}</span>
-                            <span className="admin-included-popover__desc">{p.description}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
 
                 {selectedPermissions.length > 0 && (
