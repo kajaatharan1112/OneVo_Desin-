@@ -9,3 +9,6 @@ export const PRODUCTIVITY_DASHBOARD_ENABLED = true;
 
 /** Performance tab (third tab, replaces Attendance) — new dashboard is active. */
 export const PERFORMANCE_DASHBOARD_ENABLED = true;
+
+/** Environment tab (fourth tab, replaces Schedule) — new dashboard is active. */
+export const ENVIRONMENT_DASHBOARD_ENABLED = true;

@@ -28,9 +28,9 @@ export const employeeSummaryCards: SummaryCardData[] = [
   },
   {
     id: 'my-calendar',
-    title: 'Schedule',
-    value: '—',
-    desc: 'New design in progress',
+    title: 'Environment',
+    value: '3/6',
+    desc: 'Active projects · 2 teams',
     color: 'var(--accent)'
   }
 ];
