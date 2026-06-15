@@ -14,16 +14,16 @@ export const employeeSummaryCards: SummaryCardData[] = [
   },
   {
     id: 'requests-approval',
-    title: 'Requests',
-    value: '—',
-    desc: 'New design in progress',
+    title: 'Productivity',
+    value: '28/22',
+    desc: '79% task efficiency · This week',
     color: 'var(--accent)'
   },
   {
     id: 'activity',
-    title: 'Attendance',
-    value: '—',
-    desc: 'New design in progress',
+    title: 'Performance',
+    value: '87%',
+    desc: 'Task approval rate · This month',
     color: 'var(--accent)'
   },
   {

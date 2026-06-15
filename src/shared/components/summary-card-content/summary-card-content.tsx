@@ -6,7 +6,7 @@ import { CeoProjectHealthDashboard } from '../../../features/employees/component
 import { CeoScheduleDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-schedule-dashboard';
 import { CeoWorkforceDashboard } from '../../../features/employees/components/ceo-dashboard/ceo-workforce-dashboard';
 import { DashboardTabPlaceholder } from '../../../features/employees/components/dashboard-tab-placeholder/dashboard-tab-placeholder';
-import { EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
+import { EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED, PRODUCTIVITY_DASHBOARD_ENABLED, PERFORMANCE_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
 import type { SummaryCardData } from '../../types/summary-card.types';
 
 const EmployeeTaskOverviewDashboard = React.lazy(() =>
@@ -18,6 +18,18 @@ const EmployeeTaskOverviewDashboard = React.lazy(() =>
 const RequestApprovalTab = React.lazy(() =>
   import('../../../features/employees/components/request-approval/request-approval-tab').then(
     (module) => ({ default: module.RequestApprovalTab })
+  )
+);
+
+const ProductivityDashboard = React.lazy(() =>
+  import('../../../features/employees/components/productivity-dashboard/productivity-dashboard').then(
+    (module) => ({ default: module.ProductivityDashboard })
+  )
+);
+
+const PerformanceDashboard = React.lazy(() =>
+  import('../../../features/employees/components/performance-dashboard/performance-dashboard').then(
+    (module) => ({ default: module.PerformanceDashboard })
   )
 );
 
@@ -68,8 +80,14 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
   const isActivity = card.id === 'activity';
   const isMyCalendar = card.id === 'my-calendar';
   const isEmployeeTab = EMPLOYEE_TAB_IDS.has(card.id);
+  const isProductivityTab = PRODUCTIVITY_DASHBOARD_ENABLED && isRequestsApproval;
+  const isPerformanceTab  = PERFORMANCE_DASHBOARD_ENABLED && isActivity;
   const isEmployeeTabEmpty =
-    EMPLOYEE_DASHBOARD_EMPTY && isEmployeeTab && !(WORK_DASHBOARD_ENABLED && isTaskOverview);
+    EMPLOYEE_DASHBOARD_EMPTY &&
+    isEmployeeTab &&
+    !(WORK_DASHBOARD_ENABLED && isTaskOverview) &&
+    !isProductivityTab &&
+    !isPerformanceTab;
 
   const isTenantProductivity = card.id === 'today-productivity';
   const isWorkforce = card.id === 'workforce-availability';
@@ -84,6 +102,8 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
   const isTabEmpty = isEmployeeTabEmpty || isCeoTabEmpty;
   const isFilledOverview =
     ((WORK_DASHBOARD_ENABLED && isTaskOverview) || (!EMPLOYEE_DASHBOARD_EMPTY && isEmployeeTab)) ||
+    isProductivityTab ||
+    isPerformanceTab ||
     isTenantProductivity ||
     (!EMPLOYEE_DASHBOARD_EMPTY && isCeoPanel);
 
@@ -92,7 +112,7 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
       id={tabId}
       role="tabpanel"
       aria-labelledby={labelledBy}
-      className={`summary-card-content${isTabEmpty ? ' summary-card-content--empty' : ''}${isFilledOverview ? ' summary-card-content--filled' : ''}${WORK_DASHBOARD_ENABLED && isTaskOverview ? ' summary-card-content--work-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isTaskOverview ? ' summary-card-content--work-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isRequestsApproval ? ' summary-card-content--requests-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isActivity ? ' summary-card-content--activity-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isMyCalendar ? ' summary-card-content--calendar-filled' : ''}${isTenantProductivity ? ' summary-card-content--tenant-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isCeoPanel ? ' summary-card-content--ceo-filled' : ''}`}
+      className={`summary-card-content${isTabEmpty ? ' summary-card-content--empty' : ''}${isFilledOverview ? ' summary-card-content--filled' : ''}${WORK_DASHBOARD_ENABLED && isTaskOverview ? ' summary-card-content--work-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isTaskOverview ? ' summary-card-content--work-filled' : ''}${isProductivityTab ? ' summary-card-content--work-filled' : ''}${isPerformanceTab ? ' summary-card-content--work-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isRequestsApproval ? ' summary-card-content--requests-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isActivity ? ' summary-card-content--activity-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isMyCalendar ? ' summary-card-content--calendar-filled' : ''}${isTenantProductivity ? ' summary-card-content--tenant-filled' : ''}${!EMPLOYEE_DASHBOARD_EMPTY && isCeoPanel ? ' summary-card-content--ceo-filled' : ''}`}
       aria-label={`${card.title} details`}
       data-summary-card={card.id}
     >
@@ -107,7 +127,19 @@ export const SummaryCardContent: React.FC<SummaryCardContentProps> = ({
           </Suspense>
         ) : null}
 
-        {!EMPLOYEE_DASHBOARD_EMPTY && !(WORK_DASHBOARD_ENABLED && isTaskOverview) ? (
+        {isProductivityTab ? (
+          <Suspense fallback={<TabLoadingFallback />}>
+            <ProductivityDashboard />
+          </Suspense>
+        ) : null}
+
+        {isPerformanceTab ? (
+          <Suspense fallback={<TabLoadingFallback />}>
+            <PerformanceDashboard />
+          </Suspense>
+        ) : null}
+
+        {!EMPLOYEE_DASHBOARD_EMPTY && !(WORK_DASHBOARD_ENABLED && isTaskOverview) && !isProductivityTab ? (
           <Suspense fallback={<TabLoadingFallback />}>
             {isTaskOverview ? (
               <EmployeeTaskOverviewDashboard

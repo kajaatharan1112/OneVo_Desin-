@@ -17,7 +17,7 @@ import {
   getSummaryCardsForView,
   isCeoSummaryCardId
 } from '../../../core/summary/summary-cards';
-import { EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
+import { EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED, PRODUCTIVITY_DASHBOARD_ENABLED, PERFORMANCE_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
 import { workDashboardSummary } from '../../../features/employees/data/work-dashboard.data';
 import { useEmployeeContext } from '../../../features/employees/context/employee-context';
 import type { EmployeeId } from '../../../features/employees/types/employee.types';
@@ -158,7 +158,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
               id={`dashboard-tab-${card.id}`}
               aria-controls={`dashboard-tabpanel-${card.id}`}
               aria-selected={isActive}
-              className={`summary-card${isActive ? ' summary-card--active' : ''}${isCeoCard ? ' summary-card--ceo' : ''}${card.id === 'task-overview' && WORK_DASHBOARD_ENABLED ? ' summary-card--work-tab' : ''}`}
+              className={`summary-card${isActive ? ' summary-card--active' : ''}${isCeoCard ? ' summary-card--ceo' : ''}${card.id === 'task-overview' && WORK_DASHBOARD_ENABLED ? ' summary-card--work-tab' : ''}${card.id === 'requests-approval' && PRODUCTIVITY_DASHBOARD_ENABLED ? ' summary-card--work-tab' : ''}${card.id === 'activity' && PERFORMANCE_DASHBOARD_ENABLED ? ' summary-card--work-tab' : ''}`}
               data-summary-card-id={card.id}
               onClick={() => handleCardClick(card)}
               aria-label={isCeoCard ? `${card.title}. ${card.desc}` : `${card.title}: ${card.value}. ${card.desc}`}
@@ -174,6 +174,18 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
                       Total / pending tasks · Sprint {workDashboardSummary.sprintCompletedPercent}%
                       complete
                     </span>
+                  </>
+                ) : card.id === 'requests-approval' && PRODUCTIVITY_DASHBOARD_ENABLED ? (
+                  <>
+                    <span className="summary-card__eyebrow">This week</span>
+                    <span className="summary-card__value">28/22</span>
+                    <span className="summary-card__subtitle">Clock in / Task hr · 79% efficiency</span>
+                  </>
+                ) : card.id === 'activity' && PERFORMANCE_DASHBOARD_ENABLED ? (
+                  <>
+                    <span className="summary-card__eyebrow">This month</span>
+                    <span className="summary-card__value">87%</span>
+                    <span className="summary-card__subtitle">Task approval rate · 32 tasks</span>
                   </>
                 ) : isCeoCard ? (
                   <>
