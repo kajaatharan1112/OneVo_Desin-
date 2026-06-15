@@ -30,6 +30,8 @@
   --nexus-space-3: 24px;
   --nexus-space-4: 32px;
   --nexus-shell-gap: 8px;
+  --nexus-app-frame-gap: 10px;
+  --nexus-app-frame-radius: 16px;
   --nexus-dashboard-padding: 24px;
   --nexus-section-gap: 24px;
   --nexus-card-gap: 20px;
@@ -97,7 +99,7 @@
   --nexus-chart-muted: #94a3b8;
   --nexus-chart-pending: rgba(14, 165, 233, 0.55);
 
-  --nexus-shell-outer: #f1f5f9;
+  --nexus-shell-outer: #e4e9ef;
   --nexus-content-island: #ffffff;
   --nexus-rail-fg: rgba(15, 23, 42, 0.45);
   --nexus-rail-fg-active: #0f172a;
@@ -123,7 +125,7 @@
   --nexus-text-disabled: #64748b;
   --nexus-code-bg: #1e293b;
 
-  --nexus-topbar-bg: rgba(15, 23, 42, 0.75);
+  --nexus-topbar-bg: var(--nexus-rail-bg);
   --nexus-topbar-blur: blur(20px);
   --nexus-topbar-border: rgba(255, 255, 255, 0.08);
 
@@ -143,7 +145,7 @@
   --nexus-chart-muted: #94a3b8;
   --nexus-chart-pending: rgba(56, 189, 248, 0.55);
 
-  --nexus-shell-outer: #111116;
+  --nexus-shell-outer: #000000;
   --nexus-content-island: #0d0f14;
   --nexus-rail-bg: #111116;
   --nexus-rail-fg: rgba(255, 255, 255, 0.28);

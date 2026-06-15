@@ -5,6 +5,7 @@ import { CompactPillDropdown, type PillDropdownOption } from './CompactPillDropd
 import { ProjectIconPicker } from './project/ProjectIconPicker';
 import { PROJECT_COVER_COLORS, randomCoverColor } from './project/ProjectCoverColors';
 import { ProjectIcon } from './project/projectIcon';
+import { projectCoverStyle, resolveProjectIconType } from './project/projectMedia';
 import {
   ALL_WORKSPACES_ID,
   CURRENT_USER_ID,
@@ -49,6 +50,8 @@ export const CreateProjectModal: React.FC = () => {
     leadId: CURRENT_USER_ID,
     icon: '📁',
     coverColor: randomCoverColor(),
+    coverImage: null as string | null,
+    iconColor: null as string | null,
     invites: [] as InviteRow[],
   });
   const [wsSearch, setWsSearch] = useState('');
@@ -67,6 +70,8 @@ export const CreateProjectModal: React.FC = () => {
         leadId: CURRENT_USER_ID,
         icon: '📁',
         coverColor: randomCoverColor(),
+        coverImage: null,
+        iconColor: null,
         invites: [],
       });
       setWsSearch('');
@@ -112,17 +117,22 @@ export const CreateProjectModal: React.FC = () => {
     return scopedWorkspaces.filter(w => w.name.toLowerCase().includes(q));
   }, [scopedWorkspaces, wsSearch]);
 
-  if (activeModal !== 'create-project') return null;
+  const selectedWorkspace = useMemo(
+    () => scopedWorkspaces.find(w => w.id === form.workspaceId),
+    [scopedWorkspaces, form.workspaceId],
+  );
 
-  const searchResults = peoplePool.filter(e => {
-    if (!peopleSearch.trim()) return false;
-    const q = peopleSearch.toLowerCase();
-    return (
+  const inviteSearchResults = useMemo(() => {
+    const q = peopleSearch.trim().toLowerCase();
+    if (!q) return peoplePool.slice(0, 3);
+    return peoplePool.filter(e =>
       e.name.toLowerCase().includes(q) ||
       e.position.toLowerCase().includes(q) ||
-      e.department.toLowerCase().includes(q)
+      e.department.toLowerCase().includes(q),
     );
-  });
+  }, [peopleSearch, peoplePool]);
+
+  if (activeModal !== 'create-project') return null;
 
   const canSubmit = Boolean(form.name.trim() && displayKey.trim() && form.workspaceId);
 
@@ -156,7 +166,7 @@ export const CreateProjectModal: React.FC = () => {
   const cycleCoverColor = () => {
     const idx = PROJECT_COVER_COLORS.indexOf(form.coverColor);
     const next = PROJECT_COVER_COLORS[(idx + 1) % PROJECT_COVER_COLORS.length];
-    setForm(f => ({ ...f, coverColor: next }));
+    setForm(f => ({ ...f, coverColor: next, coverImage: null }));
   };
 
   const handleCreate = () => {
@@ -170,7 +180,10 @@ export const CreateProjectModal: React.FC = () => {
       visibility: form.visibility,
       leadId: form.leadId,
       icon: form.icon,
+      iconType: resolveProjectIconType(form.icon),
+      iconColor: form.iconColor,
       coverColor: form.coverColor,
+      coverImage: form.coverImage,
       invites: form.invites.map(inv => ({
         ...inv,
         workspaceSourceId: form.workspaceId,
@@ -200,10 +213,12 @@ export const CreateProjectModal: React.FC = () => {
         </header>
 
         <div className="work-create-modal__body">
-          <div className="work-create-modal__cover" style={{ background: form.coverColor }}>
-            <button type="button" className="work-create-modal__cover-btn" onClick={cycleCoverColor}>
-              <Image size={14} /> Change cover
-            </button>
+          <div className="work-create-modal__cover-wrap">
+            <div className="work-create-modal__cover" style={projectCoverStyle(form)}>
+              <button type="button" className="work-create-modal__cover-btn" onClick={cycleCoverColor}>
+                <Image size={14} /> Change cover
+              </button>
+            </div>
             <button
               ref={iconRef}
               type="button"
@@ -215,175 +230,191 @@ export const CreateProjectModal: React.FC = () => {
             </button>
           </div>
 
-          <section className="work-form-section">
-            <div className="org-form-field">
-              <label htmlFor="proj-name">Project name</label>
-              <input
-                id="proj-name"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="e.g. OneVo Platform Refresh"
-              />
-            </div>
-            <div className="org-form-field work-form-field--secondary">
-              <label htmlFor="proj-key">Project key</label>
-              <input
-                id="proj-key"
-                value={displayKey}
-                onChange={e => setForm(f => ({ ...f, key: e.target.value.toUpperCase(), keyTouched: true }))}
-                placeholder="Auto-generated from name"
-              />
-              <p className="admin-hint">Used for work item IDs, for example ONEVO-15.</p>
-            </div>
-            <div className="org-form-field">
-              <label htmlFor="proj-desc">Description</label>
-              <textarea
-                id="proj-desc"
-                rows={3}
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="What is this project about?"
-              />
-            </div>
-            <div className="work-create-controls">
-              <CompactPillDropdown
-                icon={visibilityIcon}
-                value={form.visibility}
-                options={VISIBILITY_OPTIONS}
-                onChange={id => setForm(f => ({ ...f, visibility: id as ProjectVisibility }))}
-                ariaLabel="Project visibility"
-              />
-              <CompactPillDropdown
-                icon={<UserCircle size={14} />}
-                value={form.leadId}
-                options={leadOptions}
-                onChange={id => setForm(f => ({ ...f, leadId: id }))}
-                ariaLabel="Project lead"
-                prefixLabel="Lead"
-              />
-            </div>
-          </section>
-
-          <section className="work-form-section">
-            <h3 className="work-form-section__title">Workspace</h3>
-            <p className="work-form-section__hint">
-              Choose the team or work area this project belongs to.
-            </p>
-            <div className="cfg-search work-ws-picker__search">
-              <Search size={14} />
-              <input
-                placeholder="Search workspaces…"
-                value={wsSearch}
-                onChange={e => setWsSearch(e.target.value)}
-              />
-            </div>
-            <div className="work-ws-picker work-ws-picker--single">
-              {filteredWorkspaces.map(w => (
-                <button
-                  key={w.id}
-                  type="button"
-                  className={`work-ws-picker__card${form.workspaceId === w.id ? ' work-ws-picker__card--active' : ''}`}
-                  onClick={() => selectWorkspace(w.id)}
-                >
-                  <span className="work-ws-picker__name">{w.name}</span>
-                  {canViewWorkspaceMemberCount(w.id) && (
-                    <span className="work-ws-picker__meta">{w.memberCount} members</span>
-                  )}
-                </button>
-              ))}
-              {filteredWorkspaces.length === 0 && (
-                <p className="admin-hint">No workspaces in your scope match your search.</p>
-              )}
-            </div>
-            <p className="work-form-section__hint work-form-section__hint--later">
-              You can add more workspaces later if another team joins this project.
-            </p>
-          </section>
-
-          <section className="work-form-section">
-            <h3 className="work-form-section__title">Invite people</h3>
-            <p className="work-form-section__hint">Optional — add people now or later from project settings.</p>
-
-            <div className="work-invite-fixed">
-              <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
-                {(creator?.name ?? 'You').slice(0, 2)}
-              </span>
-              <div className="work-invite-row__info">
-                <span className="work-invite-row__name">You</span>
-                <span className="work-invite-row__meta">Project Admin</span>
-              </div>
-            </div>
-
-            {form.invites.map(inv => {
-              const emp = employeeById(inv.employeeId);
-              if (!emp) return null;
-              return (
-                <div key={inv.employeeId} className="work-invite-row">
-                  <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
-                    {emp.name.slice(0, 2)}
-                  </span>
-                  <div className="work-invite-row__info">
-                    <span className="work-invite-row__name">{emp.name}</span>
-                    <span className="work-invite-row__meta">{emp.position}</span>
+          <div className="work-create-modal__scroll">
+            <div className="work-create-modal__form">
+              <div className="work-create-modal__name-key-block">
+                <div className="work-create-modal__row work-create-modal__row--name-key">
+                  <div className="org-form-field work-create-modal__field--name">
+                    <label htmlFor="proj-name" className="work-create-modal__field-label">Project name</label>
+                    <input
+                      id="proj-name"
+                      value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. OneVo Platform Refresh"
+                    />
                   </div>
-                  <select
-                    className="work-invite-row__access"
-                    value={inv.accessLevel}
-                    onChange={e => updateInviteAccess(inv.employeeId, e.target.value as ProjectAccessLevel)}
-                    aria-label={`Access for ${emp.name}`}
-                  >
-                    <option value="admin">Admin</option>
-                    <option value="member">Member</option>
-                    <option value="viewer">Viewer</option>
-                  </select>
-                  <button
-                    type="button"
-                    className="work-invite-row__remove"
-                    onClick={() => removeInvite(inv.employeeId)}
-                    aria-label={`Remove ${emp.name}`}
-                  >
-                    <X size={14} />
-                  </button>
+                  <div className="org-form-field work-create-modal__field--key">
+                    <label htmlFor="proj-key" className="work-create-modal__field-label">Project ID</label>
+                    <input
+                      id="proj-key"
+                      value={displayKey}
+                      onChange={e => setForm(f => ({ ...f, key: e.target.value.toUpperCase(), keyTouched: true }))}
+                      placeholder="Auto-generated from name"
+                    />
+                  </div>
                 </div>
-              );
-            })}
-
-            <div className="cfg-search">
-              <Search size={14} />
-              <input
-                placeholder="Search people by name or position…"
-                value={peopleSearch}
-                onChange={e => setPeopleSearch(e.target.value)}
-                disabled={!form.workspaceId}
-              />
-            </div>
-            {!form.workspaceId && (
-              <p className="admin-hint">Select a workspace first to search people from that team.</p>
-            )}
-            {peopleSearch.trim() && (
-              <div className="work-invite-results">
-                {searchResults.map(e => (
-                  <button
-                    key={e.id}
-                    type="button"
-                    className="work-invite-result"
-                    onClick={() => addInvite(e.id)}
-                  >
-                    <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
-                      {e.name.slice(0, 2)}
-                    </span>
-                    <span className="work-invite-result__info">
-                      <span className="work-invite-result__name">{e.name}</span>
-                      <span className="work-invite-result__meta">{e.position}</span>
-                    </span>
-                  </button>
-                ))}
-                {searchResults.length === 0 && (
-                  <p className="admin-hint">No people found in the selected workspace.</p>
-                )}
+                <div className="work-create-modal__field-hint-row">
+                  <p className="work-create-modal__field-hint">
+                    Used for work item IDs, for example ONEVO-15.
+                  </p>
+                </div>
               </div>
-            )}
-          </section>
+
+              <div className="work-create-modal__row">
+                <div className="org-form-field work-create-modal__field--desc">
+                  <label htmlFor="proj-desc" className="work-create-modal__sr-only">Description</label>
+                  <textarea
+                    id="proj-desc"
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Description"
+                  />
+                </div>
+              </div>
+
+              <div className="work-create-modal__row work-create-modal__row--controls">
+                <CompactPillDropdown
+                  icon={visibilityIcon}
+                  value={form.visibility}
+                  options={VISIBILITY_OPTIONS}
+                  onChange={id => setForm(f => ({ ...f, visibility: id as ProjectVisibility }))}
+                  ariaLabel="Project visibility"
+                />
+                <CompactPillDropdown
+                  icon={<UserCircle size={14} />}
+                  value={form.leadId}
+                  options={leadOptions}
+                  onChange={id => setForm(f => ({ ...f, leadId: id }))}
+                  ariaLabel="Project lead"
+                  prefixLabel="Lead"
+                />
+              </div>
+
+              <div className="work-create-modal__row work-create-modal__row--split">
+                <section className="work-create-modal__col">
+                  <h3 className="work-create-modal__section-title">Workspace</h3>
+                  <label className="work-create-modal__search-field">
+                    <Search size={14} aria-hidden />
+                    <input
+                      type="search"
+                      placeholder="Search workspaces…"
+                      value={wsSearch}
+                      onChange={e => setWsSearch(e.target.value)}
+                    />
+                  </label>
+                  {selectedWorkspace && (
+                    <div className="work-ws-picker__selected work-ws-picker__selected--modal">
+                      <span className="work-ws-picker__name">{selectedWorkspace.name}</span>
+                      {canViewWorkspaceMemberCount(selectedWorkspace.id) && (
+                        <span className="work-ws-picker__meta">{selectedWorkspace.memberCount} members</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="work-ws-picker work-ws-picker--single work-ws-picker--modal">
+                    {filteredWorkspaces.map(w => (
+                      <button
+                        key={w.id}
+                        type="button"
+                        className={`work-ws-picker__card work-ws-picker__card--modal${form.workspaceId === w.id ? ' work-ws-picker__card--active' : ''}`}
+                        onClick={() => selectWorkspace(w.id)}
+                      >
+                        <span className="work-ws-picker__name">{w.name}</span>
+                        {canViewWorkspaceMemberCount(w.id) && (
+                          <span className="work-ws-picker__meta">{w.memberCount} members</span>
+                        )}
+                      </button>
+                    ))}
+                    {filteredWorkspaces.length === 0 && (
+                      <p className="work-create-modal__empty-hint">No workspaces match your search.</p>
+                    )}
+                  </div>
+                </section>
+
+                <section className="work-create-modal__col work-create-modal__col--invite">
+                  <h3 className="work-create-modal__section-title">Invite people</h3>
+
+                  <label className="work-create-modal__search-field">
+                    <Search size={14} aria-hidden />
+                    <input
+                      type="search"
+                      placeholder="Search people by name or position…"
+                      value={peopleSearch}
+                      onChange={e => setPeopleSearch(e.target.value)}
+                    />
+                  </label>
+                  {inviteSearchResults.length > 0 && (
+                    <div className="work-invite-results work-invite-results--modal">
+                      {inviteSearchResults.map(e => (
+                        <button
+                          key={e.id}
+                          type="button"
+                          className="work-invite-result work-invite-result--modal"
+                          onClick={() => addInvite(e.id)}
+                        >
+                          <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
+                            {e.name.slice(0, 2)}
+                          </span>
+                          <span className="work-invite-result__info">
+                            <span className="work-invite-result__name">{e.name}</span>
+                            <span className="work-invite-result__meta">{e.position}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {peopleSearch.trim() && inviteSearchResults.length === 0 && (
+                    <p className="work-create-modal__empty-hint">No people found.</p>
+                  )}
+
+                  <div className="work-create-modal__selected-people">
+                    <div className="work-invite-row work-invite-row--modal work-invite-row--creator">
+                      <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
+                        {(creator?.name ?? 'You').slice(0, 2)}
+                      </span>
+                      <div className="work-invite-row__info">
+                        <span className="work-invite-row__name">You</span>
+                        <span className="work-invite-row__meta">Project Admin</span>
+                      </div>
+                    </div>
+
+                    {form.invites.map(inv => {
+                      const emp = employeeById(inv.employeeId);
+                      if (!emp) return null;
+                      return (
+                        <div key={inv.employeeId} className="work-invite-row work-invite-row--modal">
+                          <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
+                            {emp.name.slice(0, 2)}
+                          </span>
+                          <div className="work-invite-row__info">
+                            <span className="work-invite-row__name">{emp.name}</span>
+                            <span className="work-invite-row__meta">{emp.position}</span>
+                          </div>
+                          <select
+                            className="work-invite-row__access"
+                            value={inv.accessLevel}
+                            onChange={e => updateInviteAccess(inv.employeeId, e.target.value as ProjectAccessLevel)}
+                            aria-label={`Access for ${emp.name}`}
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="member">Member</option>
+                            <option value="viewer">Viewer</option>
+                          </select>
+                          <button
+                            type="button"
+                            className="work-invite-row__remove"
+                            onClick={() => removeInvite(inv.employeeId)}
+                            aria-label={`Remove ${emp.name}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
         </div>
 
         <footer className="work-create-modal__footer">

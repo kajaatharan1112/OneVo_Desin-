@@ -4,6 +4,8 @@ import type {
   Department,
   DepartmentFormState,
   Employee,
+  EmployeeFormState,
+  EmployeeFormValues,
   Position,
   PositionAssignment,
   PositionFormState
@@ -229,18 +231,18 @@ const SEED_POSITIONS: Position[] = [
 ];
 
 const SEED_EMPLOYEES: Employee[] = [
-  { id: 'emp-1', firstName: 'Ahmad', lastName: 'Razif', email: 'ahmad.razif@onevo.com', status: 'active' },
-  { id: 'emp-2', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@onevo.com', status: 'active' },
-  { id: 'emp-3', firstName: 'Lee', lastName: 'Wei Ming', email: 'lee.weiming@onevo.com', status: 'active' },
-  { id: 'emp-4', firstName: 'Zara', lastName: 'Hassan', email: 'zara.hassan@onevo.com', status: 'active' },
-  { id: 'emp-5', firstName: 'Maria', lastName: 'Gomez', email: 'maria.gomez@onevo.com', status: 'active' },
-  { id: 'emp-6', firstName: 'Alex', lastName: 'Rivera', email: 'alex.rivera@onevo.com', status: 'active' },
-  { id: 'emp-7', firstName: 'Jordan', lastName: 'Chen', email: 'jordan.chen@onevo.com', status: 'active' },
-  { id: 'emp-8', firstName: 'Sam', lastName: 'Patel', email: 'sam.patel@onevo.com', status: 'active' },
-  { id: 'emp-9', firstName: 'Taylor', lastName: 'Brooks', email: 'taylor.brooks@onevo.com', status: 'active' },
-  { id: 'emp-10', firstName: 'Morgan', lastName: 'Lee', email: 'morgan.lee@onevo.com', status: 'active' },
-  { id: 'emp-11', firstName: 'Casey', lastName: 'Nguyen', email: 'casey.nguyen@onevo.com', status: 'active' },
-  { id: 'emp-12', firstName: 'Riley', lastName: 'Foster', email: 'riley.foster@onevo.com', status: 'active' }
+  { id: 'emp-1', firstName: 'Ahmad', lastName: 'Razif', email: 'ahmad.razif@onevo.com', phone: '+94 77 123 4567', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
+  { id: 'emp-2', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@onevo.com', phone: '+94 77 234 5678', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
+  { id: 'emp-3', firstName: 'Lee', lastName: 'Wei Ming', email: 'lee.weiming@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-03-01', workMode: 'onsite' },
+  { id: 'emp-4', firstName: 'Zara', lastName: 'Hassan', email: 'zara.hassan@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
+  { id: 'emp-5', firstName: 'Maria', lastName: 'Gomez', email: 'maria.gomez@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
+  { id: 'emp-6', firstName: 'Alex', lastName: 'Rivera', email: 'alex.rivera@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'hybrid' },
+  { id: 'emp-7', firstName: 'Jordan', lastName: 'Chen', email: 'jordan.chen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'hybrid' },
+  { id: 'emp-8', firstName: 'Sam', lastName: 'Patel', email: 'sam.patel@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote' },
+  { id: 'emp-9', firstName: 'Taylor', lastName: 'Brooks', email: 'taylor.brooks@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote' },
+  { id: 'emp-10', firstName: 'Morgan', lastName: 'Lee', email: 'morgan.lee@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
+  { id: 'emp-11', firstName: 'Casey', lastName: 'Nguyen', email: 'casey.nguyen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-08-01', workMode: 'field' },
+  { id: 'emp-12', firstName: 'Riley', lastName: 'Foster', email: 'riley.foster@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-07-01', workMode: 'remote' }
 ];
 
 const SEED_ASSIGNMENTS: PositionAssignment[] = [
@@ -267,6 +269,7 @@ interface OrganizationState {
   departmentForm: DepartmentFormState;
   positionForm: PositionFormState;
   assignmentForm: AssignmentFormState;
+  employeeForm: EmployeeFormState;
 
   collapsedDeptIds: Set<string>;
   collapsedPositionIds: Set<string>;
@@ -315,6 +318,22 @@ interface OrganizationState {
     positionId: string,
     options?: { effectiveFrom?: string; notes?: string }
   ) => { ok: boolean; error?: string };
+
+  openCreateEmployee: () => void;
+  openEditEmployee: (employeeId: string) => void;
+  closeEmployeeForm: () => void;
+  saveEmployee: (values: EmployeeFormValues) => { ok: boolean; error?: string };
+  updateEmployeeEmployment: (
+    employeeId: string,
+    values: Pick<
+      EmployeeFormValues,
+      'employmentType' | 'startDate' | 'workMode' | 'status' | 'positionId'
+    >
+  ) => { ok: boolean; error?: string };
+  updateEmployeePersonal: (
+    employeeId: string,
+    values: Pick<EmployeeFormValues, 'firstName' | 'lastName' | 'email' | 'phone'>
+  ) => { ok: boolean; error?: string };
 }
 
 export const useOrganizationStore = create<OrganizationState>((set, get) => ({
@@ -326,6 +345,7 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
   departmentForm: { open: false, mode: 'create', departmentId: null, parentDepartmentId: null },
   positionForm: { open: false, mode: 'create', positionId: null, reportsToPositionId: null, departmentId: null },
   assignmentForm: { open: false, positionId: null },
+  employeeForm: { open: false, mode: 'create', employeeId: null },
 
   collapsedDeptIds: new Set(),
   collapsedPositionIds: new Set(),
@@ -624,6 +644,195 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     set({ assignments: [...updatedAssignments, newAssignment] });
     get().closeAssignEmployee();
     get().showToast('Employee assigned successfully.');
+    return { ok: true };
+  },
+
+  openCreateEmployee: () =>
+    set({ employeeForm: { open: true, mode: 'create', employeeId: null } }),
+
+  openEditEmployee: employeeId =>
+    set({ employeeForm: { open: true, mode: 'edit', employeeId } }),
+
+  closeEmployeeForm: () =>
+    set({ employeeForm: { open: false, mode: 'create', employeeId: null } }),
+
+  updateEmployeePersonal: (employeeId, values) => {
+    if (!values.firstName.trim() || !values.lastName.trim()) {
+      return { ok: false, error: 'First and last name are required.' };
+    }
+    if (!values.email.trim()) return { ok: false, error: 'Email is required.' };
+
+    set({
+      employees: get().employees.map(e =>
+        e.id === employeeId
+          ? {
+              ...e,
+              firstName: values.firstName.trim(),
+              lastName: values.lastName.trim(),
+              email: values.email.trim(),
+              phone: values.phone.trim() || undefined
+            }
+          : e
+      )
+    });
+    get().showToast('Profile updated.');
+    return { ok: true };
+  },
+
+  updateEmployeeEmployment: (employeeId, values) => {
+    if (values.status === 'active' && !values.workMode) {
+      return { ok: false, error: 'Work Mode is required for active employees.' };
+    }
+    if (!values.startDate) return { ok: false, error: 'Start date is required.' };
+
+    set({
+      employees: get().employees.map(e =>
+        e.id === employeeId
+          ? {
+              ...e,
+              employmentType: values.employmentType,
+              startDate: values.startDate,
+              workMode: values.workMode || null,
+              status: values.status
+            }
+          : e
+      )
+    });
+
+    if (values.positionId) {
+      const { positions, assignments } = get();
+      const check = canAssignEmployeeToPosition(
+        employeeId,
+        values.positionId,
+        positions,
+        assignments
+      );
+      if (!check.ok) return { ok: false, error: check.error };
+
+      const active = assignments.find(
+        a =>
+          a.employeeId === employeeId &&
+          a.status === 'active' &&
+          a.effectiveTo === null
+      );
+
+      if (!active || active.positionId !== values.positionId) {
+        const effectiveFrom = values.startDate;
+        const updatedAssignments = assignments.map(a => {
+          if (
+            a.employeeId === employeeId &&
+            a.status === 'active' &&
+            a.effectiveTo === null &&
+            a.positionId !== values.positionId
+          ) {
+            return { ...a, effectiveTo: effectiveFrom, status: 'ended' as const };
+          }
+          return a;
+        });
+
+        const newAssignment: PositionAssignment = {
+          id: createId('asgn'),
+          employeeId,
+          positionId: values.positionId,
+          effectiveFrom,
+          effectiveTo: null,
+          status: 'active'
+        };
+
+        set({ assignments: [...updatedAssignments, newAssignment] });
+      }
+    }
+
+    get().showToast('Employment details saved.');
+    return { ok: true };
+  },
+
+  saveEmployee: values => {
+    const { employees, employeeForm } = get();
+
+    if (!values.firstName.trim() || !values.lastName.trim()) {
+      return { ok: false, error: 'First and last name are required.' };
+    }
+    if (!values.email.trim()) {
+      return { ok: false, error: 'Email is required.' };
+    }
+    if (!values.startDate) {
+      return { ok: false, error: 'Start date is required.' };
+    }
+    if (values.status === 'active' && !values.workMode) {
+      return { ok: false, error: 'Work Mode is required for active employees.' };
+    }
+
+    const existing = employeeForm.employeeId
+      ? employees.find(e => e.id === employeeForm.employeeId)
+      : undefined;
+
+    const employeePayload: Employee = {
+      id: existing?.id ?? createId('emp'),
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      email: values.email.trim(),
+      phone: values.phone.trim() || undefined,
+      status: values.status,
+      employmentType: values.employmentType,
+      startDate: values.startDate,
+      workMode: values.workMode || null
+    };
+
+    set({
+      employees: existing
+        ? employees.map(e => (e.id === existing.id ? employeePayload : e))
+        : [...employees, employeePayload]
+    });
+
+    if (values.positionId) {
+      const { positions, assignments } = get();
+      const check = canAssignEmployeeToPosition(
+        employeePayload.id,
+        values.positionId,
+        positions,
+        assignments
+      );
+      if (!check.ok) {
+        return { ok: false, error: check.error };
+      }
+
+      const active = assignments.find(
+        a =>
+          a.employeeId === employeePayload.id &&
+          a.status === 'active' &&
+          a.effectiveTo === null
+      );
+
+      if (!active || active.positionId !== values.positionId) {
+        const effectiveFrom = values.startDate;
+        const updatedAssignments = assignments.map(a => {
+          if (
+            a.employeeId === employeePayload.id &&
+            a.status === 'active' &&
+            a.effectiveTo === null &&
+            a.positionId !== values.positionId
+          ) {
+            return { ...a, effectiveTo: effectiveFrom, status: 'ended' as const };
+          }
+          return a;
+        });
+
+        const newAssignment: PositionAssignment = {
+          id: createId('asgn'),
+          employeeId: employeePayload.id,
+          positionId: values.positionId,
+          effectiveFrom,
+          effectiveTo: null,
+          status: 'active'
+        };
+
+        set({ assignments: [...updatedAssignments, newAssignment] });
+      }
+    }
+
+    get().closeEmployeeForm();
+    get().showToast(existing ? 'Employee updated.' : 'Employee added.');
     return { ok: true };
   }
 }));

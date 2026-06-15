@@ -11,6 +11,8 @@ import {
   visibleWorkspaceIds,
   workspaceName,
 } from '../workMockData';
+import { ProjectIcon } from '../components/project/projectIcon';
+import { projectCoverStyle, projectIconSurfaceStyle } from '../components/project/projectMedia';
 
 type ViewMode = 'cards' | 'table';
 type SortOrder = 'newest' | 'oldest' | 'due-date' | 'name';
@@ -116,7 +118,12 @@ export const ProjectsPage: React.FC = () => {
           <div className="work-project-grid">
             {filtered.map(p => (
               <article key={p.id} className="work-project-card">
-                <div className="work-project-card__cover" style={{ background: p.coverColor }} />
+                <div className="work-project-card__media">
+                  <div className="work-project-card__cover" style={projectCoverStyle(p)} />
+                  <div className="work-project-card__icon" style={projectIconSurfaceStyle(p)}>
+                    <ProjectIcon icon={p.icon} size={18} />
+                  </div>
+                </div>
                 <div className="work-project-card__body">
                   <div className="work-project-card__header">
                     <div>

@@ -115,45 +115,79 @@
   border-radius: 12px;
   overflow: hidden;
   background: var(--surface-panel);
+  box-shadow: none;
 }
 
 .cfg-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 
 .cfg-table th {
   text-align: left;
-  padding: 10px 14px;
-  font-size: 0.7rem;
+  padding: 0 12px;
+  height: 48px;
+  font-size: 0.8125rem;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-transform: none;
+  letter-spacing: normal;
   color: var(--nexus-text-secondary);
   background: var(--surface-panel);
   border-bottom: 1px solid var(--border);
 }
 
 .cfg-table td {
-  padding: 12px 14px;
+  padding: 0 12px;
+  height: 52px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
   vertical-align: middle;
+  font-size: 0.8125rem;
 }
 
 .cfg-table tr:last-child td { border-bottom: none; }
-.cfg-table tr:hover td { background: var(--surface-muted); }
+.cfg-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--border) 10%, var(--surface-panel));
+}
 
 .cfg-table__name {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-h);
+  font-size: 0.8125rem;
 }
 
 .cfg-table__meta {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--nexus-text-secondary);
   margin-top: 2px;
+}
+
+.cfg-date-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cfg-date-range__sep {
+  color: var(--nexus-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.cfg-date-input {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+  font-size: 0.78rem;
+  color: var(--text);
+  min-width: 0;
+}
+
+.cfg-date-input:focus {
+  outline: none;
+  border-color: var(--accent-border);
 }
 
 .cfg-row-actions {
@@ -192,6 +226,26 @@
   background: #fef2f2;
   color: #991b1b;
   border-color: #fca5a5;
+}
+
+.cfg-action-btn--ghost {
+  border: none;
+  background: transparent;
+  padding: 4px 6px;
+  font-weight: 500;
+  color: var(--nexus-text-secondary);
+}
+
+.cfg-action-btn--ghost:hover {
+  background: transparent;
+  color: var(--accent);
+  border-color: transparent;
+}
+
+.cfg-badge--sm {
+  padding: 1px 6px;
+  font-size: 0.62rem;
+  font-weight: 500;
 }
 
 .auto-list-create {

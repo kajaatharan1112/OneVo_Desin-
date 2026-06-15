@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronDown,
   ChevronRight,
@@ -37,21 +38,44 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
     closeProject,
   } = useWork();
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState({ top: 0, left: 0, width: 0 });
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const selectorRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
 
   const projectList = accessibleProjects(workspaceFilterId, undefined, projects);
+
+  useLayoutEffect(() => {
+    if (!selectorOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setMenuRect({
+      top: rect.bottom + 6,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, [selectorOpen]);
 
   useEffect(() => {
     if (!selectorOpen) return;
     const handlePointerDown = (e: MouseEvent) => {
-      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) {
-        setSelectorOpen(false);
-      }
+      const t = e.target as Node;
+      if (
+        selectorRef.current?.contains(t) ||
+        menuRef.current?.contains(t)
+      ) return;
+      setSelectorOpen(false);
     };
+    const handleScroll = () => setSelectorOpen(false);
     document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
+    window.addEventListener('resize', handleScroll);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [selectorOpen]);
 
   useEffect(() => {
@@ -111,6 +135,7 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
 
       <div className="work-sub-nav__selector" ref={selectorRef}>
         <button
+          ref={triggerRef}
           type="button"
           className={`work-sub-nav__selector-trigger${selectorOpen ? ' work-sub-nav__selector-trigger--open' : ''}`}
           onClick={() => setSelectorOpen(o => !o)}
@@ -120,8 +145,19 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
           <span className="work-sub-nav__selector-label">{workspaceFilterLabel}</span>
           <ChevronDown size={14} className={`work-sub-nav__selector-chevron${selectorOpen ? ' work-sub-nav__selector-chevron--open' : ''}`} />
         </button>
-        {selectorOpen && (
-          <ul className="work-sub-nav__selector-menu" role="listbox" aria-label="Select workspace context">
+        {selectorOpen && createPortal(
+          <ul
+            ref={menuRef}
+            className="work-sub-nav__selector-menu work-sub-nav__selector-menu--portal"
+            role="listbox"
+            aria-label="Select workspace context"
+            style={{
+              position: 'fixed',
+              top: menuRect.top,
+              left: menuRect.left,
+              width: menuRect.width,
+            }}
+          >
             <li>
               <button
                 type="button"
@@ -165,7 +201,8 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
                 <Plus size={13} /> Create Workspace
               </button>
             </li>
-          </ul>
+          </ul>,
+          document.body,
         )}
       </div>
 

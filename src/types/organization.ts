@@ -1,6 +1,8 @@
 export type EntityStatus = 'active' | 'inactive';
 export type PositionType = 'unique' | 'pooled';
 export type EmployeeStatus = 'active' | 'onboarding' | 'inactive';
+export type EmploymentType = 'full-time' | 'part-time' | 'contract';
+export type WorkMode = 'onsite' | 'remote' | 'hybrid' | 'field';
 export type AssignmentStatus = 'active' | 'ended';
 
 export interface Department {
@@ -29,7 +31,12 @@ export interface Employee {
   firstName: string;
   lastName: string;
   email: string;
+  phone?: string;
   status: EmployeeStatus;
+  employmentType: EmploymentType;
+  startDate: string;
+  /** Primary work location mode — used by Clock-in Policy for allowed methods. */
+  workMode: WorkMode | null;
 }
 
 export interface PositionAssignment {
@@ -78,4 +85,24 @@ export interface PositionFormState {
 export interface AssignmentFormState {
   open: boolean;
   positionId: string | null;
+}
+
+export type EmployeeFormMode = 'create' | 'edit';
+
+export interface EmployeeFormState {
+  open: boolean;
+  mode: EmployeeFormMode;
+  employeeId: string | null;
+}
+
+export interface EmployeeFormValues {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  status: EmployeeStatus;
+  employmentType: EmploymentType;
+  startDate: string;
+  workMode: WorkMode | '';
+  positionId: string;
 }

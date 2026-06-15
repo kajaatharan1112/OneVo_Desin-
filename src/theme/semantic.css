@@ -10,6 +10,8 @@
   --border: var(--nexus-border);
 
   --shell-gap: var(--nexus-shell-gap);
+  --app-frame-gap: var(--nexus-app-frame-gap);
+  --app-frame-radius: var(--nexus-app-frame-radius);
   --sidebar-width: var(--nexus-sidebar-width);
   --sidebar-width-collapsed: var(--nexus-sidebar-width-collapsed);
   --notification-panel-width: var(--sidebar-width);
