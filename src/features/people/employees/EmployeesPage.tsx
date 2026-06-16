@@ -1,9 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, UploadCloud, History } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { OrgToast } from '../../organization/components/OrgToast';
 import { EmployeeFormPanel } from './EmployeeFormPanel';
+import { AddEmployeeWizard } from './AddEmployeeWizard';
+import { BulkOnboardingModal } from '../bulk-onboarding/BulkOnboardingModal';
+import { ImportHistoryModal } from '../bulk-onboarding/ImportHistoryModal';
+import { useBulkOnboardingStore } from '../../../store/bulkOnboardingStore';
 import {
   employeeFullName,
   employeeStatusLabel,
@@ -18,11 +22,23 @@ export const EmployeesPage: React.FC = () => {
     departments,
     assignments,
     employeeForm,
-    openCreateEmployee,
     closeEmployeeForm
   } = useOrganizationStore();
 
   const [search, setSearch] = useState('');
+  const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+  const [bulkOnboardOpen, setBulkOnboardOpen] = useState(false);
+  const [importHistoryOpen, setImportHistoryOpen] = useState(false);
+  const { goToStep, importRuns } = useBulkOnboardingStore();
+
+  const handleReopenForInvites = (runId: string) => {
+    const run = importRuns.find(r => r.id === runId);
+    if (!run) return;
+    useBulkOnboardingStore.setState({ activeRunId: runId });
+    goToStep('send-invitations');
+    setImportHistoryOpen(false);
+    setBulkOnboardOpen(true);
+  };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -51,12 +67,20 @@ export const EmployeesPage: React.FC = () => {
         <div>
           <h1 className="cfg-page__title">Employees</h1>
           <p className="cfg-page__subtitle">
-            View and manage employee profiles, employment details, and work mode.
+            View and manage employee profiles, lifecycle actions, and onboarding status.
           </p>
         </div>
-        <button type="button" className="org-btn org-btn--primary" onClick={openCreateEmployee}>
-          <Plus size={14} /> Add Employee
-        </button>
+        <div className="cfg-page__actions">
+          <button type="button" className="org-btn org-btn--primary" onClick={() => setAddEmployeeOpen(true)}>
+            <Plus size={14} /> Add Employee
+          </button>
+          <button type="button" className="org-btn org-btn--secondary" onClick={() => setBulkOnboardOpen(true)}>
+            <UploadCloud size={14} /> Bulk Onboard
+          </button>
+          <button type="button" className="org-btn org-btn--secondary" onClick={() => setImportHistoryOpen(true)}>
+            <History size={14} /> Import History
+          </button>
+        </div>
       </div>
 
       <div className="cfg-page__toolbar">
@@ -115,7 +139,10 @@ export const EmployeesPage: React.FC = () => {
         </div>
       </div>
 
-      {employeeForm.open && <EmployeeFormPanel onClose={closeEmployeeForm} />}
+      {employeeForm.open && employeeForm.mode === 'edit' && <EmployeeFormPanel onClose={closeEmployeeForm} />}
+      {addEmployeeOpen && <AddEmployeeWizard onClose={() => setAddEmployeeOpen(false)} />}
+      {bulkOnboardOpen && <BulkOnboardingModal onClose={() => setBulkOnboardOpen(false)} />}
+      {importHistoryOpen && <ImportHistoryModal onClose={() => setImportHistoryOpen(false)} onReopenForInvites={handleReopenForInvites} />}
       <OrgToast />
     </div>
   );
