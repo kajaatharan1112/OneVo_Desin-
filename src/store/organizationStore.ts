@@ -6,6 +6,7 @@ import type {
   Employee,
   EmployeeFormState,
   EmployeeFormValues,
+  EmployeeOnboardingValues,
   Position,
   PositionAssignment,
   PositionFormState
@@ -335,6 +336,9 @@ interface OrganizationState {
   openEditEmployee: (employeeId: string) => void;
   closeEmployeeForm: () => void;
   saveEmployee: (values: EmployeeFormValues) => { ok: boolean; error?: string };
+  completeEmployeeOnboarding: (
+    values: EmployeeOnboardingValues
+  ) => { ok: boolean; error?: string; employeeId?: string };
   updateEmployeeEmployment: (
     employeeId: string,
     values: Pick<
@@ -757,6 +761,50 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
 
     get().showToast('Employment details saved.');
     return { ok: true };
+  },
+
+  completeEmployeeOnboarding: values => {
+    if (!values.firstName.trim() || !values.lastName.trim()) {
+      return { ok: false, error: 'First and last name are required.' };
+    }
+    if (!values.email.trim()) return { ok: false, error: 'Email is required.' };
+    if (!values.startDate) return { ok: false, error: 'Start date is required.' };
+    if (!values.positionId) return { ok: false, error: 'Position is required.' };
+
+    const { employees, positions, assignments } = get();
+    const tempId = createId('emp');
+    const check = canAssignEmployeeToPosition(tempId, values.positionId, positions, assignments);
+    if (!check.ok) return { ok: false, error: check.error };
+
+    const employee: Employee = {
+      id: createId('emp'),
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      email: values.email.trim(),
+      phone: values.phone.trim() || undefined,
+      status: 'onboarding',
+      employmentType: values.employmentType,
+      startDate: values.startDate,
+      workMode: values.workMode || null,
+      roleIds: values.confirmedRoleIds
+    };
+
+    const newAssignment: PositionAssignment = {
+      id: createId('asgn'),
+      employeeId: employee.id,
+      positionId: values.positionId,
+      effectiveFrom: values.startDate,
+      effectiveTo: null,
+      status: 'active'
+    };
+
+    set({
+      employees: [...employees, employee],
+      assignments: [...assignments, newAssignment]
+    });
+
+    get().showToast('Employee added. Invite sent.');
+    return { ok: true, employeeId: employee.id };
   },
 
   saveEmployee: values => {

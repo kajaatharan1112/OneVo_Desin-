@@ -37,6 +37,20 @@ export interface Employee {
   startDate: string;
   /** Primary work location mode — used by Clock-in Policy for allowed methods. */
   workMode: WorkMode | null;
+  /** Role IDs confirmed by admin during onboarding (Access Confirmation step). */
+  roleIds?: string[];
+}
+
+export interface EmployeeOnboardingValues {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  employmentType: EmploymentType;
+  startDate: string;
+  workMode: WorkMode | '';
+  positionId: string;
+  confirmedRoleIds: string[];
 }
 
 export interface PositionAssignment {
