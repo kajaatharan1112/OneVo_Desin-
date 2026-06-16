@@ -400,6 +400,96 @@
   margin-top: 4px;
 }
 
+/* Add Employee wizard */
+.org-slideover--wide {
+  max-width: 640px;
+}
+
+.add-employee-wizard__steps {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  flex-wrap: wrap;
+}
+
+.add-employee-wizard__step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted, #6b7280);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.add-employee-wizard__step--active {
+  color: var(--text-primary, #111827);
+  font-weight: 600;
+  background: var(--surface-muted, #f3f4f6);
+}
+
+.add-employee-wizard__step--done {
+  color: var(--accent, #2563eb);
+}
+
+.add-employee-wizard__step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-muted, #f3f4f6);
+  font-size: 11px;
+}
+
+.add-employee-wizard__done {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+/* Checklist item editor */
+.checklist-item-card__inline {
+  display: flex;
+  gap: 8px;
+}
+
+.checklist-item-card__inline input {
+  flex: 1;
+}
+
+.checklist-multi-select {
+  min-height: 96px;
+}
+
+/* Employee profile checklist */
+.emp-checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.emp-checklist-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emp-checklist-item__title--done {
+  text-decoration: line-through;
+  color: var(--text-muted, #6b7280);
+}
+
+.emp-checklist-item__meta {
+  font-size: 11px;
+  color: var(--text-muted, #6b7280);
+  padding-left: 24px;
+}
+
 @media (max-width: 640px) {
   .emp-record-grid,
   .emp-record-form-grid {
