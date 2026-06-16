@@ -1,5 +1,19 @@
 import type { ChecklistTemplate, ChecklistTemplateItem } from './checklistTemplateTypes';
 
+export function appliesToSummary(
+  template: ChecklistTemplate,
+  departments: { id: string; name: string }[],
+  positions: { id: string; name: string }[]
+): string {
+  if (template.appliesTo === 'company') return 'Full Company';
+  if (template.appliesTo === 'department') {
+    const names = template.departmentIds.map(id => departments.find(d => d.id === id)?.name).filter(Boolean) as string[];
+    return names.length ? names.join(', ') : 'Department (none selected)';
+  }
+  const names = template.positionIds.map(id => positions.find(p => p.id === id)?.name).filter(Boolean) as string[];
+  return names.length ? names.join(', ') : 'Position (none selected)';
+}
+
 export function formatAssigneeSummary(
   item: ChecklistTemplateItem,
   positions: { id: string; name: string }[] = [],
