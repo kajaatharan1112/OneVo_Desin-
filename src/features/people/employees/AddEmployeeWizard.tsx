@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useChecklistTaskStore } from '../../../store/checklistTaskStore';
@@ -58,7 +58,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
 
   // Keep confirmedRoleIds defaulted to the suggested set whenever the position changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => {
+  useEffect(() => {
     setValues(v => ({ ...v, confirmedRoleIds: suggestedRoles.map(r => r.id) }));
   }, [values.positionId]);
 
