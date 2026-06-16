@@ -14,7 +14,11 @@ import {
   getEmployeeEmploymentContext
 } from './employeeProfileUtils';
 
-export const EmployeesPage: React.FC = () => {
+interface EmployeesPageProps {
+  isTenantAdmin?: boolean;
+}
+
+export const EmployeesPage: React.FC<EmployeesPageProps> = ({ isTenantAdmin }) => {
   const navigate = useNavigate();
   const {
     employees,
@@ -70,17 +74,19 @@ export const EmployeesPage: React.FC = () => {
             View and manage employee profiles, lifecycle actions, and onboarding status.
           </p>
         </div>
-        <div className="cfg-page__actions">
-          <button type="button" className="org-btn org-btn--primary" onClick={() => setAddEmployeeOpen(true)}>
-            <Plus size={14} /> Add Employee
-          </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={() => setBulkOnboardOpen(true)}>
-            <UploadCloud size={14} /> Bulk Onboard
-          </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={() => setImportHistoryOpen(true)}>
-            <History size={14} /> Import History
-          </button>
-        </div>
+        {isTenantAdmin && (
+          <div className="cfg-page__actions">
+            <button type="button" className="org-btn org-btn--primary" onClick={() => setAddEmployeeOpen(true)}>
+              <Plus size={14} /> Add Employee
+            </button>
+            <button type="button" className="org-btn org-btn--secondary" onClick={() => setBulkOnboardOpen(true)}>
+              <UploadCloud size={14} /> Bulk Onboard
+            </button>
+            <button type="button" className="org-btn org-btn--secondary" onClick={() => setImportHistoryOpen(true)}>
+              <History size={14} /> Import History
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="cfg-page__toolbar">

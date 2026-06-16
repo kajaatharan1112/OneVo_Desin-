@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined, ShieldCheck, Settings, FileText, Hash,
   ListChecks, Shield, Eye, List, Palette, Bell,
   CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo,
+  UserCheck, UserMinus,
   type LucideIcon,
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
@@ -124,7 +125,9 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
   ]},
   { id: 'people',     label: 'People',     icon: railIcon(UsersRound),      subSections: [
     { id: 'main', items: [
-      { id: 'employees', label: 'Employees', icon: <Users size={13} /> },
+      { id: 'employees',   label: 'Employees',   icon: <Users size={13} />     },
+      { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
+      { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
     ]},
   ]},
   { id: 'chat',       label: 'Chat',       icon: railIcon(MessageSquare),   subSections: [] },
