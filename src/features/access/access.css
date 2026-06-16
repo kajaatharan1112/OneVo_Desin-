@@ -1,0 +1,139 @@
+/* Position access approval UI */
+
+.access-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+}
+
+.access-section__hint,
+.access-section__empty {
+  margin: 0;
+  font-size: 0.68rem;
+  color: var(--nexus-text-muted);
+  line-height: 1.45;
+}
+
+.access-section__notice {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  color: var(--nexus-text-secondary);
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+}
+
+.access-section__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.access-grant-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.access-grant-row__fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.access-grant-row__summary {
+  margin: 0;
+  font-size: 0.68rem;
+  color: var(--nexus-text-muted);
+}
+
+.access-approval-modal {
+  width: min(560px, 100%);
+}
+
+.access-approval-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.access-approval-detail > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.access-approval-detail dt {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+}
+
+.access-approval-detail dd {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--text-h);
+}
+
+.access-approval-detail__cap {
+  text-transform: capitalize;
+}
+
+.access-approval-diff h3 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.access-approval-diff__grant {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.74rem;
+}
+
+.access-approval-diff__section {
+  margin-bottom: 12px;
+  font-size: 0.74rem;
+}
+
+.access-approval-diff__section ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.access-approval-diff__section li {
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.org-btn--sm {
+  padding: 5px 10px;
+  font-size: 0.72rem;
+}
+
+.org-btn--danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.org-btn--danger:hover {
+  background: #fecaca;
+}

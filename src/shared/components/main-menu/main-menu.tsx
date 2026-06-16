@@ -77,8 +77,10 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   ]},
   { id: 'people',      label: 'People',      icon: railIcon(UsersRound),      subSections: [
     { id: 'main', items: [
+      { id: 'employees',   label: 'Employees',   icon: <Users size={13} />       },
       { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
       { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
+      { id: 'hr-coverage', label: 'HR Coverage', icon: <Shield size={13} />      },
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
     ]},
   ]},
@@ -93,7 +95,7 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
     { id: 'main', items: [
       { id: 'schedules',         label: 'Schedules',         icon: <CalendarClock size={13} /> },
       { id: 'clock-in-policy',   label: 'Clock-in Policy',   icon: <Clock size={13} />       },
-      { id: 'overtime-settings', label: 'Overtime Settings', icon: <Activity size={13} />      },
+      { id: 'overtime-rules', label: 'Overtime Rules', icon: <Activity size={13} /> },
     ]},
   ]},
   WORK_NAV_ITEM,

@@ -29,6 +29,7 @@ import { TenantSectionPage } from '../features/tenant/pages/tenant-section-page/
 import { DepartmentsPage } from '../features/organization/departments/DepartmentsPage';
 import { PositionsPage } from '../features/organization/positions/PositionsPage';
 import { ChecklistTemplatesPage } from '../features/people/checklist-templates/ChecklistTemplatesPage';
+import { HRCoveragePage } from '../features/people/hr-coverage/HRCoveragePage';
 import { LeaveTypesPage } from '../features/leave/configuration/LeaveTypesPage';
 import { LeavePoliciesPage } from '../features/leave/configuration/LeavePoliciesPage';
 import { LeaveEntitlementsPage } from '../features/leave/configuration/LeaveEntitlementsPage';
@@ -43,6 +44,7 @@ import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
 import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
 import { SchedulesPage } from '../features/time-attendance/configuration/SchedulesPage';
 import { ClockInPolicyPage } from '../features/time-attendance/clock-in-policy/ClockInPolicyPage';
+import { OvertimeRulesPage } from '../features/time-attendance/overtime-rules/OvertimeRulesPage';
 import { PeopleEmployeesRoutes } from '../features/people/employees/PeopleEmployeesRoutes';
 import { WorkProvider } from '../features/work/context/work-context';
 import { InboxProvider } from '../core/notifications/inbox-context';
@@ -70,6 +72,12 @@ function App() {
       setActiveSubItemId('employees');
       return;
     }
+    if (location.pathname.startsWith('/people/hr-coverage')) {
+      setView('tenant');
+      setActiveTab('People');
+      setActiveSubItemId('hr-coverage');
+      return;
+    }
     if (location.pathname.startsWith('/people/checklist-templates')) {
       setView('tenant');
       setActiveTab('People');
@@ -93,6 +101,10 @@ function App() {
     setActiveSubItemId(id);
     if (activeTab === 'People' && id === 'employees') {
       navigate('/people/employees');
+      return;
+    }
+    if (activeTab === 'People' && id === 'hr-coverage') {
+      navigate('/people/hr-coverage');
       return;
     }
     if (activeTab === 'People' && id === 'checklist-templates') {
@@ -205,6 +217,12 @@ function App() {
       if (activeTab === 'People' && (resolvedSubId === 'checklist-templates' || location.pathname.startsWith('/people/checklist-templates'))) {
         return <ChecklistTemplatesPage />;
       }
+      if (activeTab === 'People' && (resolvedSubId === 'hr-coverage' || location.pathname.startsWith('/people/hr-coverage'))) {
+        return <HRCoveragePage />;
+      }
+      if (activeTab === 'People' && (resolvedSubId === 'employees' || location.pathname.startsWith('/people/employees'))) {
+        return <PeopleEmployeesRoutes />;
+      }
       if (activeTab === 'Organization') {
         if (resolvedSubId === 'positions') {
           return <PositionsPage />;
@@ -253,6 +271,8 @@ function App() {
             return <SchedulesPage />;
           case 'clock-in-policy':
             return <ClockInPolicyPage />;
+          case 'overtime-rules':
+            return <OvertimeRulesPage />;
           default:
             return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
         }

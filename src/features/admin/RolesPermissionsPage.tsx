@@ -34,7 +34,7 @@ export const RolesPermissionsPage: React.FC = () => {
 
   const [assignForm, setAssignForm] = useState({
     userIds: [] as string[],
-    accessScope: 'reporting_tree' as AccessScope,
+    accessScope: 'reporting_structure' as AccessScope,
     departmentId: '',
     effectiveFrom: new Date().toISOString().slice(0, 10),
     expiresAt: '',
@@ -94,7 +94,7 @@ export const RolesPermissionsPage: React.FC = () => {
     setSelectedRoleId(roleId);
     setAssignForm({
       userIds: [],
-      accessScope: 'reporting_tree',
+      accessScope: 'reporting_structure',
       departmentId: '',
       effectiveFrom: new Date().toISOString().slice(0, 10),
       expiresAt: '',
@@ -566,7 +566,7 @@ export const RolesPermissionsPage: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {assignForm.accessScope === 'department' && (
+                {assignForm.accessScope === 'selected_departments' && (
                   <div className="org-form-field">
                     <label>Department</label>
                     <select

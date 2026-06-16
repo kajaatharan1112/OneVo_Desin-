@@ -1,6 +1,8 @@
-export type ProfileTab = 'overview' | 'employment' | 'access' | 'documents' | 'activity';
+import type { AccessScope } from '../../access/visibilityModel';
 
-export type OverrideScope = 'own' | 'direct-reports' | 'department' | 'company';
+export type ProfileTab = 'about' | 'employment' | 'overrides' | 'documents' | 'activity';
+
+export type OverrideScope = AccessScope;
 
 export interface RoleOverride {
   id: string;
@@ -53,6 +55,7 @@ export interface EmployeeActivityEntry {
     | 'leave-override-added'
     | 'schedule-override-added'
     | 'transfer'
+    | 'promotion'
     | 'offboarding-started';
   label: string;
   detail?: string;
@@ -65,6 +68,16 @@ export interface TransferFormValues {
   effectiveDate: string;
   reportingManager: string;
   reason: string;
+  accessGrants?: import('../../access/accessTypes').GeneratedAccessGrant[];
+}
+
+export interface PromotionFormValues {
+  positionId: string;
+  effectiveDate: string;
+  reason: string;
+  reportingManager: string;
+  departmentName: string;
+  accessGrants?: import('../../access/accessTypes').GeneratedAccessGrant[];
 }
 
 export interface OffboardingFormValues {
@@ -102,6 +115,7 @@ export interface ScheduleOverrideFormValues {
 
 export type ProfileModal =
   | 'edit-profile'
+  | 'promotion'
   | 'transfer'
   | 'offboarding'
   | 'role-override'

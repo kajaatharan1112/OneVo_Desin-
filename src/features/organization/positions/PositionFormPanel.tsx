@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import { MOCK_ROLES, GRANTABLE_PERMISSIONS } from '../../admin/adminMockData';
 import { useOrganizationStore } from '../../../store/organizationStore';
+import { usePositionAccessConfigStore } from '../../access/positionAccessConfigStore';
+import { POSITION_VISIBILITY_OPTIONS } from '../../access/visibilityModel';
+import type { AccessScope } from '../../access/visibilityModel';
 import {
   getValidReportingTargets,
   isPositionCodeUnique,
@@ -14,6 +18,7 @@ interface PositionFormPanelProps {
 
 export const PositionFormPanel: React.FC<PositionFormPanelProps> = ({ onClose }) => {
   const { positionForm, positions, departments, savePosition } = useOrganizationStore();
+  const { getConfig, setConfig } = usePositionAccessConfigStore();
 
   const existing = positionForm.positionId
     ? positions.find(p => p.id === positionForm.positionId)
@@ -27,6 +32,8 @@ export const PositionFormPanel: React.FC<PositionFormPanelProps> = ({ onClose })
   const [type, setType] = useState<PositionType>('unique');
   const [capacity, setCapacity] = useState(1);
   const [status, setStatus] = useState<EntityStatus>('active');
+  const [accessRoleId, setAccessRoleId] = useState('');
+  const [accessVisibility, setAccessVisibility] = useState<AccessScope>('reporting_structure');
   const [error, setError] = useState<string | null>(null);
 
   const isEdit = positionForm.mode === 'edit';
@@ -41,6 +48,9 @@ export const PositionFormPanel: React.FC<PositionFormPanelProps> = ({ onClose })
       setType(existing.type);
       setCapacity(existing.capacity);
       setStatus(existing.status);
+      const cfg = getConfig(existing.id);
+      setAccessRoleId(cfg?.roleId ?? '');
+      setAccessVisibility(cfg?.visibility ?? 'reporting_structure');
     } else {
       setName('');
       setCode('');
@@ -50,6 +60,8 @@ export const PositionFormPanel: React.FC<PositionFormPanelProps> = ({ onClose })
       setType('unique');
       setCapacity(1);
       setStatus('active');
+      setAccessRoleId('');
+      setAccessVisibility('reporting_structure');
     }
     setError(null);
   }, [positionForm, existing, isEdit]);
@@ -93,6 +105,24 @@ export const PositionFormPanel: React.FC<PositionFormPanelProps> = ({ onClose })
 
     if (!result.ok) {
       setError(result.error ?? 'Failed to save position.');
+      return;
+    }
+
+    if (accessRoleId) {
+      const role = MOCK_ROLES.find(r => r.id === accessRoleId);
+      const posId =
+        positionForm.positionId ??
+        useOrganizationStore.getState().positions.find(p => p.code === code.trim().toUpperCase())?.id;
+      if (role && posId) {
+        setConfig(posId, {
+          roleId: role.id,
+          roleName: role.name,
+          visibility: accessVisibility,
+          permissionCodes: role.permissionIds
+            .map(pid => GRANTABLE_PERMISSIONS.find(p => p.id === pid)?.code)
+            .filter((c): c is string => Boolean(c))
+        });
+      }
     }
   };
 
@@ -207,6 +237,41 @@ export const PositionFormPanel: React.FC<PositionFormPanelProps> = ({ onClose })
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
+          </div>
+
+          <div className="schedules-cfg-form-section">
+            <label className="schedules-cfg-form-section__label">Default access template</label>
+            <p className="org-form-hint">
+              Suggested role and visibility when an employee is assigned to this position. Actual
+              permissions are stored as user role grants.
+            </p>
+            <div className="org-form-field">
+              <label htmlFor="pos-access-role">Suggested role</label>
+              <select
+                id="pos-access-role"
+                value={accessRoleId}
+                onChange={e => setAccessRoleId(e.target.value)}
+              >
+                <option value="">No elevated access</option>
+                {MOCK_ROLES.filter(r => r.active).map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+            {accessRoleId && (
+              <div className="org-form-field">
+                <label htmlFor="pos-access-vis">Visibility</label>
+                <select
+                  id="pos-access-vis"
+                  value={accessVisibility}
+                  onChange={e => setAccessVisibility(e.target.value as AccessScope)}
+                >
+                  {POSITION_VISIBILITY_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <footer className="org-slideover__footer">

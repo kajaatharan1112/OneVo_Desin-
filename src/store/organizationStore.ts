@@ -91,7 +91,7 @@ const SEED_DEPARTMENTS: Department[] = [
     name: 'Operations',
     code: 'OPS',
     parentDepartmentId: 'dept-exec',
-    headPositionId: null,
+    headPositionId: 'pos-mgr',
     description: 'Business operations',
     status: 'active'
   }
@@ -227,6 +227,16 @@ const SEED_POSITIONS: Position[] = [
     type: 'pooled',
     capacity: 4,
     status: 'active'
+  },
+  {
+    id: 'pos-mgr',
+    name: 'Manager',
+    code: 'MGR',
+    departmentId: 'dept-ops',
+    reportsToPositionId: 'pos-ceo',
+    type: 'pooled',
+    capacity: 5,
+    status: 'active'
   }
 ];
 
@@ -242,7 +252,8 @@ const SEED_EMPLOYEES: Employee[] = [
   { id: 'emp-9', firstName: 'Taylor', lastName: 'Brooks', email: 'taylor.brooks@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote' },
   { id: 'emp-10', firstName: 'Morgan', lastName: 'Lee', email: 'morgan.lee@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
   { id: 'emp-11', firstName: 'Casey', lastName: 'Nguyen', email: 'casey.nguyen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-08-01', workMode: 'field' },
-  { id: 'emp-12', firstName: 'Riley', lastName: 'Foster', email: 'riley.foster@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-07-01', workMode: 'remote' }
+  { id: 'emp-12', firstName: 'Riley', lastName: 'Foster', email: 'riley.foster@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-07-01', workMode: 'remote' },
+  { id: 'emp-13', firstName: 'Dana', lastName: 'Brooks', email: 'dana.brooks@onevo.com', phone: '+94 77 345 6789', status: 'active', employmentType: 'full-time', startDate: '2024-02-01', workMode: 'hybrid' }
 ];
 
 const SEED_ASSIGNMENTS: PositionAssignment[] = [
@@ -257,7 +268,8 @@ const SEED_ASSIGNMENTS: PositionAssignment[] = [
   { id: 'asgn-10', employeeId: 'emp-10', positionId: 'pos-fin-mgr', effectiveFrom: '2024-01-01', effectiveTo: null, status: 'active' },
   { id: 'asgn-11', employeeId: 'emp-12', positionId: 'pos-fe-eng', effectiveFrom: '2024-07-01', effectiveTo: null, status: 'active' },
   { id: 'asgn-13', employeeId: 'emp-11', positionId: 'pos-qa-eng', effectiveFrom: '2024-08-01', effectiveTo: null, status: 'active' },
-  { id: 'asgn-14', employeeId: 'emp-3', positionId: 'pos-acct', effectiveFrom: '2024-03-01', effectiveTo: null, status: 'active' }
+  { id: 'asgn-14', employeeId: 'emp-3', positionId: 'pos-acct', effectiveFrom: '2024-03-01', effectiveTo: null, status: 'active' },
+  { id: 'asgn-15', employeeId: 'emp-13', positionId: 'pos-mgr', effectiveFrom: '2024-02-01', effectiveTo: null, status: 'active' }
 ];
 
 interface OrganizationState {

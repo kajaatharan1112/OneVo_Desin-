@@ -1,25 +1,33 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { OrgToast } from '../../organization/components/OrgToast';
 import { useEmployeeProfileStore } from './employeeProfileStore';
+import type { ProfileTab } from './employeeProfileTypes';
 import { EmployeeProfileModals } from './EmployeeProfileModals';
 import {
-  ActivitySection,
-  DocumentsSection,
-  EmploymentDetailsSection,
-  PersonalInfoSection,
-  PolicyAccessSidebar
+  AboutTab,
+  ActivityTab,
+  DocumentsTab,
+  EmploymentTab,
+  OverridesTab
 } from './ProfileTabPanels';
 import {
   employeeFullName,
+  employeeInitials,
   employeeStatusLabel,
-  employmentTypeLabel,
-  formatProfileDate,
   getEmployeeEmploymentContext
 } from './employeeProfileUtils';
 import { workModeBadgeClass, workModeLabel } from './workModeUtils';
+
+const TABS: { id: ProfileTab; label: string }[] = [
+  { id: 'about', label: 'About' },
+  { id: 'employment', label: 'Employment' },
+  { id: 'overrides', label: 'Overrides' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'activity', label: 'Activity' }
+];
 
 const ProfileToast: React.FC = () => {
   const { toast, clearToast } = useEmployeeProfileStore();
@@ -41,7 +49,8 @@ export const EmployeeProfilePage: React.FC = () => {
   const { employeeId } = useParams<{ employeeId: string }>();
   const navigate = useNavigate();
   const { employees, positions, departments, assignments } = useOrganizationStore();
-  const { openModal } = useEmployeeProfileStore();
+  const { activeTab, setActiveTab, openModal } = useEmployeeProfileStore();
+  const [copied, setCopied] = useState(false);
 
   const employee = employees.find(e => e.id === employeeId);
 
@@ -56,115 +65,128 @@ export const EmployeeProfilePage: React.FC = () => {
     );
   }, [employee, positions, departments, assignments, employees]);
 
+  useEffect(() => {
+    setActiveTab('about');
+  }, [employeeId, setActiveTab]);
+
+  const handleCopyEmail = async () => {
+    if (!employee?.email) return;
+    try {
+      await navigator.clipboard.writeText(employee.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
   if (!employee) {
     return (
-      <div className="cfg-page emp-mgmt-page">
-        <button
-          type="button"
-          className="emp-mgmt-back"
-          onClick={() => navigate('/people/employees')}
-          aria-label="Back to Employees"
-        >
-          <ArrowLeft size={16} />
+      <div className="cfg-page emp-record-page">
+        <button type="button" className="emp-record-back" onClick={() => navigate('/people/employees')}>
+          <ArrowLeft size={14} /> Back to Employees
         </button>
-        <p className="emp-mgmt-empty">Employee not found.</p>
+        <p className="emp-record-empty">Employee not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="cfg-page emp-mgmt-page">
-      <div className="emp-mgmt-topbar">
-        <button
-          type="button"
-          className="emp-mgmt-back"
-          onClick={() => navigate('/people/employees')}
-          aria-label="Back to Employees"
-        >
-          <ArrowLeft size={16} />
-          <span className="emp-mgmt-back__label">Back to Employees</span>
-        </button>
-        <div className="emp-mgmt-header">
-          <div className="emp-mgmt-header__main">
-            <h1 className="emp-mgmt-header__name">{employeeFullName(employee)}</h1>
-            <p className="emp-mgmt-header__email">{employee.email}</p>
-            <div className="emp-mgmt-header__meta">
-              <span className={`cfg-badge cfg-badge--${employee.status === 'active' ? 'active' : 'inactive'}`}>
-                {employeeStatusLabel(employee.status)}
-              </span>
-              <span>{employment?.positionName}</span>
-              <span className="emp-mgmt-header__sep">·</span>
-              <span>{employment?.departmentName}</span>
-              {employee.workMode && (
-                <>
-                  <span className="emp-mgmt-header__sep">·</span>
-                  <span className={`emp-work-mode-badge ${workModeBadgeClass(employee.workMode)}`}>
-                    {workModeLabel(employee.workMode)}
+    <div className="cfg-page emp-record-page">
+      <div className="emp-record-hero">
+        <div className="emp-record-hero__banner" aria-hidden />
+        <div className="emp-record-hero__body">
+          <button type="button" className="emp-record-back" onClick={() => navigate('/people/employees')}>
+            <ArrowLeft size={14} /> Back to Employees
+          </button>
+
+          <div className="emp-record-hero__row">
+            <div className="emp-record-hero__identity">
+              <div className="emp-record-avatar" aria-hidden>{employeeInitials(employee)}</div>
+              <div>
+                <h1 className="emp-record-hero__name">{employeeFullName(employee)}</h1>
+                <div className="emp-record-hero__email-row">
+                  <span className="emp-record-hero__email">{employee.email}</span>
+                  <button
+                    type="button"
+                    className="emp-record-copy-btn"
+                    onClick={handleCopyEmail}
+                    aria-label="Copy email"
+                    title={copied ? 'Copied' : 'Copy email'}
+                  >
+                    <Copy size={13} />
+                  </button>
+                </div>
+                <div className="emp-record-hero__meta">
+                  <span className={`cfg-badge cfg-badge--${employee.status === 'active' ? 'active' : 'inactive'}`}>
+                    {employeeStatusLabel(employee.status)}
                   </span>
-                </>
-              )}
+                  <span>{employment?.positionName}</span>
+                  <span className="emp-record-hero__sep">·</span>
+                  <span>{employment?.departmentName}</span>
+                  {employee.workMode && (
+                    <>
+                      <span className="emp-record-hero__sep">·</span>
+                      <span className={`emp-work-mode-badge ${workModeBadgeClass(employee.workMode)}`}>
+                        {workModeLabel(employee.workMode)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="emp-record-hero__actions">
+              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('edit-profile')}>
+                Edit Profile
+              </button>
+              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('promotion')}>
+                Promote
+              </button>
+              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('transfer')}>
+                Transfer
+              </button>
+              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('offboarding')}>
+                Start Offboarding
+              </button>
             </div>
           </div>
-          <div className="emp-mgmt-header__actions">
-            <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('edit-profile')}>
-              Edit Profile
-            </button>
-            <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('transfer')}>
-              Transfer
-            </button>
-            <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('offboarding')}>
-              Start Offboarding
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="emp-mgmt-summary">
-        <div className="emp-mgmt-summary__item">
-          <span className="emp-mgmt-summary__label">Position</span>
-          <span className="emp-mgmt-summary__value">{employment?.positionName ?? '—'}</span>
-        </div>
-        <div className="emp-mgmt-summary__item">
-          <span className="emp-mgmt-summary__label">Department</span>
-          <span className="emp-mgmt-summary__value">{employment?.departmentName ?? '—'}</span>
-        </div>
-        <div className="emp-mgmt-summary__item">
-          <span className="emp-mgmt-summary__label">Reporting Manager</span>
-          <span className="emp-mgmt-summary__value">{employment?.reportingManager ?? '—'}</span>
-        </div>
-        <div className="emp-mgmt-summary__item">
-          <span className="emp-mgmt-summary__label">Employment Type</span>
-          <span className="emp-mgmt-summary__value">{employmentTypeLabel(employee.employmentType)}</span>
-        </div>
-        <div className="emp-mgmt-summary__item">
-          <span className="emp-mgmt-summary__label">Start Date</span>
-          <span className="emp-mgmt-summary__value">{formatProfileDate(employee.startDate)}</span>
-        </div>
-        <div className="emp-mgmt-summary__item">
-          <span className="emp-mgmt-summary__label">Work Mode</span>
-          <span className="emp-mgmt-summary__value">
-            {employee.workMode ? (
-              <span className={`emp-work-mode-badge ${workModeBadgeClass(employee.workMode)}`}>
-                {workModeLabel(employee.workMode)}
-              </span>
-            ) : '—'}
-          </span>
-        </div>
+      <div className="emp-record-tabs">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`emp-record-tabs__btn${activeTab === tab.id ? ' emp-record-tabs__btn--active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="emp-mgmt-layout">
-        <div className="emp-mgmt-main">
-          <PersonalInfoSection employee={employee} />
-          <EmploymentDetailsSection employee={employee} />
-          <DocumentsSection employee={employee} />
-          <ActivitySection employee={employee} />
-        </div>
-        <PolicyAccessSidebar
-          employee={employee}
-          onTransfer={() => openModal('transfer')}
-          onOffboarding={() => openModal('offboarding')}
-          onManageClockInPolicy={() => navigate('/')}
-        />
+      <div className="emp-record-content">
+        {activeTab === 'about' && (
+          <AboutTab
+            employee={employee}
+            onEditProfile={() => openModal('edit-profile')}
+            onEditEmployment={() => setActiveTab('employment')}
+          />
+        )}
+        {activeTab === 'employment' && (
+          <EmploymentTab
+            employee={employee}
+            onPromote={() => openModal('promotion')}
+            onTransfer={() => openModal('transfer')}
+            onOffboarding={() => openModal('offboarding')}
+          />
+        )}
+        {activeTab === 'overrides' && (
+          <OverridesTab employee={employee} onManageClockInPolicy={() => navigate('/')} />
+        )}
+        {activeTab === 'documents' && <DocumentsTab employee={employee} />}
+        {activeTab === 'activity' && <ActivityTab employee={employee} />}
       </div>
 
       <EmployeeProfileModals employee={employee} />

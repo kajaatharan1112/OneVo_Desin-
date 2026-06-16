@@ -5,6 +5,8 @@ import {
   formatDateTime,
   type AuditLogEntry,
 } from './adminMockData';
+import { useAccessStore } from '../access/accessStore';
+import { accessAuditToLogEntry } from '../access/accessAuditUtils';
 
 const ACTION_OPTIONS = [
   'user.invited',
@@ -17,6 +19,14 @@ const ACTION_OPTIONS = [
 ];
 
 export const AuditLogPage: React.FC = () => {
+  const accessAuditEntries = useAccessStore(s => s.auditEntries);
+  const allEntries = useMemo(
+    () => [
+      ...accessAuditEntries.map(accessAuditToLogEntry),
+      ...MOCK_AUDIT_LOG
+    ].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+    [accessAuditEntries]
+  );
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -25,13 +35,13 @@ export const AuditLogPage: React.FC = () => {
   const [detailEntry, setDetailEntry] = useState<AuditLogEntry | null>(null);
 
   const actors = useMemo(() => {
-    const names = new Set(MOCK_AUDIT_LOG.map(e => e.actorName).filter(Boolean));
+    const names = new Set(allEntries.map(e => e.actorName).filter(Boolean));
     return Array.from(names).sort();
-  }, []);
+  }, [allEntries]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return MOCK_AUDIT_LOG.filter(e => {
+    return allEntries.filter(e => {
       if (q) {
         const haystack = `${e.actorName} ${e.action} ${e.resourceName} ${e.resourceType}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -42,7 +52,7 @@ export const AuditLogPage: React.FC = () => {
       if (actionFilter !== 'all' && e.action !== actionFilter) return false;
       return true;
     });
-  }, [search, dateFrom, dateTo, actorFilter, actionFilter]);
+  }, [search, dateFrom, dateTo, actorFilter, actionFilter, allEntries]);
 
   const exportCsv = () => {
     const headers = ['Timestamp', 'Actor', 'Action', 'Resource', 'IP Address', 'Status'];

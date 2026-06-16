@@ -1,0 +1,33 @@
+/* Overtime Rules configuration */
+
+.ot-rules-modal {
+  width: min(560px, 100%);
+}
+
+.ot-rules-hint {
+  margin: 0;
+  font-size: 0.68rem;
+  color: var(--nexus-text-muted);
+  line-height: 1.45;
+}
+
+.ot-rules-note {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  color: var(--nexus-text-secondary);
+  line-height: 1.45;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+}
+
+.ot-rules-warning {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  color: #92400e;
+  line-height: 1.45;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md);
+}
