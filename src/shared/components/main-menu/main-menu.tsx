@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderKanban, Calendar, Users, UsersRound, Clock, MessageSquare,
   PieChart, Briefcase, Building2, Building, CalendarMinus, Workflow, Activity,
-  ChartNoAxesCombined, ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash,
+  ChartNoAxesCombined, ShieldCheck, Settings, FileText, Hash,
   ListChecks, Shield, Eye, List, Palette, Bell,
   CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo,
   type LucideIcon,
@@ -77,10 +77,7 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   ]},
   { id: 'people',      label: 'People',      icon: railIcon(UsersRound),      subSections: [
     { id: 'main', items: [
-      { id: 'employees',   label: 'Employees',   icon: <Users size={13} />       },
-      { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
-      { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
-      { id: 'hr-coverage', label: 'HR Coverage', icon: <Shield size={13} />      },
+      { id: 'employees', label: 'Employees', icon: <Users size={13} /> },
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
     ]},
   ]},
@@ -127,9 +124,7 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
   ]},
   { id: 'people',     label: 'People',     icon: railIcon(UsersRound),      subSections: [
     { id: 'main', items: [
-      { id: 'employees',   label: 'Employees',   icon: <Users size={13} />     },
-      { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
-      { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
+      { id: 'employees', label: 'Employees', icon: <Users size={13} /> },
     ]},
   ]},
   { id: 'chat',       label: 'Chat',       icon: railIcon(MessageSquare),   subSections: [] },
@@ -168,6 +163,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     const subId = firstSubItem?.id ?? '';
     setActiveSubItemId(subId);
 
+    if (currentView === 'tenant' && item.label === 'People' && subId === 'employees') {
+      navigate('/people/employees');
+      return;
+    }
     if (currentView === 'tenant' && item.label === 'People' && subId === 'checklist-templates') {
       navigate('/people/checklist-templates');
       return;
