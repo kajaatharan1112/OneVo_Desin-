@@ -62,6 +62,9 @@ export const useChecklistTemplateStore = create<ChecklistTemplateStore>((set, ge
       type: data.type,
       description: data.description,
       status: data.status,
+      appliesTo: data.appliesTo,
+      departmentIds: data.departmentIds,
+      positionIds: data.positionIds,
       items: data.items.map((item, i) => ({ ...item, id: item.id || itemId(), sortOrder: i })),
       createdAt: now(),
       updatedAt: now()
@@ -114,11 +117,12 @@ export function createEmptyChecklistItem(sortOrder: number): ChecklistTemplateIt
     title: '',
     description: '',
     assigneeType: '',
-    assigneeRole: '',
     assigneePositionId: '',
     assigneeEmployeeId: '',
-    dueOffsetDays: 0,
+    dueOffsetValue: 0,
+    dueOffsetUnit: 'days',
     required: true,
+    requiredDocument: '',
     sortOrder
   };
 }

@@ -9,7 +9,6 @@ export function formatAssigneeSummary(
     case 'Employee': return 'Employee';
     case 'Reporting Manager': return 'Reporting Manager';
     case 'Department Head': return 'Department Head';
-    case 'Role': return item.assigneeRole ? `${item.assigneeRole} role` : 'Role';
     case 'Specific Position':
       return positions.find(p => p.id === item.assigneePositionId)?.name ?? 'Position';
     case 'Specific Employee':
@@ -34,13 +33,22 @@ export interface ChecklistValidationIssue {
   message: string;
 }
 
-export function validateChecklistTemplate(template: Partial<ChecklistTemplate> & { items: ChecklistTemplateItem[] }, forActivate = false): ChecklistValidationIssue[] {
+export function validateChecklistTemplate(
+  template: Partial<ChecklistTemplate> & { items: ChecklistTemplateItem[] },
+  forActivate = false
+): ChecklistValidationIssue[] {
   const issues: ChecklistValidationIssue[] = [];
   if (!String(template.name ?? '').trim()) {
     issues.push({ id: 'name', message: 'Template name is required.' });
   }
   if (!template.type) {
     issues.push({ id: 'type', message: 'Template type is required.' });
+  }
+  if (template.appliesTo === 'department' && (!template.departmentIds || template.departmentIds.length === 0)) {
+    issues.push({ id: 'applies-to', message: 'Select at least one department.' });
+  }
+  if (template.appliesTo === 'position' && (!template.positionIds || template.positionIds.length === 0)) {
+    issues.push({ id: 'applies-to', message: 'Select at least one position.' });
   }
   if (forActivate && (!template.items || template.items.length === 0)) {
     issues.push({ id: 'items', message: 'At least one checklist item is required before activating.' });
@@ -51,9 +59,6 @@ export function validateChecklistTemplate(template: Partial<ChecklistTemplate> &
     }
     if (!item.assigneeType) {
       issues.push({ id: `item-assignee-${idx}`, message: `Item ${idx + 1}: assignee type is required.` });
-    }
-    if (item.assigneeType === 'Role' && !item.assigneeRole) {
-      issues.push({ id: `item-role-${idx}`, message: `Item ${idx + 1}: role is required.` });
     }
     if (item.assigneeType === 'Specific Position' && !item.assigneePositionId) {
       issues.push({ id: `item-pos-${idx}`, message: `Item ${idx + 1}: position is required.` });
