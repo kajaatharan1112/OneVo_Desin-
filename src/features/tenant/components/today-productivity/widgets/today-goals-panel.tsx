@@ -1,17 +1,17 @@
 import React from 'react';
 import { Target } from 'lucide-react';
+import { executiveDashboard } from '../../../data/executive-dashboard.data';
 import { todayCompanyProjects } from '../../../data/tenant-today-productivity.data';
 
-export const TodayGoalsPanel: React.FC = () => {
-  return (
-    <article className="tto-widget tto-goals tto-cell--goals">
-      <header className="tto-widget__head">
-        <Target size={16} aria-hidden="true" />
-        <h3 className="tto-widget__title">Today goals</h3>
-      </header>
+export const TodayGoalsPanel: React.FC = () => (
+  <article className="tto-widget tto-goals tto-cell--goals">
+    <header className="tto-widget__head">
+      <Target size={16} aria-hidden="true" />
+      <h3 className="tto-widget__title">{executiveDashboard.projectGoals.title}</h3>
+    </header>
 
-      <div className="tto-goals__list">
-        {todayCompanyProjects.map((project) => (
+    <div className="tto-goals__list">
+      {todayCompanyProjects.map((project) => (
           <div key={project.id} className="tto-goals__project-box">
             <div className="tto-goals__project-row">
               <span className="tto-goals__project-name">{project.name}</span>
@@ -29,7 +29,6 @@ export const TodayGoalsPanel: React.FC = () => {
             </div>
           </div>
         ))}
-      </div>
-    </article>
-  );
-};
+    </div>
+  </article>
+);

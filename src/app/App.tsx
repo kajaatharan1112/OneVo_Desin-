@@ -49,36 +49,99 @@ import {
   type TenantCompany
 } from '../shared/components/app-brand/app-brand';
 
+const EMPLOYEE_STORAGE_KEY = 'onevo:selectedEmployeeId';
+const VIEW_STORAGE_KEY = 'onevo:appView';
+
+function readStoredEmployeeId(): EmployeeId {
+  try {
+    const stored = localStorage.getItem(EMPLOYEE_STORAGE_KEY);
+    if (stored === 'marcus' || stored === 'alex') {
+      return stored;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return DEFAULT_EMPLOYEE_ID;
+}
+
+function readStoredView(): 'employee' | 'tenant' | null {
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored === 'employee' || stored === 'tenant') {
+      return stored;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return null;
+}
+
+function isTenantDeepLinkPath(pathname: string): boolean {
+  return (
+    pathname.startsWith('/people/checklist-templates') ||
+    pathname.startsWith('/organization/') ||
+    pathname.startsWith('/automations')
+  );
+}
+
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<EmployeeId>(DEFAULT_EMPLOYEE_ID);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<EmployeeId>(readStoredEmployeeId);
   const [isLandingPage, setIsLandingPage] = useState<boolean>(false);
-  const [view, setView] = useState<'employee' | 'tenant'>('employee');
+  const [view, setView] = useState<'employee' | 'tenant'>(() => readStoredView() ?? 'employee');
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
   const [activeSubItemId, setActiveSubItemId] = useState<string>('');
   const [selectedCompany, setSelectedCompany] = useState<TenantCompany>(DEFAULT_TENANT_COMPANY);
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/people/checklist-templates')) {
-      setView('tenant');
+    try {
+      localStorage.setItem(EMPLOYEE_STORAGE_KEY, selectedEmployeeId);
+    } catch {
+      // ignore storage errors
+    }
+  }, [selectedEmployeeId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {
+      // ignore storage errors
+    }
+  }, [view]);
+
+  useEffect(() => {
+    const { pathname } = location;
+    if (!isTenantDeepLinkPath(pathname)) {
+      return;
+    }
+
+    if (view === 'employee') {
+      const storedView = readStoredView();
+      if (storedView === null) {
+        setView('tenant');
+      } else {
+        navigate('/', { replace: true });
+        return;
+      }
+    }
+
+    if (pathname.startsWith('/people/checklist-templates')) {
       setActiveTab('People');
       setActiveSubItemId('checklist-templates');
       return;
     }
-    if (location.pathname.startsWith('/organization/')) {
-      setView('tenant');
+    if (pathname.startsWith('/organization/')) {
       setActiveTab('Organization');
-      setActiveSubItemId(location.pathname.includes('/positions') ? 'positions' : 'departments');
+      setActiveSubItemId(pathname.includes('/positions') ? 'positions' : 'departments');
       return;
     }
-    if (location.pathname.startsWith('/automations')) {
-      setView('tenant');
+    if (pathname.startsWith('/automations')) {
       setActiveTab('Automations');
       setActiveSubItemId('');
     }
-  }, [location.pathname]);
+  }, [location.pathname, view, navigate]);
 
   const handleSubItemSelect = (id: string) => {
     setActiveSubItemId(id);

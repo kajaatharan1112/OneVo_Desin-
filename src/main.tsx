@@ -26,6 +26,7 @@ import './features/leave/configuration/leaveConfiguration.css'
 import './features/admin/admin.css'
 import './features/settings/settings.css'
 import './features/work/work.css'
+import './features/employees/components/productivity-dashboard/productivity-dashboard.css'
 import { ThemeProvider } from './core/theme/theme-context'
 import App from './app/App.tsx'
 

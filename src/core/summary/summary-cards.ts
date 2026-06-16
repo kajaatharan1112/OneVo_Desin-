@@ -1,6 +1,9 @@
 import type { SummaryCardData, TenantKpiCardData } from '../../shared/types/summary-card.types';
 import { getEmployeeData } from '../../features/employees/data/employee-data.registry';
-import { EMPLOYEE_DASHBOARD_EMPTY } from '../../features/employees/config/employee-dashboard.config';
+import {
+  CEO_SUMMARY_TABS_ENABLED,
+  EMPLOYEE_DASHBOARD_EMPTY
+} from '../../features/employees/config/employee-dashboard.config';
 import { workDashboardSummary } from '../../features/employees/data/work-dashboard.data';
 import type { EmployeeId } from '../../features/employees/types/employee.types';
 
@@ -79,8 +82,8 @@ export const tenantSummaryCards: SummaryCardData[] = [
   {
     id: 'today-productivity',
     title: 'Today',
-    value: 'Productivity 87%',
-    desc: '+4% higher than yesterday',
+    value: 'Productivity 89%',
+    desc: '11% higher than yesterday',
     color: 'var(--accent)'
   },
   {
@@ -131,7 +134,11 @@ export function getSummaryCardsForView(
     return tenantSummaryCards;
   }
 
-  return employeeId === 'marcus' ? getCeoSummaryCards() : employeeSummaryCards;
+  if (employeeId === 'marcus') {
+    return CEO_SUMMARY_TABS_ENABLED ? getCeoSummaryCards() : [];
+  }
+
+  return employeeSummaryCards;
 }
 
 export function isCeoSummaryCardId(id: SummaryCardData['id']): boolean {

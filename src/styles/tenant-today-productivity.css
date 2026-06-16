@@ -40,16 +40,17 @@
   --tto-meta-size: 0.62rem;
 
   display: grid;
-  grid-template-columns: 1fr 1fr 1.05fr;
-  grid-template-rows: auto minmax(0, 1fr) minmax(28px, auto) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.08fr);
+  grid-template-rows: auto minmax(0, 0.95fr) auto minmax(0, 1.15fr);
   grid-template-areas:
     'total-emp total-emp alerts'
     'onsite remote alerts'
     'notify notify goals'
     'meetings pending goals';
-  gap: var(--shell-gap);
+  gap: var(--shell-gap, 10px);
   flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
   font-family: var(--sans);
   font-size: var(--tto-body-size);
@@ -432,6 +433,35 @@
   opacity: 0.6;
 }
 
+.tto-alerts__resolve {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--tto-meta-size);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--tto-motion, 0.2s ease), color var(--tto-motion, 0.2s ease);
+}
+
+.tto-alerts__resolve:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
+}
+
+.tto-alerts__empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--tto-body-size);
+}
+
 .tto-notify-bar__row {
   display: flex;
   align-items: center;
@@ -487,6 +517,12 @@
   color: var(--text-h);
 }
 
+.tto-notify-bar__chip-label {
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
 .tto-notify-bar__chip-type {
   font-size: var(--tto-meta-size);
   color: var(--text-muted);
@@ -511,9 +547,48 @@
   border: 1px solid var(--border);
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   min-width: 0;
+}
+
+.tto-pending__item--card {
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 8px 10px;
+}
+
+.tto-pending__item--card .tto-pending__info {
+  gap: 4px;
+}
+
+.tto-pending__item--card .tto-pending__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.tto-pending__item--card .tto-pending__title {
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.tto-pending__item--card .tto-pending__badge {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tto-pending__item--card .tto-pending__actions {
+  margin-top: 6px;
+  width: 100%;
+}
+
+.tto-pending__item--high .tto-pending__badge {
+  background: color-mix(in srgb, var(--nexus-warning) 14%, transparent);
+  color: #b45309;
+  border-color: color-mix(in srgb, var(--nexus-warning) 35%, var(--border));
 }
 
 /* LEFT: title + meta stacked */

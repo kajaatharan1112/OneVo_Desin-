@@ -1,7 +1,19 @@
+import { executiveDashboard } from './executive-dashboard.data';
+import type {
+  ExecutiveAlertItem,
+  ExecutiveModuleBadge,
+  ExecutivePendingRequest,
+  ExecutiveProjectGoal,
+  ExecutiveScheduleEvent,
+  ExecutiveWorkforceBreakdown
+} from './executive-dashboard.data';
+
+/** @deprecated Use executiveDashboard — kept for legacy widget imports */
 export interface WorkforceMetrics {
   total: number;
   attendedToday: number;
   onlineNow: number;
+  absent?: number;
 }
 
 export interface TenantTodayAlert {
@@ -30,6 +42,10 @@ export interface TodayMeeting {
   scheduledAt?: string;
   scheduledBy?: string;
   members?: string[];
+  hasJoinLink?: boolean;
+  isEvent?: boolean;
+  context?: string;
+  attendeesCount?: number;
 }
 
 export interface PendingApprovalItem {
@@ -49,6 +65,126 @@ export interface TodayCompanyProject {
   remainingPercent: number;
 }
 
+export interface OverallAttendanceData {
+  percent: number;
+  present: number;
+  total: number;
+  changeVsYesterday: number;
+}
+
+function toWorkforceMetrics(slice: ExecutiveWorkforceBreakdown): WorkforceMetrics {
+  return {
+    total: slice.total,
+    attendedToday: slice.attended,
+    onlineNow: slice.onlineNow,
+    absent: slice.absent
+  };
+}
+
+function scheduleEventType(event: ExecutiveScheduleEvent): TodayMeeting['type'] {
+  if (event.isEvent) return 'birthday';
+  return 'meeting';
+}
+
+function mapScheduleEvent(event: ExecutiveScheduleEvent): TodayMeeting {
+  const [purpose, location] = event.context.includes(' - ')
+    ? event.context.split(' - ').map((part) => part.trim())
+    : [event.context, undefined];
+
+  return {
+    id: event.id,
+    time: event.time,
+    title: event.title,
+    purpose: purpose || event.context,
+    location,
+    type: scheduleEventType(event),
+    hasJoinLink: event.hasJoinLink,
+    isEvent: event.isEvent,
+    context: event.context,
+    attendeesCount: event.attendeesCount,
+    members: event.attendeesCount ? Array.from({ length: event.attendeesCount }, (_, i) => `member-${i}`) : undefined
+  };
+}
+
+function mapAlert(alert: ExecutiveAlertItem): TenantTodayAlert {
+  return {
+    id: alert.id,
+    message: alert.type,
+    severity: 'warning',
+    employeeName: alert.employee,
+    employeeDepartment: alert.department
+  };
+}
+
+function mapModuleBadge(badge: ExecutiveModuleBadge): TenantModuleNotification {
+  const [module, ...typeParts] = badge.name.split(' ');
+  return {
+    id: badge.id,
+    module: module ?? badge.name,
+    type: typeParts.join(' ') || 'Updates',
+    count: badge.badgeCount
+  };
+}
+
+function mapPendingRequest(item: ExecutivePendingRequest): PendingApprovalItem {
+  const request =
+    item.requester === item.department ? item.category : `${item.category} — ${item.requester}`;
+
+  return {
+    id: item.id,
+    request,
+    category: item.department,
+    requestedBy: item.requester,
+    requestedAt: item.timestamp,
+    pendingDays: item.daysPending,
+    pendingEmphasis: item.daysPending >= 3
+  };
+}
+
+function mapProjectGoal(project: ExecutiveProjectGoal): TodayCompanyProject {
+  const remaining = Math.max(0, 100 - project.progressPercent);
+  return {
+    id: project.id,
+    name: project.name,
+    completedPercent: project.progressPercent,
+    remainingPercent: remaining
+  };
+}
+
+export { executiveDashboard };
+
+export const overallAttendance: OverallAttendanceData = {
+  percent: executiveDashboard.kpiSummary.attendancePercentage,
+  present: executiveDashboard.kpiSummary.presentToday,
+  total: executiveDashboard.kpiSummary.totalEmployees,
+  changeVsYesterday: 4
+};
+
+export const onSiteWorkforce = toWorkforceMetrics(executiveDashboard.attendanceBreakdown.onSite);
+export const remoteWorkforce = toWorkforceMetrics(executiveDashboard.attendanceBreakdown.remote);
+
+export const tenantTodayAlerts = executiveDashboard.companyAlerts.items
+  .filter((item) => !item.resolved)
+  .map(mapAlert);
+
+export const tenantModuleNotifications = executiveDashboard.moduleBadges.map(mapModuleBadge);
+
+export const todayMeetings = executiveDashboard.schedule.events.map(mapScheduleEvent);
+
+export const scheduleTotalToday = executiveDashboard.schedule.totalToday;
+
+export const pendingApprovalsToday = executiveDashboard.pendingRequests.items.map(mapPendingRequest);
+
+export const todayCompanyProjects = executiveDashboard.projectGoals.projects.map(mapProjectGoal);
+
+/** @deprecated Legacy exports */
+export const tenantProductivitySummary = {
+  productivityPercent: executiveDashboard.kpiSummary.attendancePercentage,
+  changeVsYesterday: 4
+};
+
+export const pendingOwnerApprovals = pendingApprovalsToday;
+
 export interface AttentionItem {
   id: string;
   value: number;
@@ -57,150 +193,25 @@ export interface AttentionItem {
   severity: 'critical' | 'warning' | 'neutral' | 'info';
 }
 
-export interface HealthGaugeSegment {
-  label: string;
-  value: number;
-  percent: number;
-  color: string;
-}
+export const attentionItems: AttentionItem[] = [];
 
 export interface HealthGaugeData {
   centerValue: number;
   centerLabel: string;
-  segments: HealthGaugeSegment[];
+  segments: { label: string; value: number; percent: number; color: string }[];
 }
-
-export interface OverallAttendanceData {
-  percent: number;
-  present: number;
-  total: number;
-  changeVsYesterday: number;
-}
-
-export const overallAttendance: OverallAttendanceData = {
-  percent: 87,
-  present: 353,
-  total: 404,
-  changeVsYesterday: 4
-};
-
-export const attentionItems: AttentionItem[] = [
-  {
-    id: 'deadline-risks',
-    value: 4,
-    title: 'Project deadline risks',
-    hint: 'Due within 7 days',
-    severity: 'critical'
-  },
-  {
-    id: 'leave-approvals',
-    value: 6,
-    title: 'Leave approvals pending',
-    hint: 'Awaiting owner sign-off',
-    severity: 'warning'
-  },
-  {
-    id: 'low-productivity',
-    value: 5,
-    title: 'Low productivity teams',
-    hint: 'Below 80% target this week',
-    severity: 'neutral'
-  },
-  {
-    id: 'missing-documents',
-    value: 7,
-    title: 'Employee documents missing',
-    hint: 'ID, contract, or compliance',
-    severity: 'info'
-  }
-];
 
 export const projectDeliveryHealth: HealthGaugeData = {
-  centerValue: 14,
+  centerValue: 0,
   centerLabel: 'Projects',
-  segments: [
-    { label: 'On track', value: 9, percent: 64, color: '#2563eb' },
-    { label: 'At risk', value: 3, percent: 21, color: '#f59e0b' },
-    { label: 'Delayed', value: 2, percent: 14, color: '#ef4444' }
-  ]
+  segments: []
 };
 
 export const hiringRetention: HealthGaugeData = {
-  centerValue: 6,
+  centerValue: 0,
   centerLabel: 'Total',
-  segments: [
-    { label: 'Interviews', value: 12, percent: 55, color: '#2563eb' },
-    { label: 'Offers', value: 3, percent: 14, color: '#3b82f6' },
-    { label: 'Notice period', value: 4, percent: 31, color: '#ef4444' }
-  ]
+  segments: []
 };
-
-export const pendingOwnerApprovals: PendingApprovalItem[] = [
-  {
-    id: 'p1',
-    request: 'Leave extension approval',
-    category: 'Attendance',
-    requestedBy: 'Priya N. · HR desk',
-    requestedAt: 'Oct 24, 09:15 AM',
-    pendingDays: 3,
-    pendingEmphasis: true
-  },
-  {
-    id: 'p2',
-    request: 'Purchase order approval',
-    category: 'Finance',
-    requestedBy: 'Arjun S. · Procurement',
-    requestedAt: 'Oct 25, 02:30 PM',
-    pendingDays: 2
-  },
-  {
-    id: 'p3',
-    request: 'Salary revision approval',
-    category: 'Finance',
-    requestedBy: 'Neha K. · Finance',
-    requestedAt: 'Oct 25, 04:10 PM',
-    pendingDays: 2
-  }
-];
-
-/** @deprecated Legacy data — kept for backward compatibility */
-export const tenantProductivitySummary = {
-  productivityPercent: 87,
-  changeVsYesterday: 4
-};
-
-export const onSiteWorkforce: WorkforceMetrics = {
-  total: 248,
-  attendedToday: 211,
-  onlineNow: 187
-};
-
-export const remoteWorkforce: WorkforceMetrics = {
-  total: 156,
-  attendedToday: 142,
-  onlineNow: 118
-};
-
-export const tenantTodayAlerts: TenantTodayAlert[] = [
-  {
-    id: 'a1',
-    message: 'Late clock-in',
-    severity: 'warning',
-    employeeName: 'Marcus Vance',
-    employeeDepartment: 'Operations',
-    employeeProject: 'HRMS'
-  }
-];
-
-export const tenantModuleNotifications: TenantModuleNotification[] = [
-  { id: 'n1', module: 'HRMS', type: 'Tasks', count: 5 }
-];
-
-export const todayMeetings: TodayMeeting[] = [];
-
-export const pendingApprovalsToday: PendingApprovalItem[] = pendingOwnerApprovals;
-
-export const todayCompanyProjects: TodayCompanyProject[] = [];
 
 export interface AttendanceTrendData {
   date: string;

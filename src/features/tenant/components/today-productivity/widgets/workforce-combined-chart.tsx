@@ -25,7 +25,7 @@ export const WorkforceCombinedChart: React.FC<WorkforceCombinedChartProps> = ({ 
   const { containerRef, size: chartSize } = useWorkforceChartSize();
 
   const attendedOffline = Math.max(0, attendedToday - onlineNow);
-  const absentToday = Math.max(0, total - attendedToday);
+  const absentToday = metrics.absent ?? Math.max(0, total - attendedToday);
 
   const series = useMemo(
     () => [onlineNow, attendedOffline, absentToday],

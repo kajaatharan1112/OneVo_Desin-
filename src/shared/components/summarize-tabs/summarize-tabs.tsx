@@ -17,7 +17,8 @@ import {
   getSummaryCardsForView,
   isCeoSummaryCardId
 } from '../../../core/summary/summary-cards';
-import { EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED, PRODUCTIVITY_DASHBOARD_ENABLED, PERFORMANCE_DASHBOARD_ENABLED, ENVIRONMENT_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
+import { DashboardTabPlaceholder } from '../../../features/employees/components/dashboard-tab-placeholder/dashboard-tab-placeholder';
+import { CEO_SUMMARY_TABS_ENABLED, EMPLOYEE_DASHBOARD_EMPTY, WORK_DASHBOARD_ENABLED, PRODUCTIVITY_DASHBOARD_ENABLED, PERFORMANCE_DASHBOARD_ENABLED, ENVIRONMENT_DASHBOARD_ENABLED } from '../../../features/employees/config/employee-dashboard.config';
 import { workDashboardSummary } from '../../../features/employees/data/work-dashboard.data';
 import { useEmployeeContext } from '../../../features/employees/context/employee-context';
 import type { EmployeeId } from '../../../features/employees/types/employee.types';
@@ -70,7 +71,11 @@ function defaultCardForContext(
     return 'today-productivity';
   }
 
-  return employeeId === 'marcus' ? 'my-priorities' : 'task-overview';
+  if (employeeId === 'marcus') {
+    return CEO_SUMMARY_TABS_ENABLED ? 'my-priorities' : null;
+  }
+
+  return 'task-overview';
 }
 
 function getCeoExpandClass(selectedId: SummaryCardId | null): string {
@@ -98,6 +103,7 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
 }) => {
   const { selectedEmployeeId } = useEmployeeContext();
   const isCeoView = currentView === 'employee' && selectedEmployeeId === 'marcus';
+  const isCeoTabsHidden = isCeoView && !CEO_SUMMARY_TABS_ENABLED;
   const cards = useMemo(
     () => getSummaryCardsForView(currentView, selectedEmployeeId),
     [currentView, selectedEmployeeId]
@@ -139,8 +145,9 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
 
   return (
     <div
-      className={`summarize-tabs-root${isCeoView ? ' summarize-tabs-root--ceo' : ''}${isTaskOverviewOpen ? ' summarize-tabs-root--task-overview' : ''}${isRequestsApprovalOpen ? ' summarize-tabs-root--requests-approval' : ''}${isActivityOpen ? ' summarize-tabs-root--activity' : ''}${isMyCalendarOpen ? ' summarize-tabs-root--my-calendar' : ''}${isTenantProductivityOpen ? ' summarize-tabs-root--tenant-productivity' : ''}${isCeoPanelOpen ? getCeoExpandClass(selectedId) : ''}`}
+      className={`summarize-tabs-root${isCeoTabsHidden ? ' summarize-tabs-root--empty' : ''}${isCeoView ? ' summarize-tabs-root--ceo' : ''}${isTaskOverviewOpen ? ' summarize-tabs-root--task-overview' : ''}${isRequestsApprovalOpen ? ' summarize-tabs-root--requests-approval' : ''}${isActivityOpen ? ' summarize-tabs-root--activity' : ''}${isMyCalendarOpen ? ' summarize-tabs-root--my-calendar' : ''}${isTenantProductivityOpen ? ' summarize-tabs-root--tenant-productivity' : ''}${isCeoPanelOpen ? getCeoExpandClass(selectedId) : ''}`}
     >
+      {cards.length > 0 ? (
       <section
         className={`summarize-tabs${isCeoView ? ' summarize-tabs--ceo' : ''}`}
         role="tablist"
@@ -220,8 +227,11 @@ export const SummarizeTabs: React.FC<SummarizeTabsProps> = ({
           );
         })}
       </section>
+      ) : null}
 
-      {selectedCard ? (
+      {isCeoTabsHidden ? (
+        <DashboardTabPlaceholder title="CEO Dashboard" />
+      ) : selectedCard ? (
         <SummaryCardContent
           card={selectedCard}
           onNavigateTab={onNavigateTab}

@@ -118,6 +118,41 @@
   overflow: auto;
 }
 
+.dashboard-page--employee-overview:has(.summarize-tabs-root--tenant-productivity),
+.dashboard-page--employee-overview.dashboard-page--ceo-operations {
+  overflow: hidden;
+}
+
+.main-scrollable:has(.summarize-tabs-root--tenant-productivity),
+.main-scrollable:has(.dashboard-page--ceo-operations) {
+  overflow: hidden !important;
+}
+
+.dashboard-page--employee-overview.dashboard-page--ceo-operations {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+}
+
+.dashboard-page--employee-overview.dashboard-page--ceo-operations > .tenant-today-productivity {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-page--tenant-overview > .tenant-today-productivity {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
 .dashboard-page--employee-overview:has(.summary-card-content--empty) .main-scrollable,
 .main-scrollable:has(.dashboard-page--employee-overview .summary-card-content--empty) {
   overflow: auto;

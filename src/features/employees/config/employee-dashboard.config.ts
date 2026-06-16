@@ -1,5 +1,11 @@
-/** Set to false when new employee & CEO dashboard tab designs are ready to wire in. */
+/** Set to false when new employee dashboard tab designs are ready to wire in. */
 export const EMPLOYEE_DASHBOARD_EMPTY = true;
+
+/** CEO summary tabs (My Priorities, Productivity, Availability, Performance). Set true when ready. */
+export const CEO_SUMMARY_TABS_ENABLED = false;
+
+/** CEO operations dashboard (Today productivity grid) for Marcus Chen. */
+export const CEO_OPERATIONS_DASHBOARD_ENABLED = true;
 
 /** Work tab (first tab) — new wireframe dashboard is active. */
 export const WORK_DASHBOARD_ENABLED = true;
