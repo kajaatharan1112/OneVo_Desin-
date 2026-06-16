@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
+import { useChecklistTaskStore } from '../../../store/checklistTaskStore';
 import { MOCK_ROLES } from '../../admin/adminMockData';
 import { SEED_CHECKLIST_TEMPLATES } from '../checklist-templates/checklistTemplateMockData';
 import { SEED_WORK_SCHEDULES } from '../../time-attendance/configuration/schedulesConfigMockData';
@@ -258,6 +259,8 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
   startOffboarding: (employeeId, values) => {
     if (!values.lastWorkingDay) return { ok: false, error: 'Last working day is required.' };
     if (!values.templateId) return { ok: false, error: 'Offboarding template is required.' };
+
+    useChecklistTaskStore.getState().generateTasksForEmployee(employeeId, 'offboarding', values.lastWorkingDay);
 
     const template = SEED_CHECKLIST_TEMPLATES.find(t => t.id === values.templateId);
     set({
