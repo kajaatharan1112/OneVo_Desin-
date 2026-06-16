@@ -4,6 +4,7 @@ import type { Employee, EmploymentType, WorkMode } from '../../../types/organiza
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import { useClockInPolicyStore } from '../../time-attendance/clock-in-policy/clockInPolicyStore';
+import { useChecklistTaskStore } from '../../../store/checklistTaskStore';
 import { SEED_WORK_SCHEDULES } from '../../time-attendance/configuration/schedulesConfigMockData';
 import { useEmployeeProfileStore } from './employeeProfileStore';
 import { resolveClockInRequirement } from './employeeClockInUtils';
@@ -57,10 +58,12 @@ export const AboutTab: React.FC<{
   onEditEmployment: () => void;
 }> = ({ employee, onEditProfile, onEditEmployment }) => {
   const { positions, departments, assignments, employees } = useOrganizationStore();
+  const { getTasksForEmployee, toggleTaskStatus } = useChecklistTaskStore();
   const employment = useMemo(
     () => getEmployeeEmploymentContext(employee.id, positions, departments, assignments, employees),
     [employee.id, positions, departments, assignments, employees]
   );
+  const tasks = getTasksForEmployee(employee.id);
 
   return (
     <div className="emp-record-tab">
@@ -103,6 +106,29 @@ export const AboutTab: React.FC<{
           <Field label="Note"><Dash /></Field>
         </FieldGrid>
       </RecordCard>
+
+      {tasks.length > 0 && (
+        <RecordCard title={tasks[0].templateType === 'onboarding' ? 'Onboarding Checklist' : 'Offboarding Checklist'}>
+          <ul className="emp-checklist-list">
+            {tasks.map(task => (
+              <li key={task.id} className="emp-checklist-item">
+                <label className="cip-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={task.status === 'completed'}
+                    onChange={() => toggleTaskStatus(task.id)}
+                  />
+                  <span className={task.status === 'completed' ? 'emp-checklist-item__title--done' : ''}>{task.title}</span>
+                </label>
+                <span className="emp-checklist-item__meta">
+                  {task.assigneeLabel} · Due {formatProfileDate(task.dueDate)}
+                  {task.requiredDocument && ` · Requires: ${task.requiredDocument}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </RecordCard>
+      )}
     </div>
   );
 };
