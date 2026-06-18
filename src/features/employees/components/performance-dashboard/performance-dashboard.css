@@ -795,7 +795,7 @@
 .perf-avail-tooltip__row strong { font-weight: 700; }
 .perf-avail-tooltip__row--sub { opacity: 0.7; font-size: 0.625rem; }
 
-
+.perf-avail-stats {
   display: flex;
   align-items: center;
   justify-content: space-between;

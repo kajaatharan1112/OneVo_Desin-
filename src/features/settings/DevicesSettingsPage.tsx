@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, Ban, Activity, X } from 'lucide-react';
+import { Eye, Ban, Activity, X, Monitor } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import {
   MOCK_DEVICES,
@@ -51,6 +51,7 @@ export const DevicesSettingsPage: React.FC = () => {
       <SettingsPageHeader
         title="Devices"
         description="Manage registered employee devices, agent status, and monitoring connectivity."
+        icon={<Monitor size={15} />}
       />
 
       <div className="admin-summary-row">

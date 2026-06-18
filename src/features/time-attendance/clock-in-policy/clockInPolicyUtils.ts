@@ -2,7 +2,8 @@ import type {
   ClockInExemption,
   ExemptionFormValues,
   ExemptionScope,
-  OutageFormValues
+  OutageFormValues,
+  OutageScope
 } from './clockInPolicyTypes';
 import { useOrganizationStore } from '../../../store/organizationStore';
 
@@ -108,6 +109,16 @@ export function buildAppliesToLabel(
     .join(', ');
 }
 
+export function buildOutageAppliesToLabel(
+  scope: OutageScope,
+  employeeIds: string[],
+  departmentIds: string[],
+  positionIds: string[]
+): string {
+  if (scope === 'company') return 'Entire company';
+  return buildAppliesToLabel(scope, employeeIds, departmentIds, positionIds);
+}
+
 export function resolveExemptionDates(values: ExemptionFormValues): {
   effectiveFrom: string;
   effectiveTo: string | null;
@@ -124,47 +135,15 @@ export function resolveExemptionDates(values: ExemptionFormValues): {
   };
 }
 
-export function computeOutageTimes(values: OutageFormValues): {
+export function resolveOutageTimes(values: OutageFormValues): {
   startsAt: string;
   endsAt: string;
 } | null {
-  const now = new Date();
-  let startsAt: Date;
-
-  if (values.startsMode === 'now') {
-    startsAt = now;
-  } else {
-    if (!values.startsAt) return null;
-    startsAt = new Date(values.startsAt);
-  }
-
-  let endsAt: Date;
-  switch (values.endsMode) {
-    case '1h':
-      endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
-      break;
-    case '4h':
-      endsAt = new Date(startsAt.getTime() + 4 * 60 * 60 * 1000);
-      break;
-    case 'eod': {
-      endsAt = new Date(startsAt);
-      endsAt.setHours(23, 59, 0, 0);
-      break;
-    }
-    case 'custom':
-      if (!values.endsAt) return null;
-      endsAt = new Date(values.endsAt);
-      break;
-    default:
-      return null;
-  }
-
-  const toLocalIso = (d: Date) => {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (!values.startDate || !values.startTime || !values.endDate || !values.endTime) return null;
+  return {
+    startsAt: `${values.startDate}T${values.startTime}`,
+    endsAt: `${values.endDate}T${values.endTime}`
   };
-
-  return { startsAt: toLocalIso(startsAt), endsAt: toLocalIso(endsAt) };
 }
 
 export function validateExemptionForm(values: ExemptionFormValues): string | null {
@@ -193,18 +172,22 @@ export function validateExemptionForm(values: ExemptionFormValues): string | nul
 }
 
 export function validateOutageForm(values: OutageFormValues): string | null {
-  if (!values.location.trim()) return 'Affected office/location is required.';
+  if (values.scope === 'department' && values.departmentIds.length === 0) {
+    return 'Select at least one department.';
+  }
+  if (values.scope === 'position' && values.positionIds.length === 0) {
+    return 'Select at least one position.';
+  }
+  if (values.scope === 'employee' && values.employeeIds.length === 0) {
+    return 'Select at least one employee.';
+  }
   if (!values.reason.trim()) return 'Outage reason is required.';
-  if (values.startsMode === 'on-datetime' && !values.startsAt) {
-    return 'Select a start date and time.';
-  }
-  if (values.endsMode === 'custom' && !values.endsAt) {
-    return 'Select an end date and time.';
-  }
-  const times = computeOutageTimes(values);
+  if (!values.startDate || !values.startTime) return 'Start date/time is required.';
+  if (!values.endDate || !values.endTime) return 'End date/time is required.';
+  const times = resolveOutageTimes(values);
   if (!times) return 'Unable to compute outage window.';
   if (new Date(times.endsAt) <= new Date(times.startsAt)) {
-    return 'End time must be after start time.';
+    return 'End date/time must be after start date/time.';
   }
   return null;
 }

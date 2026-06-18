@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Palette, Upload } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import { DEFAULT_BRANDING, type BrandingSettings } from './settingsMockData';
 
@@ -24,6 +24,7 @@ export const BrandingSettingsPage: React.FC = () => {
       <SettingsPageHeader
         title="Branding"
         description="Control the tenant logo, favicon, and brand colors used across OneVo."
+        icon={<Palette size={15} />}
         actions={
           <>
             <button type="button" className="org-btn org-btn--secondary" onClick={resetDefaults}>

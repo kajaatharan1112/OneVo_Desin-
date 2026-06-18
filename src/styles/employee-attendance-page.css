@@ -1,0 +1,509 @@
+/* ── Employee Attendance Page (eap-*) ────────────────────────────── */
+
+.eap-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  font-family: var(--sans);
+  color: var(--text);
+  min-height: 100%;
+}
+
+/* Header */
+.eap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.eap-header__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.eap-page-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: -0.01em;
+}
+
+.eap-header__sub {
+  font-size: 0.75rem;
+  color: var(--nexus-text-muted);
+}
+
+.eap-header__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Today strip */
+.eap-today-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.eap-today-card {
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eap-today-card__label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  color: var(--nexus-text-muted);
+}
+
+.eap-today-card__value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.2;
+}
+
+.eap-today-card__sub {
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+}
+
+.eap-today-card__value--success {
+  color: var(--success);
+}
+
+.eap-today-card__value--warning {
+  color: var(--nexus-warning, #f59e0b);
+}
+
+/* Progress bar for today card */
+.eap-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.eap-progress-bar {
+  height: 5px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.eap-progress-bar__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.eap-progress-label {
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Main grid */
+.eap-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 0.875rem;
+  align-items: start;
+}
+
+/* Panels */
+.eap-panel {
+  padding: 1rem 1.125rem;
+}
+
+.eap-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.eap-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: -0.005em;
+}
+
+.eap-section-meta {
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+}
+
+/* Attendance log table */
+.eap-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.eap-log-table th {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 0.5rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.eap-log-table td {
+  padding: 0.5625rem 0.5rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.eap-log-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.eap-log-table tbody tr:hover td {
+  background: var(--surface-muted);
+}
+
+.eap-log-table__date {
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.eap-log-table__hours {
+  color: var(--text-h);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mode chip */
+.eap-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.eap-mode-chip--office {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+.eap-mode-chip--remote {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+/* Punctuality chip */
+.eap-punct-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.eap-punct-chip--on-time {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.eap-punct-chip--late {
+  background: color-mix(in srgb, var(--nexus-warning, #f59e0b) 12%, transparent);
+  color: var(--nexus-warning, #f59e0b);
+}
+
+/* Weekly summary panel */
+.eap-week-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.eap-week-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.eap-week-row:last-child {
+  border-bottom: none;
+}
+
+.eap-week-row__day {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-h);
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.eap-week-row__mode {
+  flex: 1;
+}
+
+.eap-week-row__hours {
+  font-size: 0.6875rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.eap-week-totals {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.625rem;
+  margin-top: 0.375rem;
+  border-top: 1px solid var(--border);
+}
+
+.eap-week-totals__label {
+  font-size: 0.75rem;
+  color: var(--nexus-text-muted);
+}
+
+.eap-week-totals__value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Bottom grid */
+.eap-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+
+/* Request lists (OT + corrections) */
+.eap-req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.eap-req-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.6875rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.eap-req-row:last-child {
+  border-bottom: none;
+}
+
+.eap-req-row__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--surface-muted);
+  color: var(--nexus-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.eap-req-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eap-req-row__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.eap-req-row__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.eap-req-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+  flex-wrap: wrap;
+}
+
+.eap-empty {
+  font-size: 0.8125rem;
+  color: var(--nexus-text-muted);
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.eap-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* Modals */
+.eap-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.eap-modal {
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--nexus-radius-lg, 20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.eap-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.25rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.eap-modal__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.eap-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--nexus-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: var(--sans);
+}
+
+.eap-modal__close:hover {
+  background: var(--surface-muted);
+  color: var(--text-h);
+}
+
+.eap-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.125rem 1.25rem 1.25rem;
+}
+
+.eap-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+}
+
+.eap-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.eap-field__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.eap-field__input {
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  color: var(--text-h);
+  font-family: var(--sans);
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.eap-field__input:focus {
+  border-color: var(--accent);
+}
+
+.eap-field__textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.eap-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .eap-today-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eap-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eap-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .eap-today-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+}

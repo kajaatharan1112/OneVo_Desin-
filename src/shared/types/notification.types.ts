@@ -26,6 +26,9 @@ export interface AppNotification {
   /** When set, notification is shown only to this user in employee view. */
   recipientId?: string;
   workMeta?: WorkInboxMeta;
+  accessApprovalMeta?: { requestId: string };
+  leaveMeta?: { requestId: string; leaveType?: string };
+  attendanceMeta?: { requestId: string; type: 'overtime' | 'correction' };
 }
 
 export type WorkInboxKind =

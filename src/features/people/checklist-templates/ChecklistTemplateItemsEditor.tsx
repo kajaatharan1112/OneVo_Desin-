@@ -1,7 +1,6 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ChecklistAssigneeType, ChecklistTemplateItem, ChecklistTemplateType } from './checklistTemplateTypes';
-import { ROLE_OPTIONS } from '../../automations/personTargetUtils';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { filterPositionOptions } from '../../automations/alertAssignmentUtils';
 import { createEmptyChecklistItem } from '../../../store/checklistTemplateStore';
@@ -11,8 +10,7 @@ const ASSIGNEE_TYPES: ChecklistAssigneeType[] = [
   'Reporting Manager',
   'Department Head',
   'Specific Position',
-  'Specific Employee',
-  'Role'
+  'Specific Employee'
 ];
 
 interface ChecklistTemplateItemsEditorProps {
@@ -43,8 +41,8 @@ export const ChecklistTemplateItemsEditor: React.FC<ChecklistTemplateItemsEditor
   };
 
   const dueHint = type === 'onboarding'
-    ? 'Days relative to employee start date'
-    : 'Days relative to offboarding/termination date (negative = before exit)';
+    ? 'Time relative to employee start date'
+    : 'Time before the last working day';
 
   return (
     <div className="checklist-items-editor">
@@ -84,7 +82,6 @@ export const ChecklistTemplateItemsEditor: React.FC<ChecklistTemplateItemsEditor
               value={item.assigneeType}
               onChange={e => updateItem(index, {
                 assigneeType: e.target.value as ChecklistAssigneeType,
-                assigneeRole: '',
                 assigneePositionId: '',
                 assigneeEmployeeId: ''
               })}
@@ -93,16 +90,6 @@ export const ChecklistTemplateItemsEditor: React.FC<ChecklistTemplateItemsEditor
               {ASSIGNEE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-
-          {item.assigneeType === 'Role' && (
-            <div className="org-form-field">
-              <label>Role</label>
-              <select value={item.assigneeRole} onChange={e => updateItem(index, { assigneeRole: e.target.value })}>
-                <option value="">— Select role —</option>
-                {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-          )}
 
           {item.assigneeType === 'Specific Position' && (
             <div className="org-form-field">
@@ -125,13 +112,32 @@ export const ChecklistTemplateItemsEditor: React.FC<ChecklistTemplateItemsEditor
           )}
 
           <div className="org-form-field">
-            <label>Due offset (days)</label>
-            <input
-              type="number"
-              value={item.dueOffsetDays}
-              onChange={e => updateItem(index, { dueOffsetDays: Number(e.target.value) })}
-            />
+            <label>Due after</label>
+            <div className="checklist-item-card__inline">
+              <input
+                type="number"
+                min={0}
+                value={item.dueOffsetValue}
+                onChange={e => updateItem(index, { dueOffsetValue: Math.max(0, Number(e.target.value)) })}
+              />
+              <select
+                value={item.dueOffsetUnit}
+                onChange={e => updateItem(index, { dueOffsetUnit: e.target.value as ChecklistTemplateItem['dueOffsetUnit'] })}
+              >
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+              </select>
+            </div>
             <p className="auto-condition-note">{dueHint}</p>
+          </div>
+
+          <div className="org-form-field">
+            <label>Required document (optional)</label>
+            <input
+              value={item.requiredDocument}
+              onChange={e => updateItem(index, { requiredDocument: e.target.value })}
+              placeholder="e.g. Signed contract"
+            />
           </div>
 
           <label className="auto-toggle-row">

@@ -1,4 +1,4 @@
-export type EmployeeId = 'alex' | 'marcus';
+export type EmployeeId = 'alex' | 'marcus' | 'manager';
 
 export interface EmployeeProfile {
   id: EmployeeId;

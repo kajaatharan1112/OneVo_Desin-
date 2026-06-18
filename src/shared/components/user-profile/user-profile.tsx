@@ -1,16 +1,9 @@
 import React from 'react';
 import { useEmployeeContext } from '../../../features/employees/context/employee-context';
 
-interface UserProfileProps {
-  currentView: 'employee' | 'tenant';
-}
-
-export const UserProfile: React.FC<UserProfileProps> = ({ currentView }) => {
+export const UserProfile: React.FC = () => {
   const { selectedEmployee } = useEmployeeContext();
-
-  const user = currentView === 'tenant'
-    ? { name: 'Manesh', role: 'CEO', avatar: 'M', avatarUrl: 'https://i.pravatar.cc/150?u=manesh' }
-    : selectedEmployee;
+  const user = selectedEmployee;
 
   return (
     <div className="user-profile">

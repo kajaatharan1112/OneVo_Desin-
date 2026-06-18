@@ -8,10 +8,11 @@ export type PhotoRequired = 'no' | 'yes' | 'optional';
 export type PolicyWorkMode = 'onsite' | 'remote' | 'hybrid' | 'field';
 
 export type ExemptionScope = 'employee' | 'department' | 'position';
+export type OutageScope = 'company' | 'department' | 'position' | 'employee';
 
 export type ExemptionClockIn = 'exempt' | 'required';
 
-export type PolicyStatus = 'active' | 'inactive';
+export type PolicyStatus = 'active' | 'inactive' | 'scheduled';
 
 export interface WorkTypeRule {
   id: string;
@@ -42,7 +43,11 @@ export interface ClockInExemption {
 
 export interface BiometricOutageFallback {
   id: string;
-  location: string;
+  appliesToLabel: string;
+  scope: OutageScope;
+  employeeIds: string[];
+  departmentIds: string[];
+  positionIds: string[];
   reason: string;
   startsAt: string;
   endsAt: string;
@@ -52,37 +57,39 @@ export interface BiometricOutageFallback {
 
 export interface OutageFallbackDraft {
   enabled: boolean;
-  location: string;
   reason: string;
   startsAt: string;
   endsAt: string;
 }
-
-export type OutageStartsMode = 'now' | 'on-datetime';
-export type OutageEndsMode = '1h' | '4h' | 'eod' | 'custom';
 
 export interface OutageFormState {
   open: boolean;
 }
 
 export interface OutageFormValues {
-  location: string;
+  scope: OutageScope;
+  employeeIds: string[];
+  departmentIds: string[];
+  positionIds: string[];
   reason: string;
-  startsMode: OutageStartsMode;
-  startsAt: string;
-  endsMode: OutageEndsMode;
-  endsAt: string;
-  status: PolicyStatus;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  status: 'scheduled' | 'active';
 }
 
 export const EMPTY_OUTAGE_FORM = (): OutageFormValues => ({
-  location: '',
+  scope: 'company',
+  employeeIds: [],
+  departmentIds: [],
+  positionIds: [],
   reason: '',
-  startsMode: 'now',
-  startsAt: '',
-  endsMode: '4h',
-  endsAt: '',
-  status: 'active'
+  startDate: '',
+  startTime: '',
+  endDate: '',
+  endTime: '',
+  status: 'scheduled'
 });
 
 export interface ManualCorrectionPolicy {

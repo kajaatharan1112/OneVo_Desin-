@@ -11,6 +11,7 @@ import type { AppNotification, NotificationCategory } from '../../types/notifica
 interface NotificationItemProps {
   notification: AppNotification;
   onAction: (notificationId: string, actionId: string) => void;
+  onOpen?: (notification: AppNotification) => void;
 }
 
 const categoryMeta: Record<
@@ -46,12 +47,20 @@ const categoryMeta: Record<
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
-  onAction
+  onAction,
+  onOpen
 }) => {
   const meta = categoryMeta[notification.category];
+  const isClickable = Boolean(notification.accessApprovalMeta && onOpen);
 
   return (
-    <article className={`notification-item notification-item--${notification.category}`}>
+    <article
+      className={`notification-item notification-item--${notification.category}${isClickable ? ' notification-item--clickable' : ''}`}
+      onClick={isClickable ? () => onOpen?.(notification) : undefined}
+      onKeyDown={isClickable ? e => e.key === 'Enter' && onOpen?.(notification) : undefined}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+    >
       <div className="notification-item__header">
         <div
           className="notification-item__icon"
@@ -79,7 +88,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
               key={action.id}
               type="button"
               className={`notification-item__btn notification-item__btn--${action.variant}`}
-              onClick={() => onAction(notification.id, action.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(notification.id, action.id);
+              }}
             >
               {action.label}
             </button>

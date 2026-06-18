@@ -8,6 +8,10 @@ import {
 import type { NotificationFilter } from '../../types/notification.types';
 import { NotificationFilterTabs } from './notification-filter';
 import { NotificationItem } from './notification-item';
+import { useEmployeeContext } from '../../../features/employees/context/employee-context';
+import { useAccessStore } from '../../../features/access/accessStore';
+import { getAccessApprovalNotifications } from '../../../features/access/accessNotifications';
+import { AccessApprovalModal } from '../../../features/access/AccessApprovalModal';
 
 interface NotificationPanelProps {
   currentView: 'employee' | 'tenant';
@@ -19,6 +23,10 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   onClose
 }) => {
   const { getInboxForUser, resolveInboxAction } = useInbox();
+  const { selectedEmployeeId } = useEmployeeContext();
+  const approvalRequests = useAccessStore(s => s.approvalRequests);
+  const requesterNotices = useAccessStore(s => s.requesterNotices);
+  const { activeApprovalRequestId, openApprovalRequest, closeApprovalRequest } = useAccessStore();
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>('new');
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 
@@ -32,15 +40,29 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     [currentView],
   );
 
+  const accessNotifications = useMemo(() => {
+    if (currentView !== 'employee') return [];
+    return getAccessApprovalNotifications(
+      approvalRequests,
+      selectedEmployeeId,
+      requesterNotices
+    );
+  }, [currentView, approvalRequests, selectedEmployeeId, requesterNotices]);
+
   const inboxNotifications = useMemo(() => {
     if (currentView !== 'employee') return [];
     return getInboxForUser(INBOX_CURRENT_USER);
   }, [currentView, getInboxForUser]);
 
-  const allNotifications = useMemo(
-    () => [...inboxNotifications, ...staticNotifications],
-    [inboxNotifications, staticNotifications],
-  );
+  const allNotifications = useMemo(() => {
+    const base = [...accessNotifications, ...inboxNotifications, ...staticNotifications];
+    if (currentView === 'employee') {
+      return base.filter(
+        n => !n.recipientId || n.recipientId === selectedEmployeeId
+      );
+    }
+    return base;
+  }, [accessNotifications, inboxNotifications, staticNotifications, currentView, selectedEmployeeId]);
 
   const visibleNotifications = useMemo(
     () =>
@@ -59,6 +81,10 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
   const handleAction = (notificationId: string, actionId: string) => {
     const notification = allNotifications.find(n => n.id === notificationId);
+    if (notification?.accessApprovalMeta) {
+      openApprovalRequest(notification.accessApprovalMeta.requestId);
+      return;
+    }
     if (notification?.workMeta) {
       resolveInboxAction(notificationId, actionId);
       return;
@@ -115,11 +141,21 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 key={notification.id}
                 notification={notification}
                 onAction={handleAction}
+                onOpen={n => {
+                  if (n.accessApprovalMeta) {
+                    openApprovalRequest(n.accessApprovalMeta.requestId);
+                  }
+                }}
               />
             ))
           )}
         </div>
       </div>
+
+      <AccessApprovalModal
+        requestId={activeApprovalRequestId}
+        onClose={closeApprovalRequest}
+      />
     </aside>
   );
 };

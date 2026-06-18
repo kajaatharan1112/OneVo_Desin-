@@ -382,6 +382,47 @@ export function canAssignEmployeeToPosition(
   return { ok: true };
 }
 
+/** End current active assignment and create a new one for the target position. */
+export function applyEmployeePositionAssignment(
+  employeeId: string,
+  positionId: string,
+  effectiveDate: string,
+  positions: Position[],
+  assignments: PositionAssignment[],
+  notes?: string
+): { ok: boolean; error?: string; assignments?: PositionAssignment[] } {
+  const check = canAssignEmployeeToPosition(employeeId, positionId, positions, assignments);
+  if (!check.ok) return check;
+
+  const updatedAssignments = assignments.map(a => {
+    if (
+      a.employeeId === employeeId &&
+      a.status === 'active' &&
+      a.effectiveTo === null &&
+      a.positionId !== positionId
+    ) {
+      return { ...a, effectiveTo: effectiveDate, status: 'ended' as const };
+    }
+    return a;
+  });
+
+  return {
+    ok: true,
+    assignments: [
+      ...updatedAssignments,
+      {
+        id: createId('asgn'),
+        employeeId,
+        positionId,
+        effectiveFrom: effectiveDate,
+        effectiveTo: null,
+        status: 'active' as const,
+        notes: notes?.trim() || undefined
+      }
+    ]
+  };
+}
+
 export function getPositionOccupancy(
   positionId: string,
   position: Position,

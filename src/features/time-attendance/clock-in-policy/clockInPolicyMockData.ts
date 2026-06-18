@@ -83,7 +83,11 @@ export const SEED_EXEMPTIONS: ClockInExemption[] = [
 export const SEED_OUTAGE_FALLBACKS: BiometricOutageFallback[] = [
   {
     id: 'out-colombo',
-    location: 'Colombo Office',
+    appliesToLabel: 'Entire company',
+    scope: 'company',
+    employeeIds: [],
+    departmentIds: [],
+    positionIds: [],
     reason: 'Biometric terminal maintenance',
     startsAt: '2026-06-12T09:00',
     endsAt: '2026-06-12T18:00',
@@ -101,7 +105,6 @@ export const DEFAULT_MANUAL_CORRECTION: ManualCorrectionPolicy = {
 
 export const DEFAULT_OUTAGE_DRAFT = (): OutageFallbackDraft => ({
   enabled: false,
-  location: '',
   reason: '',
   startsAt: '',
   endsAt: ''

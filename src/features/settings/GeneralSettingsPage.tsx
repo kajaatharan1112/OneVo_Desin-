@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Settings } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import {
   DEFAULT_BRANDING,
@@ -23,6 +24,7 @@ export const GeneralSettingsPage: React.FC = () => {
       <SettingsPageHeader
         title="General"
         description="Basic company details used across OneVo."
+        icon={<Settings size={15} />}
         actions={
           <button type="button" className="org-btn org-btn--primary" onClick={handleSave}>
             Save Changes

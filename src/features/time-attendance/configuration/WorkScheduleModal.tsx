@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { useSchedulesConfigStore } from '../../../store/schedulesConfigStore';
 import {
   COUNTRY_OPTIONS,
@@ -10,6 +10,7 @@ import {
   type WorkScheduleFormValues
 } from './schedulesConfigTypes';
 import { ScheduleAssignmentFields } from './ScheduleAssignmentFields';
+import { expectedWorkingMinutes, formatDuration } from './schedulesConfigUtils';
 
 interface WorkScheduleModalProps {
   onClose: () => void;
@@ -33,8 +34,13 @@ export const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose })
         workHourType: existing.workHourType,
         startTime: existing.startTime ?? '09:00',
         endTime: existing.endTime ?? '17:00',
+        breakPeriods: existing.breakPeriods?.length
+          ? existing.breakPeriods.map(period => ({ ...period }))
+          : [],
         flexibleHours: String(existing.flexibleHours ?? 7),
         flexibleMinutes: String(existing.flexibleMinutes ?? 30),
+        flexibleBreakHours: String(existing.flexibleBreakHours ?? 0),
+        flexibleBreakMinutes: String(existing.flexibleBreakMinutes ?? 0),
         assignmentTarget: existing.assignmentTarget,
         departmentIds: [...existing.departmentIds],
         employeeIds: [...existing.employeeIds],
@@ -60,6 +66,40 @@ export const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose })
     });
   };
 
+  const addBreakPeriod = () => {
+    setValues(prev => ({
+      ...prev,
+      breakPeriods: [
+        ...prev.breakPeriods,
+        {
+          id: `break-${Date.now()}`,
+          name: 'Lunch break',
+          startTime: '13:00',
+          endTime: '14:00'
+        }
+      ]
+    }));
+  };
+
+  const updateBreakPeriod = (
+    id: string,
+    patch: Partial<WorkScheduleFormValues['breakPeriods'][number]>
+  ) => {
+    setValues(prev => ({
+      ...prev,
+      breakPeriods: prev.breakPeriods.map(period =>
+        period.id === id ? { ...period, ...patch } : period
+      )
+    }));
+  };
+
+  const removeBreakPeriod = (id: string) => {
+    setValues(prev => ({
+      ...prev,
+      breakPeriods: prev.breakPeriods.filter(period => period.id !== id)
+    }));
+  };
+
   const handleSave = () => {
     const result = saveSchedule(values);
     if (!result.ok) {
@@ -68,6 +108,10 @@ export const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose })
     }
     onClose();
   };
+
+  const expectedMinutes = expectedWorkingMinutes(values);
+  const expectedWorkingLabel =
+    expectedMinutes === null ? null : expectedMinutes === 0 ? '0 minutes' : formatDuration(expectedMinutes);
 
   return (
     <div className="schedules-cfg-modal-overlay" onClick={onClose}>
@@ -187,6 +231,65 @@ export const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose })
                     />
                   </div>
                 </div>
+                <div className="schedules-cfg-break-section">
+                  <div className="schedules-cfg-break-section__header">
+                    <span className="schedules-cfg-work-time__label">Break periods</span>
+                    <button
+                      type="button"
+                      className="org-btn org-btn--secondary org-btn--sm"
+                      onClick={addBreakPeriod}
+                    >
+                      <Plus size={13} /> Add break
+                    </button>
+                  </div>
+                  {values.breakPeriods.length === 0 ? (
+                    <p className="schedules-cfg-field-hint">No break configured.</p>
+                  ) : (
+                    <div className="schedules-cfg-break-list">
+                      {values.breakPeriods.map(period => (
+                        <div key={period.id} className="schedules-cfg-break-row">
+                          <div className="org-form-field">
+                            <label>Break name</label>
+                            <input
+                              value={period.name}
+                              onChange={e => updateBreakPeriod(period.id, { name: e.target.value })}
+                              placeholder="Lunch break"
+                            />
+                          </div>
+                          <div className="org-form-field">
+                            <label>Break start time</label>
+                            <input
+                              type="time"
+                              value={period.startTime}
+                              onChange={e => updateBreakPeriod(period.id, { startTime: e.target.value })}
+                            />
+                          </div>
+                          <div className="org-form-field">
+                            <label>Break end time</label>
+                            <input
+                              type="time"
+                              value={period.endTime}
+                              onChange={e => updateBreakPeriod(period.id, { endTime: e.target.value })}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="cfg-action-btn cfg-action-btn--icon cfg-action-btn--danger schedules-cfg-break-remove"
+                            onClick={() => removeBreakPeriod(period.id)}
+                            aria-label={`Remove ${period.name || 'break'}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {expectedWorkingLabel && (
+                    <p className="schedules-cfg-field-hint">
+                      Expected working time: {expectedWorkingLabel}
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="schedules-cfg-work-time">
@@ -212,6 +315,33 @@ export const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose })
                     />
                   </div>
                 </div>
+                <span className="schedules-cfg-work-time__label">Break duration (hours:minutes)</span>
+                <div className="schedules-cfg-field-row">
+                  <div className="org-form-field">
+                    <label>Hours</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={values.flexibleBreakHours}
+                      onChange={e => set('flexibleBreakHours', e.target.value)}
+                    />
+                  </div>
+                  <div className="org-form-field">
+                    <label>Minutes</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={values.flexibleBreakMinutes}
+                      onChange={e => set('flexibleBreakMinutes', e.target.value)}
+                    />
+                  </div>
+                </div>
+                {expectedWorkingLabel && (
+                  <p className="schedules-cfg-field-hint">
+                    Expected working time: {expectedWorkingLabel}
+                  </p>
+                )}
               </div>
             )}
           </div>

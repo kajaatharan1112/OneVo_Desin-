@@ -38,10 +38,6 @@ export const ScheduleAssignmentFields: React.FC<ScheduleAssignmentFieldsProps> =
         ))}
       </div>
 
-      {assignmentTarget === 'company' && (
-        <div className="schedules-cfg-readonly-value">Full company</div>
-      )}
-
       {assignmentTarget === 'department' && (
         <LeaveScopeMultiSelect
           label="Departments"

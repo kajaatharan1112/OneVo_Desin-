@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, FolderKanban, Calendar, Users, UsersRound, Clock, MessageSquare,
-  PieChart, Briefcase, Building2, Building, CalendarMinus, Workflow, Activity,
-  ChartNoAxesCombined, ShieldCheck, Settings, UserCheck, UserMinus, FileText, Hash,
-  ListChecks, Shield, Eye, List, Palette, Bell,
-  CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo,
+  LayoutDashboard, FolderKanban, Users, UsersRound, Clock,
+  PieChart, Briefcase, Building2, Building, CalendarMinus, Activity,
+  ChartNoAxesCombined, ShieldCheck, Settings, FileText, Hash,
+  ListChecks, Shield, Eye, List, Bell,
+  CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo, CalendarDays,
   type LucideIcon,
 } from 'lucide-react';
 import type { SubNavSection } from '../sub-nav-panel/sub-nav-panel';
@@ -28,7 +28,6 @@ export interface NavItem {
 
 const SETTINGS_SUB_ITEMS = [
   { id: 'general',           label: 'General',             icon: <Settings size={13} />      },
-  { id: 'branding',          label: 'Branding',            icon: <Palette size={13} />       },
   { id: 'users',             label: 'Users',               icon: <Users size={13} />         },
   { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} />   },
   { id: 'notifications',     label: 'Notifications',       icon: <Bell size={13} />          },
@@ -77,27 +76,32 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   ]},
   { id: 'people',      label: 'People',      icon: railIcon(UsersRound),      subSections: [
     { id: 'main', items: [
-      { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
-      { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
+      { id: 'employees', label: 'Employees', icon: <Users size={13} /> },
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
     ]},
   ]},
   { id: 'leave', label: 'Leave', icon: railIcon(CalendarMinus), subSections: [
-    { id: 'main', items: [
+    { id: 'self', label: 'Self-Service', items: [
+      { id: 'my-leave', label: 'My Leave', icon: <CalendarMinus size={13} /> },
+    ]},
+    { id: 'main', label: 'Configuration', items: [
       { id: 'leave-types', label: 'Leave Types', icon: <Hash size={13} /> },
       { id: 'leave-policies', label: 'Leave Policies', icon: <FileText size={13} /> },
       { id: 'leave-entitlements', label: 'Entitlements', icon: <ClipboardList size={13} /> },
     ]},
   ]},
   { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock), subSections: [
-    { id: 'main', items: [
-      { id: 'schedules',         label: 'Schedules',         icon: <CalendarClock size={13} /> },
-      { id: 'clock-in-policy',   label: 'Clock-in Policy',   icon: <Clock size={13} />       },
-      { id: 'overtime-settings', label: 'Overtime Settings', icon: <Activity size={13} />      },
+    { id: 'self', label: 'Self-Service', items: [
+      { id: 'my-attendance', label: 'My Attendance', icon: <Clock size={13} /> },
+      { id: 'my-calendar',   label: 'My Calendar',   icon: <CalendarDays size={13} /> },
+    ]},
+    { id: 'main', label: 'Configuration', items: [
+      { id: 'schedules',       label: 'Schedules',       icon: <CalendarClock size={13} /> },
+      { id: 'clock-in-policy', label: 'Clock-in Policy', icon: <Clock size={13} />        },
+      { id: 'overtime-rules',  label: 'Overtime Rules',  icon: <Activity size={13} />     },
     ]},
   ]},
   WORK_NAV_ITEM,
-  { id: 'automations', label: 'Automations', railLabel: 'Flow', icon: railIcon(Workflow), subSections: [] },
   { id: 'monitoring',  label: 'Monitoring',  railLabel: 'Monitor', icon: railIcon(ChartNoAxesCombined), subSections: [
     { id: 'settings', label: 'Settings', collapsible: true, defaultOpen: true, items: [
       { id: 'policy-settings',  label: 'Policy Settings',  icon: <Shield size={13} /> },
@@ -115,23 +119,18 @@ export const SHARED_BOTTOM_ITEMS: NavItem[] = [];
 export const TENANT_BOTTOM_ITEMS = SHARED_BOTTOM_ITEMS;
 
 export const EMPLOYEE_ITEMS: NavItem[] = [
-  { id: 'dashboard',  label: 'Dashboard',  railLabel: 'Home', icon: railIcon(LayoutDashboard), subSections: [] },
+  { id: 'dashboard',       label: 'Dashboard',         railLabel: 'Home',     icon: railIcon(LayoutDashboard), subSections: [] },
   WORK_NAV_ITEM,
-  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock), subSections: [
-    { id: 'main', items: [
-      { id: 'calendar',   label: 'Calendar',   icon: <Calendar size={13} /> },
-      { id: 'attendance', label: 'Attendance', icon: <Clock size={13} />    },
-    ]},
-  ]},
-  { id: 'people',     label: 'People',     icon: railIcon(UsersRound),      subSections: [
-    { id: 'main', items: [
-      { id: 'employees',   label: 'Employees',   icon: <Users size={13} />     },
-      { id: 'onboarding',  label: 'Onboarding',  icon: <UserCheck size={13} /> },
-      { id: 'offboarding', label: 'Offboarding', icon: <UserMinus size={13} /> },
-    ]},
-  ]},
-  { id: 'chat',       label: 'Chat',       icon: railIcon(MessageSquare),   subSections: [] },
-  { id: 'reports',    label: 'Reports',    icon: railIcon(PieChart),        subSections: [] },
+  { id: 'leave',           label: 'Leave',                                    icon: railIcon(CalendarMinus),   subSections: [] },
+  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock),   subSections: [{
+    id: 'main',
+    items: [
+      { id: 'attendance', label: 'Attendance', icon: <Clock size={13} />        },
+      { id: 'calendar',   label: 'Calendar',   icon: <CalendarDays size={13} /> },
+    ],
+  }]},
+  { id: 'people',          label: 'People',                                   icon: railIcon(UsersRound),      subSections: [] },
+  { id: 'reports',         label: 'Reports',                                  icon: railIcon(PieChart),        subSections: [] },
   SETTINGS_NAV_ITEM,
 ];
 
@@ -166,6 +165,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     const subId = firstSubItem?.id ?? '';
     setActiveSubItemId(subId);
 
+    if (currentView === 'tenant' && item.label === 'People' && subId === 'employees') {
+      navigate('/people/employees');
+      return;
+    }
     if (currentView === 'tenant' && item.label === 'People' && subId === 'checklist-templates') {
       navigate('/people/checklist-templates');
       return;
@@ -174,8 +177,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       navigate(subId === 'positions' ? '/organization/positions' : '/organization/departments');
       return;
     }
-    if (currentView === 'tenant' && item.label === 'Automations') {
-      navigate('/automations');
+    if (currentView === 'employee' && item.label === 'People') {
+      navigate('/people/employees');
       return;
     }
 
