@@ -136,9 +136,6 @@ export const EmployeeProfilePage: React.FC = () => {
               </div>
             </div>
             <div className="emp-record-hero__actions">
-              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('edit-profile')}>
-                Edit Profile
-              </button>
               <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('promotion')}>
                 Promote
               </button>

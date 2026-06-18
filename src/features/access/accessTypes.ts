@@ -1,4 +1,4 @@
-import type { AccessScope } from './visibilityModel';
+import type { EmployeeAccessArea } from './visibilityModel';
 
 export type GrantSource = 'position-template' | 'manual';
 export type GrantStatus = 'active' | 'pending' | 'ended';
@@ -8,7 +8,12 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export interface GeneratedAccessGrant {
   roleId: string;
   roleName: string;
-  scope: AccessScope;
+  accessArea: EmployeeAccessArea;
+  departmentIds?: string[];
+  departmentNames?: string[];
+  positionIds?: string[];
+  positionNames?: string[];
+  requiresApproval: boolean;
   permissionCodes: string[];
 }
 
@@ -17,7 +22,11 @@ export interface UserRoleGrant {
   employeeId: string;
   roleId: string;
   roleName: string;
-  scope: AccessScope;
+  accessArea: EmployeeAccessArea;
+  departmentIds?: string[];
+  departmentNames?: string[];
+  positionIds?: string[];
+  positionNames?: string[];
   permissionCodes: string[];
   source: GrantSource;
   sourcePositionId?: string;

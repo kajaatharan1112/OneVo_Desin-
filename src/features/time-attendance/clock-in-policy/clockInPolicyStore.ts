@@ -22,8 +22,9 @@ import {
 } from './clockInPolicyMockData';
 import {
   buildAppliesToLabel,
-  computeOutageTimes,
+  buildOutageAppliesToLabel,
   resolveExemptionDates,
+  resolveOutageTimes,
   validateExemptionForm,
   validateOutageForm
 } from './clockInPolicyUtils';
@@ -90,12 +91,21 @@ export const useClockInPolicyStore = create<ClockInPolicyStore>((set, get) => ({
     const error = validateOutageForm(values);
     if (error) return { ok: false, error };
 
-    const times = computeOutageTimes(values);
+    const times = resolveOutageTimes(values);
     if (!times) return { ok: false, error: 'Unable to compute outage window.' };
 
     const next: BiometricOutageFallback = {
       id: createId('out'),
-      location: values.location.trim(),
+      appliesToLabel: buildOutageAppliesToLabel(
+        values.scope,
+        values.employeeIds,
+        values.departmentIds,
+        values.positionIds
+      ),
+      scope: values.scope,
+      employeeIds: values.scope === 'employee' ? [...values.employeeIds] : [],
+      departmentIds: values.scope === 'department' ? [...values.departmentIds] : [],
+      positionIds: values.scope === 'position' ? [...values.positionIds] : [],
       reason: values.reason.trim(),
       startsAt: times.startsAt,
       endsAt: times.endsAt,

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { useOrganizationStore } from '../../store/organizationStore';
-import type { AccessScope } from './visibilityModel';
 import { getPositionAccessTemplate } from './positionAccessConfigStore';
 import type {
   AccessAuditEntry,
@@ -28,7 +27,7 @@ const SEED_GRANTS: UserRoleGrant[] = [
     employeeId: 'emp-1',
     roleId: 'role-ceo-exec',
     roleName: 'Executive Administrator',
-    scope: 'organization',
+    accessArea: 'organization',
     permissionCodes: [
       'roles:manage',
       'access:approve',
@@ -46,7 +45,7 @@ const SEED_GRANTS: UserRoleGrant[] = [
     employeeId: 'emp-13',
     roleId: 'role-line-manager',
     roleName: 'Line Manager',
-    scope: 'reporting_structure',
+    accessArea: 'none',
     permissionCodes: ['employees:read', 'leave:approve', 'attendance:read'],
     source: 'position-template',
     sourcePositionId: 'pos-mgr',
@@ -115,7 +114,12 @@ function currentActiveGrants(employeeId: string): GeneratedAccessGrant[] {
     .map(g => ({
       roleId: g.roleId,
       roleName: g.roleName,
-      scope: g.scope,
+      accessArea: g.accessArea,
+      departmentIds: g.departmentIds ? [...g.departmentIds] : undefined,
+      departmentNames: g.departmentNames ? [...g.departmentNames] : undefined,
+      positionIds: g.positionIds ? [...g.positionIds] : undefined,
+      positionNames: g.positionNames ? [...g.positionNames] : undefined,
+      requiresApproval: false,
       permissionCodes: [...g.permissionCodes]
     }));
 }
@@ -289,7 +293,11 @@ export const useAccessStore = create<AccessStore>((set, get) => ({
         employeeId: input.targetEmployeeId,
         roleId: g.roleId,
         roleName: g.roleName,
-        scope: g.scope,
+        accessArea: g.accessArea,
+        departmentIds: g.departmentIds ? [...g.departmentIds] : undefined,
+        departmentNames: g.departmentNames ? [...g.departmentNames] : undefined,
+        positionIds: g.positionIds ? [...g.positionIds] : undefined,
+        positionNames: g.positionNames ? [...g.positionNames] : undefined,
         permissionCodes: [...g.permissionCodes],
         source: 'position-template',
         sourcePositionId: input.targetPositionId,
@@ -360,7 +368,11 @@ export const useAccessStore = create<AccessStore>((set, get) => ({
       employeeId: request.employeeId,
       roleId: g.roleId,
       roleName: g.roleName,
-      scope: g.scope as AccessScope,
+      accessArea: g.accessArea,
+      departmentIds: g.departmentIds ? [...g.departmentIds] : undefined,
+      departmentNames: g.departmentNames ? [...g.departmentNames] : undefined,
+      positionIds: g.positionIds ? [...g.positionIds] : undefined,
+      positionNames: g.positionNames ? [...g.positionNames] : undefined,
       permissionCodes: [...g.permissionCodes],
       source: 'position-template',
       sourcePositionId: request.targetPositionId,

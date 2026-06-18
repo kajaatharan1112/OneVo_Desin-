@@ -245,7 +245,7 @@ export const ClockInPolicyPage: React.FC = () => {
                 {outageFallbacks.map(outage => (
                   <div key={outage.id} className="cip-outage-row">
                     <div className="cip-outage-row__content">
-                      <div className="cip-outage-row__title">{outage.location}</div>
+                      <div className="cip-outage-row__title">{outage.appliesToLabel}</div>
                       <div className="cip-outage-row__meta">{outage.reason}</div>
                       <div className="cip-outage-row__meta">
                         {formatOutageRange(outage.startsAt, outage.endsAt)}

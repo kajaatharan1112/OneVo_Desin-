@@ -10,6 +10,14 @@ export const SEED_WORK_SCHEDULES: WorkSchedule[] = [
     workHourType: 'fixed',
     startTime: '09:00',
     endTime: '17:00',
+    breakPeriods: [
+      {
+        id: 'break-lunch',
+        name: 'Lunch break',
+        startTime: '13:00',
+        endTime: '14:00'
+      }
+    ],
     assignmentTarget: 'company',
     departmentIds: [],
     employeeIds: [],

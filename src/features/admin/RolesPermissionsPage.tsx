@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock,
+  Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock, ShieldCheck,
 } from 'lucide-react';
+import { ConfigShellHeader } from '../../shared/components/config-shell-header/ConfigShellHeader';
 import {
   MOCK_ROLES,
   MOCK_USERS,
@@ -241,17 +242,21 @@ export const RolesPermissionsPage: React.FC = () => {
 
   return (
     <div className="cfg-page">
-      <div className="cfg-page__header">
-        <div>
-          <h1 className="cfg-page__title">Roles &amp; Permissions</h1>
-          <p className="cfg-page__subtitle">
-            Create tenant security roles and assign module-filtered permissions.
-          </p>
-        </div>
+      <ConfigShellHeader
+        title="Roles & Permissions"
+        icon={<ShieldCheck size={15} />}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search roles...',
+          label: 'Search roles'
+        }}
+        actions={
         <button type="button" className="org-btn org-btn--primary" onClick={openCreate}>
           <Plus size={14} /> Create Role
         </button>
-      </div>
+        }
+      />
 
       <div className="admin-summary-row">
         <div className="admin-summary-card">

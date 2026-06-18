@@ -46,6 +46,8 @@ export interface EmployeeOnboardingValues {
   lastName: string;
   email: string;
   phone: string;
+  employeeNumber: string;
+  legalEntity: string;
   employmentType: EmploymentType;
   startDate: string;
   workMode: WorkMode | '';

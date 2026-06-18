@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ListChecks } from 'lucide-react';
+import { ConfigShellHeader } from '../../../shared/components/config-shell-header/ConfigShellHeader';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import { LeaveTypeFormPanel } from './LeaveTypeFormPanel';
 import { LeaveConfigToast } from './LeaveConfigToast';
@@ -19,22 +20,21 @@ export const LeaveTypesPage: React.FC = () => {
 
   return (
     <div className="cfg-page">
-      <div className="cfg-page__header">
-        <div>
-          <h1 className="cfg-page__title">Leave Types</h1>
-          <p className="cfg-page__subtitle">Define what kinds of leave exist in the company.</p>
-        </div>
-        <button type="button" className="org-btn org-btn--primary" onClick={openCreateLeaveType}>
-          <Plus size={14} /> Add Leave Type
-        </button>
-      </div>
-
-      <div className="cfg-page__toolbar">
-        <div className="cfg-search">
-          <Search size={14} />
-          <input placeholder="Search leave types…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-      </div>
+      <ConfigShellHeader
+        title="Leave Types"
+        icon={<ListChecks size={15} />}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search leave types...',
+          label: 'Search leave types'
+        }}
+        actions={
+          <button type="button" className="org-btn org-btn--primary" onClick={openCreateLeaveType}>
+            <Plus size={14} /> Add Leave Type
+          </button>
+        }
+      />
 
       <div className="cfg-page__body">
         <div className="cfg-table-wrap">

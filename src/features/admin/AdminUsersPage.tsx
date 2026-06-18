@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Search, Download, Ban, CheckCircle, Eye, Send, X,
+  Download, Ban, CheckCircle, Eye, Send, X,
   Unlock, LogOut, Plus, Trash2,
+  Users,
 } from 'lucide-react';
+import { ConfigShellHeader } from '../../shared/components/config-shell-header/ConfigShellHeader';
 import {
   MOCK_USERS,
   MOCK_ROLES,
@@ -267,22 +269,26 @@ export const AdminUsersPage: React.FC = () => {
 
   return (
     <div className="cfg-page">
-      <div className="cfg-page__header">
-        <div>
-          <h1 className="cfg-page__title">Users</h1>
-          <p className="cfg-page__subtitle">
-            Manage login access, invite status, MFA status, and active sessions for employee accounts.
-          </p>
-        </div>
-        <div className="cfg-page__actions">
+      <ConfigShellHeader
+        title="Users"
+        icon={<Users size={15} />}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search by name, email, or position...',
+          label: 'Search users'
+        }}
+        actions={
+          <>
           <button type="button" className="org-btn org-btn--secondary" onClick={exportCsv}>
             <Download size={14} /> Export
           </button>
           <button type="button" className="org-btn org-btn--primary" onClick={openCreateAccess}>
             <Plus size={14} /> Create Login Access
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="admin-summary-row">
         <div className="admin-summary-card">
@@ -304,14 +310,6 @@ export const AdminUsersPage: React.FC = () => {
       </div>
 
       <div className="cfg-page__toolbar">
-        <div className="cfg-search">
-          <Search size={14} />
-          <input
-            placeholder="Search by name, email, or position…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
         <select
           className="cfg-filter-select"
           value={accountFilter}

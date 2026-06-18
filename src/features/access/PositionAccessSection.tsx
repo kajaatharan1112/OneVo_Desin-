@@ -1,18 +1,7 @@
 import React, { useEffect } from 'react';
-import { Trash2 } from 'lucide-react';
-import { MOCK_ROLES, GRANTABLE_PERMISSIONS } from '../admin/adminMockData';
 import type { GeneratedAccessGrant } from './accessTypes';
-import { formatGrantSummary } from './accessUtils';
+import { formatGrantSummary, scopeLabel } from './accessUtils';
 import { getPositionAccessTemplate } from './positionAccessConfigStore';
-import { POSITION_VISIBILITY_OPTIONS } from './visibilityModel';
-
-function rolePermissionCodes(roleId: string): string[] {
-  const role = MOCK_ROLES.find(r => r.id === roleId);
-  if (!role) return [];
-  return role.permissionIds
-    .map(pid => GRANTABLE_PERMISSIONS.find(p => p.id === pid)?.code)
-    .filter((c): c is string => Boolean(c));
-}
 
 interface PositionAccessSectionProps {
   targetPositionId: string;
@@ -31,14 +20,14 @@ export const PositionAccessSection: React.FC<PositionAccessSectionProps> = ({
     if (targetPositionId) {
       onChange(getPositionAccessTemplate(targetPositionId));
     }
-  }, [targetPositionId]);
+  }, [targetPositionId, onChange]);
 
   if (!targetPositionId) return null;
 
   if (!canEdit) {
     return (
       <div className="access-section access-section--readonly">
-        <label className="schedules-cfg-form-section__label">Access impact</label>
+        <label className="schedules-cfg-form-section__label">Position access preview</label>
         <p className="access-section__notice">
           This change includes access updates and requires approval.
         </p>
@@ -46,19 +35,9 @@ export const PositionAccessSection: React.FC<PositionAccessSectionProps> = ({
     );
   }
 
-  const updateGrant = (index: number, patch: Partial<GeneratedAccessGrant>) => {
-    const next = [...grants];
-    next[index] = { ...next[index], ...patch };
-    onChange(next);
-  };
-
   return (
     <div className="access-section">
-      <label className="schedules-cfg-form-section__label">Access impact preview</label>
-      <p className="access-section__hint">
-        Generated from the target position template. Reporting visibility is derived from the org
-        structure — not chosen manually.
-      </p>
+      <label className="schedules-cfg-form-section__label">Position access preview</label>
 
       {grants.length === 0 ? (
         <p className="access-section__empty">No elevated access generated for this position.</p>
@@ -68,44 +47,35 @@ export const PositionAccessSection: React.FC<PositionAccessSectionProps> = ({
             <li key={`${grant.roleId}-${index}`} className="access-grant-row access-grant-row--preview">
               <div className="access-grant-row__fields">
                 <div className="org-form-field">
-                  <label>Role to grant</label>
-                  <select
-                    value={grant.roleId}
-                    onChange={e => {
-                      const role = MOCK_ROLES.find(r => r.id === e.target.value);
-                      if (!role) return;
-                      updateGrant(index, {
-                        roleId: role.id,
-                        roleName: role.name,
-                        permissionCodes: rolePermissionCodes(role.id)
-                      });
-                    }}
-                  >
-                    {MOCK_ROLES.filter(r => r.active).map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label>Role granted</label>
+                  <input readOnly className="settings-readonly" value={grant.roleName} />
                 </div>
                 <div className="org-form-field">
-                  <label>Visibility</label>
+                  <label>Can access employees in</label>
+                  <input readOnly className="settings-readonly" value={scopeLabel(grant.accessArea)} />
+                </div>
+                {grant.accessArea === 'selected_departments' && grant.departmentNames?.length ? (
+                  <div className="org-form-field">
+                    <label>Selected departments</label>
+                    <input readOnly className="settings-readonly" value={grant.departmentNames.join(', ')} />
+                  </div>
+                ) : null}
+                {grant.accessArea === 'selected_positions' && grant.positionNames?.length ? (
+                  <div className="org-form-field">
+                    <label>Selected positions</label>
+                    <input readOnly className="settings-readonly" value={grant.positionNames.join(', ')} />
+                  </div>
+                ) : null}
+                <div className="org-form-field">
+                  <label>Requires approval</label>
                   <input
                     readOnly
                     className="settings-readonly"
-                    value={POSITION_VISIBILITY_OPTIONS.find(o => o.value === grant.scope)?.label ?? grant.scope}
+                    value={grant.requiresApproval ? 'Required' : 'Not required'}
                   />
                 </div>
               </div>
               <p className="access-grant-row__summary">{formatGrantSummary(grant)}</p>
-              <button
-                type="button"
-                className="cfg-action-btn cfg-action-btn--icon cfg-action-btn--danger"
-                onClick={() => onChange(grants.filter((_, i) => i !== index))}
-                aria-label="Remove grant"
-              >
-                <Trash2 size={14} />
-              </button>
             </li>
           ))}
         </ul>

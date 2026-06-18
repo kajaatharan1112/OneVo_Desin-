@@ -37,6 +37,110 @@
   line-height: 1.45;
 }
 
+.emp-form-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  color: #92400e;
+  background: #fef3c7;
+  line-height: 1.45;
+}
+
+/* ── Add Employee — position preview card ── */
+.add-emp-position-preview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--nexus-border, #e5e7eb);
+  background: var(--nexus-surface-secondary, #f8f9fa);
+  font-size: 0.75rem;
+}
+
+.add-emp-position-preview__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+}
+
+.add-emp-position-preview__dept {
+  color: var(--nexus-text-muted);
+  font-weight: 400;
+}
+
+.add-emp-position-preview__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.add-emp-position-preview__row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.4;
+}
+
+.add-emp-position-preview__label {
+  min-width: 180px;
+  flex-shrink: 0;
+  color: var(--nexus-text-muted);
+}
+
+.add-emp-position-preview__warning {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 5px;
+  color: #92400e;
+}
+
+.add-emp-position-preview__muted {
+  color: var(--nexus-text-muted);
+  font-style: italic;
+}
+
+.add-emp-position-preview__access-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.add-emp-access-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+}
+
+.add-emp-access-tag__badge {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ── Add Employee — access row in Step 2 ── */
+.add-emp-access-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--nexus-border, #e5e7eb);
+  font-size: 0.8rem;
+}
+
+.add-emp-access-row__name {
+  flex: 1;
+}
+
 .emp-record-page {
   padding-bottom: 32px;
   background: var(--surface-muted, #f8f9fb);

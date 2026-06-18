@@ -13,15 +13,16 @@ import {
   EMPLOYEE_ITEMS
 } from '../shared/components/main-menu/main-menu';
 import { findNavItem, getSubItemLabel, resolveSubItemId } from '../shared/utils/nav-utils';
+import { getProfileCapabilities, isManagementOnlyPath } from '../shared/utils/profile-capabilities';
+import { getEmployeeById } from '../features/employees/data/employees.data';
 
 import { EmployeeDashboard } from '../features/employees/pages/employee-dashboard/employee-dashboard';
-import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/employee-calendar';
-import { EmployeePeople } from '../features/employees/pages/employee-people/employee-people';
 import { EmployeeAttendance } from '../features/employees/pages/employee-attendance/employee-attendance';
+import { EmployeeLeave } from '../features/employees/pages/employee-leave/employee-leave';
+import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/employee-calendar';
 import { EmployeeChat } from '../features/employees/pages/employee-chat/employee-chat';
 import { EmployeeReports } from '../features/employees/pages/employee-reports/employee-reports';
 
-import { TenantDashboard } from '../features/tenant/pages/tenant-dashboard/tenant-dashboard';
 import { TenantCalendar } from '../features/tenant/pages/tenant-calendar/tenant-calendar';
 import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/tenant-attendance';
 import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
@@ -58,11 +59,12 @@ function App() {
   const navigate = useNavigate();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<EmployeeId>(DEFAULT_EMPLOYEE_ID);
   const [isLandingPage, setIsLandingPage] = useState<boolean>(false);
-  const [view, setView] = useState<'employee' | 'tenant'>('employee');
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
   const [activeSubItemId, setActiveSubItemId] = useState<string>('');
   const [selectedCompany, setSelectedCompany] = useState<TenantCompany>(DEFAULT_TENANT_COMPANY);
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
+
+  const shellMode = getProfileCapabilities(getEmployeeById(selectedEmployeeId)).shellMode;
 
   useEffect(() => {
     if (location.pathname.startsWith('/people/employees')) {
@@ -71,21 +73,18 @@ function App() {
       return;
     }
     if (location.pathname.startsWith('/people/checklist-templates')) {
-      setView('tenant');
       setActiveTab('People');
       setActiveSubItemId('checklist-templates');
       return;
     }
     if (location.pathname.startsWith('/organization/')) {
-      setView('tenant');
       setActiveTab('Organization');
       setActiveSubItemId(location.pathname.includes('/positions') ? 'positions' : 'departments');
       return;
     }
     if (location.pathname.startsWith('/automations')) {
-      setView('tenant');
-      setActiveTab('Automations');
-      setActiveSubItemId('');
+      setActiveTab('Settings');
+      setActiveSubItemId('automations');
     }
   }, [location.pathname]);
 
@@ -101,6 +100,10 @@ function App() {
     }
     if (activeTab === 'Organization') {
       navigate(id === 'positions' ? '/organization/positions' : '/organization/departments');
+      return;
+    }
+    if (activeTab === 'Settings' && id === 'automations') {
+      navigate('/automations');
     }
   };
 
@@ -113,6 +116,13 @@ function App() {
       navigate('/');
     }
   };
+
+  // Redirect to home when profile switches away from management while on a management-only route.
+  useEffect(() => {
+    if (shellMode === 'employee' && isManagementOnlyPath(location.pathname)) {
+      navigate('/');
+    }
+  }, [shellMode, location.pathname, navigate]);
 
   const openSetupWizard = () => setSetupWizardOpen(true);
   const closeSetupWizard = () => setSetupWizardOpen(false);
@@ -135,11 +145,11 @@ function App() {
   const isAutomationRoute = location.pathname.startsWith('/automations');
 
   const renderActivePageContent = () => {
-    if (isAutomationRoute || activeTab === 'Automations') {
+    if (isAutomationRoute || (activeTab === 'Settings' && activeSubItemId === 'automations')) {
       return <AutomationRoutes />;
     }
 
-    if (view === 'employee') {
+    if (shellMode === 'employee') {
       const allEmployeeItems = [...EMPLOYEE_ITEMS, ...TENANT_BOTTOM_ITEMS];
       const employeeNavItem = findNavItem(allEmployeeItems, activeTab);
       if ((employeeNavItem?.subSections.length ?? 0) > 0 && activeTab === 'Settings') {
@@ -154,6 +164,7 @@ function App() {
           case 'devices':
             return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
           case 'audit-log': return <AuditLogPage />;
+          case 'automations': return <AutomationRoutes />;
           default: return <GeneralSettingsPage />;
         }
       }
@@ -164,25 +175,22 @@ function App() {
         return <WorkRoutes activeSubItemId={resolvedSubId} />;
       }
 
+      if (activeTab === 'Time & Attendance') {
+        const taNav = findNavItem(allEmployeeItems, 'Time & Attendance');
+        const resolvedSubId = resolveSubItemId(taNav, activeSubItemId);
+        if (resolvedSubId === 'calendar') return <EmployeeCalendar />;
+        return <EmployeeAttendance />;
+      }
+
       switch (activeTab) {
         case 'Dashboard':
           return <EmployeeDashboard onNavigateTab={setActiveTab} />;
-        case 'Time & Attendance': {
-          const timeNav = findNavItem(EMPLOYEE_ITEMS, activeTab);
-          const resolvedSubId = resolveSubItemId(timeNav, activeSubItemId);
-          if (resolvedSubId === 'calendar') return <EmployeeCalendar />;
-          if (resolvedSubId === 'attendance') return <EmployeeAttendance />;
-          return renderSectionPage(activeTab, EMPLOYEE_ITEMS, resolvedSubId);
-        }
-        case 'People': {
-          const peopleNav = findNavItem(EMPLOYEE_ITEMS, activeTab);
-          const resolvedSubId = resolveSubItemId(peopleNav, activeSubItemId);
-          if (resolvedSubId === 'employees' || location.pathname.startsWith('/people/employees')) {
-            return <PeopleEmployeesRoutes />;
-          }
-          if (resolvedSubId) return renderSectionPage(activeTab, EMPLOYEE_ITEMS, resolvedSubId);
-          return <EmployeePeople />;
-        }
+        case 'Leave':
+          return <EmployeeLeave />;
+        case 'Time & Attendance':
+          return <EmployeeAttendance />;
+        case 'People':
+          return <PeopleEmployeesRoutes canAddEmployee />;
         case 'Chat':
           return <EmployeeChat />;
         case 'Reports':
@@ -197,6 +205,7 @@ function App() {
     }
 
     const allTenantItems = [...TENANT_MAIN_ITEMS, ...TENANT_BOTTOM_ITEMS];
+
     const navItem = findNavItem(allTenantItems, activeTab);
     const hasSubNav = (navItem?.subSections.length ?? 0) > 0;
 
@@ -206,7 +215,7 @@ function App() {
         return <ChecklistTemplatesPage />;
       }
       if (activeTab === 'People' && (resolvedSubId === 'employees' || location.pathname.startsWith('/people/employees'))) {
-        return <PeopleEmployeesRoutes isTenantAdmin />;
+        return <PeopleEmployeesRoutes canAddEmployee canBulkOnboard />;
       }
       if (activeTab === 'Organization') {
         if (resolvedSubId === 'positions') {
@@ -216,6 +225,8 @@ function App() {
       }
       if (activeTab === 'Leave') {
         switch (resolvedSubId) {
+          case 'my-leave':
+            return <EmployeeLeave />;
           case 'leave-policies':
             return <LeavePoliciesPage />;
           case 'leave-entitlements':
@@ -243,6 +254,8 @@ function App() {
             return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
           case 'audit-log':
             return <AuditLogPage />;
+          case 'automations':
+            return <AutomationRoutes />;
           default:
             return <GeneralSettingsPage />;
         }
@@ -252,6 +265,10 @@ function App() {
       }
       if (activeTab === 'Time & Attendance') {
         switch (resolvedSubId) {
+          case 'my-attendance':
+            return <EmployeeAttendance />;
+          case 'my-calendar':
+            return <EmployeeCalendar />;
           case 'schedules':
             return <SchedulesPage />;
           case 'clock-in-policy':
@@ -267,7 +284,7 @@ function App() {
 
     switch (activeTab) {
       case 'Dashboard':
-        return <TenantDashboard />;
+        return <EmployeeDashboard onNavigateTab={setActiveTab} />;
       case 'Calendar':
         return <TenantCalendar />;
       case 'Attendance':
@@ -289,8 +306,8 @@ function App() {
         onSelectEmployee={setSelectedEmployeeId}
       >
         <Shell
-        currentView={view}
-        onToggleView={() => setView((v) => (v === 'employee' ? 'tenant' : 'employee'))}
+        currentView={shellMode}
+        onToggleView={() => undefined}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeSubItemId={activeSubItemId}
@@ -300,7 +317,7 @@ function App() {
         selectedCompany={selectedCompany}
         onSelectCompany={setSelectedCompany}
         onAddCompany={openSetupWizard}
-        setupWizardOpen={view === 'tenant' && setupWizardOpen}
+        setupWizardOpen={shellMode === 'tenant' && setupWizardOpen}
         onCloseSetupWizard={closeSetupWizard}
         onGoToLandingPage={() => setIsLandingPage(true)}
       >

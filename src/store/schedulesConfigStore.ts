@@ -206,10 +206,21 @@ export const useSchedulesConfigStore = create<SchedulesConfigState>((set, get) =
       workHourType: values.workHourType,
       startTime: values.workHourType === 'fixed' ? values.startTime : undefined,
       endTime: values.workHourType === 'fixed' ? values.endTime : undefined,
+      breakPeriods:
+        values.workHourType === 'fixed'
+          ? values.breakPeriods.map(period => ({
+              ...period,
+              name: period.name.trim()
+            }))
+          : undefined,
       flexibleHours:
         values.workHourType === 'flexible' ? Number(values.flexibleHours) || 0 : undefined,
       flexibleMinutes:
         values.workHourType === 'flexible' ? Number(values.flexibleMinutes) || 0 : undefined,
+      flexibleBreakHours:
+        values.workHourType === 'flexible' ? Number(values.flexibleBreakHours) || 0 : undefined,
+      flexibleBreakMinutes:
+        values.workHourType === 'flexible' ? Number(values.flexibleBreakMinutes) || 0 : undefined,
       assignmentTarget: values.assignmentTarget,
       departmentIds:
         values.assignmentTarget === 'department' ? [...values.departmentIds] : [],

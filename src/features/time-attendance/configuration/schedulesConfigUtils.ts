@@ -25,6 +25,61 @@ export function formatWorkTime(schedule: {
   return `${hours} hours ${minutes} minutes`;
 }
 
+function timeToMinutes(time: string): number | null {
+  const [h, m] = time.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return h * 60 + m;
+}
+
+function durationToMinutes(hours: string | number | undefined, minutes: string | number | undefined): number {
+  return (Number(hours) || 0) * 60 + (Number(minutes) || 0);
+}
+
+export function formatDuration(totalMinutes: number): string {
+  if (totalMinutes <= 0) return 'No break';
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const parts: string[] = [];
+  if (hours) parts.push(hours === 1 ? '1 hour' : `${hours} hours`);
+  if (minutes) parts.push(minutes === 1 ? '1 minute' : `${minutes} minutes`);
+  return parts.join(' ');
+}
+
+export function formatBreakTime(schedule: {
+  workHourType: 'fixed' | 'flexible';
+  breakPeriods?: Array<{ startTime: string; endTime: string }>;
+  flexibleBreakHours?: number;
+  flexibleBreakMinutes?: number;
+}): string {
+  if (schedule.workHourType === 'fixed') {
+    const breaks = schedule.breakPeriods ?? [];
+    if (breaks.length === 0) return 'No break';
+    return breaks.map(period => `${period.startTime} - ${period.endTime}`).join(', ');
+  }
+  return formatDuration((schedule.flexibleBreakHours ?? 0) * 60 + (schedule.flexibleBreakMinutes ?? 0));
+}
+
+export function expectedWorkingMinutes(values: WorkScheduleFormValues): number | null {
+  if (values.workHourType === 'fixed') {
+    const start = timeToMinutes(values.startTime);
+    const end = timeToMinutes(values.endTime);
+    if (start === null || end === null || end <= start) return null;
+    const breakMinutes = values.breakPeriods.reduce((total, period) => {
+      const breakStart = timeToMinutes(period.startTime);
+      const breakEnd = timeToMinutes(period.endTime);
+      if (breakStart === null || breakEnd === null || breakEnd <= breakStart) return total;
+      return total + breakEnd - breakStart;
+    }, 0);
+    return Math.max(0, end - start - breakMinutes);
+  }
+
+  return Math.max(
+    0,
+    durationToMinutes(values.flexibleHours, values.flexibleMinutes) -
+      durationToMinutes(values.flexibleBreakHours, values.flexibleBreakMinutes)
+  );
+}
+
 export function formatCreatedDate(iso: string): string {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('en-GB', {
@@ -66,14 +121,47 @@ export function validateWorkScheduleForm(values: WorkScheduleFormValues): string
     if (!values.startTime.trim()) return 'Start time is required.';
     if (!values.endTime.trim()) return 'End time is required.';
     if (values.startTime === values.endTime) return 'Start and end time cannot be the same.';
+    const shiftStart = timeToMinutes(values.startTime);
+    const shiftEnd = timeToMinutes(values.endTime);
+    if (shiftStart === null || shiftEnd === null || shiftEnd <= shiftStart) {
+      return 'End time must be after start time.';
+    }
+    for (const period of values.breakPeriods) {
+      if (!period.name.trim()) return 'Break name is required.';
+      if (!period.startTime) return 'Break start time is required.';
+      if (!period.endTime) return 'Break end time is required.';
+      const breakStart = timeToMinutes(period.startTime);
+      const breakEnd = timeToMinutes(period.endTime);
+      if (breakStart === null || breakEnd === null || breakEnd <= breakStart) {
+        return 'Break end time must be after break start time.';
+      }
+      if (breakStart < shiftStart || breakEnd > shiftEnd) {
+        return 'Break time must be within work time.';
+      }
+    }
+    const breakMinutes = values.breakPeriods.reduce((total, period) => {
+      const breakStart = timeToMinutes(period.startTime);
+      const breakEnd = timeToMinutes(period.endTime);
+      return breakStart !== null && breakEnd !== null ? total + breakEnd - breakStart : total;
+    }, 0);
+    if (breakMinutes >= shiftEnd - shiftStart) return 'Break time must be shorter than work time.';
   } else {
     const hours = Number(values.flexibleHours);
     const minutes = Number(values.flexibleMinutes);
+    const breakHours = Number(values.flexibleBreakHours);
+    const breakMinutes = Number(values.flexibleBreakMinutes);
     if (!Number.isFinite(hours) || hours < 0) return 'Enter valid hours for daily duration.';
     if (!Number.isFinite(minutes) || minutes < 0 || minutes >= 60) {
       return 'Enter valid minutes for daily duration.';
     }
     if (hours === 0 && minutes === 0) return 'Daily duration is required.';
+    if (!Number.isFinite(breakHours) || breakHours < 0) return 'Enter valid hours for break duration.';
+    if (!Number.isFinite(breakMinutes) || breakMinutes < 0 || breakMinutes >= 60) {
+      return 'Enter valid minutes for break duration.';
+    }
+    if (breakHours * 60 + breakMinutes >= hours * 60 + minutes) {
+      return 'Break duration must be shorter than daily duration.';
+    }
   }
 
   return null;
