@@ -6,19 +6,22 @@ export type ChecklistAssigneeType =
   | 'Reporting Manager'
   | 'Department Head'
   | 'Specific Position'
-  | 'Specific Employee'
-  | 'Role';
+  | 'Specific Employee';
+
+export type ChecklistAppliesTo = 'company' | 'department' | 'position';
+export type DueOffsetUnit = 'hours' | 'days';
 
 export interface ChecklistTemplateItem {
   id: string;
   title: string;
   description: string;
   assigneeType: ChecklistAssigneeType | '';
-  assigneeRole: string;
   assigneePositionId: string;
   assigneeEmployeeId: string;
-  dueOffsetDays: number;
+  dueOffsetValue: number;
+  dueOffsetUnit: DueOffsetUnit;
   required: boolean;
+  requiredDocument: string;
   sortOrder: number;
 }
 
@@ -28,6 +31,9 @@ export interface ChecklistTemplate {
   type: ChecklistTemplateType;
   description: string;
   status: ChecklistTemplateStatus;
+  appliesTo: ChecklistAppliesTo;
+  departmentIds: string[];
+  positionIds: string[];
   items: ChecklistTemplateItem[];
   createdAt: string;
   updatedAt: string;

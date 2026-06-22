@@ -499,7 +499,18 @@ const marcusData: EmployeeDataBundle = {
 
 const employeeDataRegistry: Record<EmployeeId, EmployeeDataBundle> = {
   alex: alexData,
-  marcus: marcusData
+  marcus: marcusData,
+  manager: {
+    ...alexData,
+    summaryCards: {
+      taskOverviewValue: '5 / 8',
+      taskOverviewDesc: 'Team approvals · 3 direct reports',
+      requestsValue: '6 received',
+      requestsDesc: '2 leave approvals pending',
+      activityValue: '2 meetings today',
+      activityDesc: 'Next: Team sync at 2:00 PM'
+    }
+  }
 };
 
 export function getEmployeeData(id: EmployeeId): EmployeeDataBundle {

@@ -5,7 +5,6 @@ import { MySecurityDrawer } from '../../shared/components/my-security/my-securit
 
 import { NavbarSearch } from './navbar-search';
 
-import { WorkspaceSelector } from './workspace-selector';
 
 import { appNavDateLabel } from '../../shared/constants/app-nav';
 
@@ -118,10 +117,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           collapsed={false}
         />
 
-
-
-        <WorkspaceSelector currentView={currentView} onSelect={onToggle} />
-
       </div>
 
 
@@ -184,7 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           >
 
-            <UserProfile currentView={currentView} />
+            <UserProfile />
 
           </div>
 
@@ -194,15 +189,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <div className="navbar-profile__dropdown" role="menu">
 
-              {!isTenant && (
+              <div className="navbar-profile__switcher">
 
-                <div className="navbar-profile__switcher">
-
-                  <EmployeeSwitcher />
+                  <EmployeeSwitcher onAfterSelect={() => setProfileOpen(false)} />
 
                 </div>
-
-              )}
 
               <button
 

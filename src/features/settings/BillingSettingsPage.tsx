@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, ExternalLink } from 'lucide-react';
+import { CreditCard, Download, ExternalLink } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import { MOCK_INVOICES, formatDateTime } from './settingsMockData';
 
@@ -15,6 +15,7 @@ export const BillingSettingsPage: React.FC = () => {
       <SettingsPageHeader
         title="Billing"
         description="Review subscription, invoices, usage limits, and billing status."
+        icon={<CreditCard size={15} />}
         actions={
           <button type="button" className="org-btn org-btn--secondary" disabled title="Contact your account manager to change plans">
             <ExternalLink size={14} /> Manage Plan

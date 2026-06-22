@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, Search } from 'lucide-react';
+import { Bell, Eye } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import { NotificationPreviewDrawer } from './components/NotificationPreviewDrawer';
 import {
@@ -53,6 +53,13 @@ export const NotificationsSettingsPage: React.FC = () => {
       <SettingsPageHeader
         title="Notifications"
         description="Choose which events send in-app and email notifications."
+        icon={<Bell size={15} />}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search notifications...',
+          label: 'Search notifications'
+        }}
         actions={
           <button
             type="button"
@@ -72,14 +79,6 @@ export const NotificationsSettingsPage: React.FC = () => {
           </header>
 
           <div className="cfg-page__toolbar notif-toolbar">
-            <div className="cfg-search">
-              <Search size={14} />
-              <input
-                placeholder="Search notifications…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
             <select
               className="cfg-filter-select"
               value={categoryFilter}

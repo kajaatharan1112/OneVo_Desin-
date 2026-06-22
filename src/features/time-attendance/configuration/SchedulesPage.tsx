@@ -1,8 +1,10 @@
-import React from 'react';
-import { Plus, Edit, Trash2, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Plus, Edit, Trash2, ChevronRight, CalendarDays } from 'lucide-react';
+import { ConfigShellHeader } from '../../../shared/components/config-shell-header/ConfigShellHeader';
 import { useSchedulesConfigStore } from '../../../store/schedulesConfigStore';
 import {
   formatAssignedCount,
+  formatBreakTime,
   formatCreatedDate,
   formatHolidayCount,
   formatWorkdays,
@@ -26,20 +28,39 @@ export const SchedulesPage: React.FC = () => {
     openHolidayList,
     openAssignmentModal
   } = useSchedulesConfigStore();
+  const [search, setSearch] = useState('');
+
+  const filteredSchedules = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return schedules;
+    return schedules.filter(schedule =>
+      [
+        schedule.title,
+        schedule.countryName,
+        formatWorkdays(schedule.workdays),
+        formatWorkTime(schedule),
+        formatBreakTime(schedule)
+      ].some(value => value.toLowerCase().includes(q))
+    );
+  }, [schedules, search]);
 
   return (
     <div className="cfg-page">
-      <div className="cfg-page__header">
-        <div>
-          <h1 className="cfg-page__title">Schedules</h1>
-          <p className="cfg-page__subtitle">
-            Create and assign work schedules for employees, departments, or the company.
-          </p>
-        </div>
-        <button type="button" className="org-btn org-btn--primary" onClick={openCreateSchedule}>
-          <Plus size={14} /> Create Work Schedule
-        </button>
-      </div>
+      <ConfigShellHeader
+        title="Schedules"
+        icon={<CalendarDays size={15} />}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search schedules...',
+          label: 'Search schedules'
+        }}
+        actions={
+          <button type="button" className="org-btn org-btn--primary" onClick={openCreateSchedule}>
+            <Plus size={14} /> Create Work Schedule
+          </button>
+        }
+      />
 
       <div className="cfg-page__body">
         <div className="cfg-table-wrap">
@@ -49,6 +70,7 @@ export const SchedulesPage: React.FC = () => {
                 <th>Name</th>
                 <th>Workdays</th>
                 <th>Work time</th>
+                <th>Break</th>
                 <th>Assigned</th>
                 <th>Holidays</th>
                 <th>Created At</th>
@@ -56,7 +78,7 @@ export const SchedulesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {schedules.map(schedule => (
+              {filteredSchedules.map(schedule => (
                 <tr key={schedule.id}>
                   <td>
                     <div className="schedules-cfg-name-cell">
@@ -71,6 +93,7 @@ export const SchedulesPage: React.FC = () => {
                   </td>
                   <td>{formatWorkdays(schedule.workdays)}</td>
                   <td>{formatWorkTime(schedule)}</td>
+                  <td>{formatBreakTime(schedule)}</td>
                   <td>
                     <button
                       type="button"

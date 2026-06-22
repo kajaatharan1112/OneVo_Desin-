@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useChecklistTemplateStore, createEmptyChecklistItem } from '../../../store/checklistTemplateStore';
-import type { ChecklistTemplateItem, ChecklistTemplateStatus, ChecklistTemplateType } from './checklistTemplateTypes';
+import type { ChecklistAppliesTo, ChecklistTemplateItem, ChecklistTemplateStatus, ChecklistTemplateType } from './checklistTemplateTypes';
 import { ChecklistTemplateItemsEditor } from './ChecklistTemplateItemsEditor';
 import { validateChecklistTemplate } from './checklistTemplateUtils';
+import { useOrganizationStore } from '../../../store/organizationStore';
 
 interface ChecklistTemplateFormPanelProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ export const ChecklistTemplateFormPanel: React.FC<ChecklistTemplateFormPanelProp
   const { form, templates, saveTemplate } = useChecklistTemplateStore();
   const existing = form.templateId ? templates.find(t => t.id === form.templateId) : null;
   const isEdit = form.mode === 'edit';
+  const { departments, positions } = useOrganizationStore();
 
   const [name, setName] = useState('');
   const [type, setType] = useState<ChecklistTemplateType | ''>('');
@@ -20,6 +22,9 @@ export const ChecklistTemplateFormPanel: React.FC<ChecklistTemplateFormPanelProp
   const [status, setStatus] = useState<ChecklistTemplateStatus>('draft');
   const [items, setItems] = useState<ChecklistTemplateItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [appliesTo, setAppliesTo] = useState<ChecklistAppliesTo>('company');
+  const [departmentIds, setDepartmentIds] = useState<string[]>([]);
+  const [positionIds, setPositionIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -28,19 +33,25 @@ export const ChecklistTemplateFormPanel: React.FC<ChecklistTemplateFormPanelProp
       setDescription(existing.description);
       setStatus(existing.status);
       setItems(existing.items.map((item, i) => ({ ...item, sortOrder: i })));
+      setAppliesTo(existing.appliesTo);
+      setDepartmentIds(existing.departmentIds);
+      setPositionIds(existing.positionIds);
     } else {
       setName('');
       setType('');
       setDescription('');
       setStatus('draft');
       setItems([createEmptyChecklistItem(0)]);
+      setAppliesTo('company');
+      setDepartmentIds([]);
+      setPositionIds([]);
     }
     setError(null);
   }, [form, existing, isEdit]);
 
   const validationIssues = useMemo(
-    () => validateChecklistTemplate({ name, type: type || undefined, description, status, items }, status === 'active'),
-    [name, type, description, status, items]
+    () => validateChecklistTemplate({ name, type: type || undefined, description, status, items, appliesTo, departmentIds, positionIds }, status === 'active'),
+    [name, type, description, status, items, appliesTo, departmentIds, positionIds]
   );
 
   const handleSave = () => {
@@ -58,7 +69,10 @@ export const ChecklistTemplateFormPanel: React.FC<ChecklistTemplateFormPanelProp
       type,
       description,
       status,
-      items
+      items,
+      appliesTo,
+      departmentIds,
+      positionIds
     });
     if (!id) {
       setError('Could not save template. Check required fields.');
@@ -111,6 +125,52 @@ export const ChecklistTemplateFormPanel: React.FC<ChecklistTemplateFormPanelProp
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <div className="org-form-field">
+            <label>Applies To</label>
+            <select value={appliesTo} onChange={e => {
+              const v = e.target.value as ChecklistAppliesTo;
+              setAppliesTo(v);
+              if (v !== 'department') setDepartmentIds([]);
+              if (v !== 'position') setPositionIds([]);
+            }}>
+              <option value="company">Full Company</option>
+              <option value="department">Department</option>
+              <option value="position">Position</option>
+            </select>
+          </div>
+
+          {appliesTo === 'department' && (
+            <div className="org-form-field">
+              <label>Departments</label>
+              <select
+                multiple
+                value={departmentIds}
+                onChange={e => setDepartmentIds(Array.from(e.target.selectedOptions, o => o.value))}
+                className="checklist-multi-select"
+              >
+                {departments.filter(d => d.status === 'active').map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {appliesTo === 'position' && (
+            <div className="org-form-field">
+              <label>Positions</label>
+              <select
+                multiple
+                value={positionIds}
+                onChange={e => setPositionIds(Array.from(e.target.selectedOptions, o => o.value))}
+                className="checklist-multi-select"
+              >
+                {positions.filter(p => p.status === 'active').map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {type && (
             <ChecklistTemplateItemsEditor type={type} items={items} onChange={setItems} />

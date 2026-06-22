@@ -112,19 +112,10 @@
   color: var(--text-h);
 }
 
-.schedules-cfg-readonly-value {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-muted);
-  font-size: 0.78rem;
-  color: var(--text);
-}
-
 .schedules-cfg-radio-group {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 20px;
 }
 
 .schedules-cfg-radio {
@@ -151,6 +142,40 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.schedules-cfg-break-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedules-cfg-break-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedules-cfg-break-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.schedules-cfg-break-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.schedules-cfg-break-remove {
+  margin-bottom: 1px;
 }
 
 .schedules-cfg-default-block {
@@ -473,4 +498,14 @@
 .org-btn--primary:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .schedules-cfg-break-row {
+    grid-template-columns: 1fr;
+  }
+
+  .schedules-cfg-break-remove {
+    width: 100%;
+  }
 }

@@ -1,6 +1,8 @@
 export type AccountStatus = 'active' | 'disabled' | 'locked' | 'no_login_access';
 export type InviteStatus = 'sent' | 'accepted' | 'expired' | 'not_sent';
-export type AccessScope = 'own' | 'direct_reports' | 'reporting_tree' | 'department' | 'organization';
+export type { AccessScope } from '../access/visibilityModel';
+export { VISIBILITY_LABELS, POSITION_VISIBILITY_OPTIONS, visibilityLabel, normalizeAccessScope } from '../access/visibilityModel';
+import type { AccessScope } from '../access/visibilityModel';
 export type RoleType = 'system' | 'custom';
 
 export interface AdminUser {
@@ -110,11 +112,12 @@ export const ENABLED_MODULES = [
 ] as const;
 
 export const ACCESS_SCOPE_OPTIONS: { value: AccessScope; label: string }[] = [
-  { value: 'own', label: 'Own' },
-  { value: 'direct_reports', label: 'Direct Reports' },
-  { value: 'reporting_tree', label: 'Reporting Tree' },
-  { value: 'department', label: 'Department' },
-  { value: 'organization', label: 'Organization' },
+  { value: 'own', label: 'This employee only' },
+  { value: 'organization', label: 'Entire company' },
+  { value: 'selected_departments', label: 'Selected departments' },
+  { value: 'selected_positions', label: 'Selected positions' },
+  { value: 'reporting_structure', label: 'Team from reporting structure' },
+  { value: 'hr_coverage', label: 'HR coverage area' },
 ];
 
 export const DEPARTMENTS = [
@@ -138,7 +141,8 @@ export const UNIVERSAL_PERMISSIONS: PermissionDef[] = [
 
 export const GRANTABLE_PERMISSIONS: PermissionDef[] = [
   { id: 'p1', code: 'employees:read', description: 'View employee records', module: 'Employees' },
-  { id: 'p2', code: 'employees:write', description: 'Create and edit employees', module: 'Employees' },
+  { id: 'p2', code: 'employees:manage', description: 'Create and manage employees', module: 'Employees' },
+  { id: 'p2b', code: 'employees:write', description: 'Create and edit employees', module: 'Employees' },
   { id: 'p3', code: 'employees:delete', description: 'Delete employee records', module: 'Employees' },
   { id: 'p4', code: 'org:read', description: 'View organization structure', module: 'Organization' },
   { id: 'p5', code: 'org:manage', description: 'Manage departments and positions', module: 'Organization' },
@@ -165,6 +169,7 @@ export const GRANTABLE_PERMISSIONS: PermissionDef[] = [
   { id: 'p26', code: 'roles:manage', description: 'Create and assign roles', module: 'Roles' },
   { id: 'p27', code: 'automations:read', description: 'View automations', module: 'Automations' },
   { id: 'p28', code: 'automations:manage', description: 'Create and edit automations', module: 'Automations' },
+  { id: 'p29', code: 'access:approve', description: 'Approve position access changes', module: 'Roles' },
 ];
 
 export const MOCK_ROLES: AdminRole[] = [
@@ -217,6 +222,26 @@ export const MOCK_ROLES: AdminRole[] = [
     userCount: 0,
     updatedAt: '2026-03-12T11:00:00Z',
     active: false,
+  },
+  {
+    id: 'role-ceo-exec',
+    name: 'Executive Administrator',
+    description: 'Organization-wide executive access including role and access approval',
+    type: 'system',
+    permissionIds: ['p1', 'p2', 'p4', 'p5', 'p26', 'p29'],
+    userCount: 1,
+    updatedAt: '2026-06-01T10:00:00Z',
+    active: true,
+  },
+  {
+    id: 'role-line-manager',
+    name: 'Line Manager',
+    description: 'Manager-level access for direct reports',
+    type: 'custom',
+    permissionIds: ['p1', 'p7', 'p9'],
+    userCount: 1,
+    updatedAt: '2026-06-10T11:00:00Z',
+    active: true,
   },
 ];
 
@@ -289,7 +314,7 @@ export const MOCK_USERS: AdminUser[] = [
     inviteStatus: 'accepted',
     mfaEnabled: true,
     lastLogin: '2026-06-11T17:20:00Z',
-    accessScope: 'department',
+    accessScope: 'selected_departments',
     accessScopeDepartmentId: 'dept-hr',
   },
   {
@@ -308,7 +333,7 @@ export const MOCK_USERS: AdminUser[] = [
     inviteStatus: 'accepted',
     mfaEnabled: false,
     lastLogin: '2026-06-10T09:05:00Z',
-    accessScope: 'reporting_tree',
+    accessScope: 'reporting_structure',
     accessScopeDepartmentId: null,
   },
   {
@@ -346,7 +371,7 @@ export const MOCK_USERS: AdminUser[] = [
     inviteStatus: 'sent',
     mfaEnabled: false,
     lastLogin: null,
-    accessScope: 'direct_reports',
+    accessScope: 'reporting_structure',
     accessScopeDepartmentId: null,
   },
   {
@@ -437,7 +462,7 @@ export const MOCK_ACCESS_CHANGES: Record<string, AccessChange[]> = {
     },
     {
       timestamp: '2026-05-15T09:30:00Z',
-      description: 'Assigned Leave Approver role with reporting_tree scope',
+      description: 'Assigned Leave Approver role with Team from reporting structure visibility',
       changedBy: 'Priya Sharma',
     },
   ],
@@ -537,7 +562,7 @@ export const MOCK_AUDIT_LOG: AuditLogEntry[] = [
     ipAddress: '203.0.113.42',
     status: 'success',
     beforeValues: null,
-    afterValues: { roleId: 'role-leave-approver', scope: 'direct_reports' },
+    afterValues: { roleId: 'role-leave-approver', scope: 'reporting_structure' },
     correlationId: 'corr-p6q7r8',
   },
   {
@@ -577,9 +602,9 @@ export function formatDateTime(iso: string): string {
 }
 
 export function scopeLabel(scope: AccessScope, deptId: string | null): string {
-  if (scope === 'department' && deptId) {
+  if (scope === 'selected_departments' && deptId) {
     const dept = DEPARTMENTS.find(d => d.id === deptId);
-    return dept ? `Department · ${dept.name}` : 'Department';
+    return dept ? `Selected departments · ${dept.name}` : 'Selected departments';
   }
   return ACCESS_SCOPE_OPTIONS.find(o => o.value === scope)?.label ?? scope;
 }

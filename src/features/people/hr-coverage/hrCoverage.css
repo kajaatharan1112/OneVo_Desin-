@@ -1,0 +1,16 @@
+.hr-coverage-modal {
+  width: min(560px, 100%);
+}
+
+.hr-coverage-access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hr-coverage-table__access {
+  max-width: 280px;
+  font-size: 0.75rem;
+  color: var(--nexus-text-secondary);
+  line-height: 1.4;
+}

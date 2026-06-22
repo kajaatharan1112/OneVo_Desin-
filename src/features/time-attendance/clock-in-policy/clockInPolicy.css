@@ -282,6 +282,22 @@
   color: var(--text);
 }
 
+.cip-date-time-row {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 10px;
+}
+
+.cip-date-time-row input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-panel);
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
 .leave-cfg-segmented--wrap {
   flex-wrap: wrap;
 }
@@ -303,5 +319,9 @@
     align-items: center;
     width: 100%;
     justify-content: space-between;
+  }
+
+  .cip-date-time-row {
+    grid-template-columns: 1fr;
   }
 }

@@ -3,7 +3,7 @@ import { Search, Plus, Edit, Copy, Pause, Play, Trash2 } from 'lucide-react';
 import { useChecklistTemplateStore } from '../../../store/checklistTemplateStore';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { ChecklistTemplateFormPanel } from './ChecklistTemplateFormPanel';
-import { templateAssigneesSummary } from './checklistTemplateUtils';
+import { templateAssigneesSummary, appliesToSummary } from './checklistTemplateUtils';
 import { filterPositionOptions } from '../../automations/alertAssignmentUtils';
 
 function formatDate(iso: string) {
@@ -21,7 +21,7 @@ export const ChecklistTemplatesPage: React.FC = () => {
     setTemplateStatus,
     deleteTemplate
   } = useChecklistTemplateStore();
-  const { positions, employees } = useOrganizationStore();
+  const { positions, employees, departments } = useOrganizationStore();
 
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -79,6 +79,7 @@ export const ChecklistTemplatesPage: React.FC = () => {
               <tr>
                 <th>Template name</th>
                 <th>Type</th>
+                <th>Applies To</th>
                 <th>Item count</th>
                 <th>Default assignees</th>
                 <th>Status</th>
@@ -94,6 +95,7 @@ export const ChecklistTemplatesPage: React.FC = () => {
                     {t.description && <div className="cfg-table__meta">{t.description}</div>}
                   </td>
                   <td>{t.type === 'onboarding' ? 'Onboarding' : 'Offboarding'}</td>
+                  <td>{appliesToSummary(t, departments, positions)}</td>
                   <td>{t.items.length}</td>
                   <td>{templateAssigneesSummary(t, orgContext.positions, orgContext.employees)}</td>
                   <td><span className={`cfg-badge cfg-badge--${t.status}`}>{t.status}</span></td>

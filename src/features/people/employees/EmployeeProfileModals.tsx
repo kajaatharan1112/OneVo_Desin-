@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { MOCK_ROLES } from '../../admin/adminMockData';
+import { POSITION_VISIBILITY_OPTIONS } from '../../access/visibilityModel';
 import { SEED_CHECKLIST_TEMPLATES } from '../checklist-templates/checklistTemplateMockData';
 import { SEED_WORK_SCHEDULES } from '../../time-attendance/configuration/schedulesConfigMockData';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
@@ -8,13 +9,18 @@ import { useOrganizationStore } from '../../../store/organizationStore';
 import type {
   LeaveOverrideFormValues,
   OffboardingFormValues,
+  PromotionFormValues,
   RoleOverrideFormValues,
   ScheduleOverrideFormValues,
   TransferFormValues
 } from './employeeProfileTypes';
-import { previewTransferManager, useEmployeeProfileStore } from './employeeProfileStore';
+import { previewPositionContext, previewTransferManager, useEmployeeProfileStore } from './employeeProfileStore';
 import type { Employee } from '../../../types/organization';
 import { getEmployeeActiveAssignment } from '../../../utils/organizationUtils';
+import { useActorAccess } from '../../access/useActorAccess';
+import { PositionAccessSection } from '../../access/PositionAccessSection';
+import type { GeneratedAccessGrant } from '../../access/accessTypes';
+import { getPositionAccessTemplate } from '../../access/positionAccessConfigStore';
 
 interface Props {
   employee: Employee;
@@ -27,6 +33,8 @@ export const EmployeeProfileModals: React.FC<Props> = ({ employee }) => {
   switch (activeModal) {
     case 'edit-profile':
       return <EditProfileModal employee={employee} onClose={closeModal} />;
+    case 'promotion':
+      return <PromotionModal employee={employee} onClose={closeModal} />;
     case 'transfer':
       return <TransferModal employee={employee} onClose={closeModal} />;
     case 'offboarding':
@@ -98,16 +106,115 @@ const EditProfileModal: React.FC<{ employee: Employee; onClose: () => void }> = 
   );
 };
 
+const PromotionModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ employee, onClose }) => {
+  const { positions, assignments } = useOrganizationStore();
+  const { promoteEmployee } = useEmployeeProfileStore();
+  const { actorOrgEmployeeId, canManageAccess } = useActorAccess();
+  const activeAssignment = getEmployeeActiveAssignment(employee.id, assignments);
+  const currentPosition = activeAssignment
+    ? positions.find(p => p.id === activeAssignment.positionId)
+    : null;
+
+  const [values, setValues] = useState<PromotionFormValues>({
+    positionId: '',
+    effectiveDate: new Date().toISOString().slice(0, 10),
+    reason: '',
+    reportingManager: '',
+    departmentName: '',
+    accessGrants: []
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (values.positionId) {
+      const ctx = previewPositionContext(values.positionId);
+      setValues(v => ({
+        ...v,
+        reportingManager: ctx.reportingManager,
+        departmentName: ctx.departmentName
+      }));
+    }
+  }, [values.positionId]);
+
+  const handleSave = () => {
+    const result = promoteEmployee(employee.id, values, actorOrgEmployeeId);
+    if (!result.ok) setError(result.error ?? 'Unable to complete promotion.');
+  };
+
+  const selectablePositions = positions.filter(
+    p => p.status === 'active' && p.id !== currentPosition?.id
+  );
+
+  const setAccessGrants = (grants: GeneratedAccessGrant[]) => {
+    setValues(v => ({ ...v, accessGrants: grants }));
+  };
+
+  return (
+    <ModalShell
+      title="Promote Employee"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="org-btn org-btn--secondary" onClick={onClose}>Cancel</button>
+          <button type="button" className="org-btn org-btn--primary" onClick={handleSave}>
+            {canManageAccess ? 'Promote Employee' : 'Submit Promotion Request'}
+          </button>
+        </>
+      }
+    >
+      {error && <p className="schedules-cfg-form-error">{error}</p>}
+      <div className="org-form-field">
+        <label>Current Position</label>
+        <input readOnly className="settings-readonly" value={currentPosition?.name ?? '—'} />
+      </div>
+      <div className="org-form-field">
+        <label>New Position</label>
+        <select value={values.positionId} onChange={e => setValues(v => ({ ...v, positionId: e.target.value }))}>
+          <option value="">Select position…</option>
+          {selectablePositions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </div>
+      <div className="org-form-field">
+        <label>Effective Date</label>
+        <input type="date" value={values.effectiveDate} onChange={e => setValues(v => ({ ...v, effectiveDate: e.target.value }))} />
+      </div>
+      <div className="org-form-field">
+        <label>Reason / Notes</label>
+        <textarea rows={3} value={values.reason} onChange={e => setValues(v => ({ ...v, reason: e.target.value }))} />
+      </div>
+      <div className="org-form-field">
+        <label>Reporting Manager</label>
+        <input readOnly className="settings-readonly" value={values.reportingManager || '—'} />
+      </div>
+      <div className="org-form-field">
+        <label>Department</label>
+        <input readOnly className="settings-readonly" value={values.departmentName || '—'} />
+      </div>
+
+      {values.positionId && (
+        <PositionAccessSection
+          targetPositionId={values.positionId}
+          canEdit={canManageAccess}
+          grants={values.accessGrants ?? getPositionAccessTemplate(values.positionId)}
+          onChange={setAccessGrants}
+        />
+      )}
+    </ModalShell>
+  );
+};
+
 const TransferModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ employee, onClose }) => {
   const { departments, positions, assignments } = useOrganizationStore();
   const { transferEmployee } = useEmployeeProfileStore();
+  const { actorOrgEmployeeId, canManageAccess } = useActorAccess();
   const activeAssignment = getEmployeeActiveAssignment(employee.id, assignments);
   const [values, setValues] = useState<TransferFormValues>({
     departmentId: '',
     positionId: activeAssignment?.positionId ?? '',
     effectiveDate: new Date().toISOString().slice(0, 10),
     reportingManager: '',
-    reason: ''
+    reason: '',
+    accessGrants: []
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -123,13 +230,17 @@ const TransferModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ 
   }, [values.positionId, positions]);
 
   const handleSave = () => {
-    const result = transferEmployee(employee.id, values);
+    const result = transferEmployee(employee.id, values, actorOrgEmployeeId);
     if (!result.ok) setError(result.error ?? 'Unable to transfer.');
   };
 
   const filteredPositions = values.departmentId
     ? positions.filter(p => p.status === 'active' && p.departmentId === values.departmentId)
     : positions.filter(p => p.status === 'active');
+
+  const setAccessGrants = (grants: GeneratedAccessGrant[]) => {
+    setValues(v => ({ ...v, accessGrants: grants }));
+  };
 
   return (
     <ModalShell
@@ -138,7 +249,9 @@ const TransferModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ 
       footer={
         <>
           <button type="button" className="org-btn org-btn--secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="org-btn org-btn--primary" onClick={handleSave}>Transfer Employee</button>
+          <button type="button" className="org-btn org-btn--primary" onClick={handleSave}>
+            {canManageAccess ? 'Transfer Employee' : 'Submit Transfer Request'}
+          </button>
         </>
       }
     >
@@ -171,6 +284,15 @@ const TransferModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ 
         <label>Reason</label>
         <textarea rows={3} value={values.reason} onChange={e => setValues(v => ({ ...v, reason: e.target.value }))} />
       </div>
+
+      {values.positionId && (
+        <PositionAccessSection
+          targetPositionId={values.positionId}
+          canEdit={canManageAccess}
+          grants={values.accessGrants ?? getPositionAccessTemplate(values.positionId)}
+          onChange={setAccessGrants}
+        />
+      )}
     </ModalShell>
   );
 };
@@ -265,12 +387,11 @@ const RoleOverrideModal: React.FC<{ employee: Employee; onClose: () => void }> =
         </select>
       </div>
       <div className="org-form-field">
-        <label>Scope</label>
+        <label>Visibility</label>
         <select value={values.scope} onChange={e => setValues(v => ({ ...v, scope: e.target.value as RoleOverrideFormValues['scope'] }))}>
-          <option value="own">Own data</option>
-          <option value="direct-reports">Direct reports</option>
-          <option value="department">Department</option>
-          <option value="company">Company</option>
+          {POSITION_VISIBILITY_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
         </select>
       </div>
       <div className="org-form-field">

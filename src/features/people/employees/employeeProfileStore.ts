@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
+import { useChecklistTaskStore } from '../../../store/checklistTaskStore';
 import { MOCK_ROLES } from '../../admin/adminMockData';
 import { SEED_CHECKLIST_TEMPLATES } from '../checklist-templates/checklistTemplateMockData';
 import { SEED_WORK_SCHEDULES } from '../../time-attendance/configuration/schedulesConfigMockData';
@@ -16,6 +17,7 @@ import type {
   RoleOverrideFormValues,
   ScheduleOverride,
   ScheduleOverrideFormValues,
+  PromotionFormValues,
   TransferFormValues
 } from './employeeProfileTypes';
 import {
@@ -26,8 +28,9 @@ import {
   SEED_ROLE_OVERRIDES,
   SEED_SCHEDULE_OVERRIDES
 } from './employeeProfileMockData';
-import { getReportingManagerPreviewForPosition } from '../../../utils/organizationUtils';
+import { getReportingManagerPreviewForPosition, applyEmployeePositionAssignment } from '../../../utils/organizationUtils';
 import { canAssignEmployeeToPosition, createId } from '../../../utils/organizationUtils';
+import { useAccessStore } from '../../access/accessStore';
 
 const createActivityId = () => `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -52,9 +55,15 @@ interface EmployeeProfileStore {
   getDocuments: (employeeId: string) => EmployeeDocument[];
   getActivity: (employeeId: string) => EmployeeActivityEntry[];
 
+  promoteEmployee: (
+    employeeId: string,
+    values: PromotionFormValues,
+    actorOrgEmployeeId: string
+  ) => { ok: boolean; error?: string };
   transferEmployee: (
     employeeId: string,
-    values: TransferFormValues
+    values: TransferFormValues,
+    actorOrgEmployeeId: string
   ) => { ok: boolean; error?: string };
   startOffboarding: (
     employeeId: string,
@@ -76,6 +85,12 @@ interface EmployeeProfileStore {
   ) => { ok: boolean; error?: string };
   removeScheduleOverride: (id: string) => void;
   uploadDocument: (employeeId: string, name: string, type: string) => void;
+  recordPositionChangeActivity: (
+    employeeId: string,
+    actionType: 'promotion' | 'transfer',
+    label: string,
+    detail: string
+  ) => void;
 }
 
 function appendActivity(entry: Omit<EmployeeActivityEntry, 'id'>) {
@@ -86,7 +101,7 @@ function appendActivity(entry: Omit<EmployeeActivityEntry, 'id'>) {
 }
 
 export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) => ({
-  activeTab: 'overview',
+  activeTab: 'about',
   activeModal: null,
   roleOverrides: SEED_ROLE_OVERRIDES,
   leaveOverrides: SEED_LEAVE_OVERRIDES,
@@ -115,7 +130,69 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
     return defaultActivityForEmployee(employeeId, emp.startDate);
   },
 
-  transferEmployee: (employeeId, values) => {
+  promoteEmployee: (employeeId, values, actorOrgEmployeeId) => {
+    if (!values.positionId) return { ok: false, error: 'New position is required.' };
+    if (!values.effectiveDate) return { ok: false, error: 'Effective date is required.' };
+
+    const org = useOrganizationStore.getState();
+    const { positions, assignments } = org;
+    const check = canAssignEmployeeToPosition(
+      employeeId,
+      values.positionId,
+      positions,
+      assignments
+    );
+    if (!check.ok) return { ok: false, error: check.error };
+
+    const position = positions.find(p => p.id === values.positionId)!;
+
+    const accessResult = useAccessStore.getState().applyPositionChangeAccess({
+      actorOrgEmployeeId,
+      targetEmployeeId: employeeId,
+      actionType: 'promotion',
+      targetPositionId: values.positionId,
+      effectiveDate: values.effectiveDate,
+      grants: values.accessGrants
+    });
+    if (!accessResult.ok) return accessResult;
+
+    if (!accessResult.requiresApproval) {
+      const assignmentResult = applyEmployeePositionAssignment(
+        employeeId,
+        values.positionId,
+        values.effectiveDate,
+        positions,
+        assignments,
+        values.reason.trim() || undefined
+      );
+      if (!assignmentResult.ok || !assignmentResult.assignments) {
+        return { ok: false, error: assignmentResult.error ?? 'Unable to update position assignment.' };
+      }
+      useOrganizationStore.setState({ assignments: assignmentResult.assignments });
+    }
+
+    const toastMsg = accessResult.requiresApproval
+      ? 'Promotion submitted. Access changes require approval.'
+      : 'Promotion completed successfully.';
+
+    set({
+      activity: [
+        appendActivity({
+          employeeId,
+          type: 'promotion',
+          label: accessResult.requiresApproval ? 'Promotion submitted' : 'Promotion completed',
+          detail: `Promoted to ${position.name}`,
+          occurredAt: new Date().toISOString()
+        }),
+        ...get().activity
+      ],
+      activeModal: null,
+      toast: toastMsg
+    });
+    return { ok: true };
+  },
+
+  transferEmployee: (employeeId, values, actorOrgEmployeeId) => {
     if (!values.positionId) return { ok: false, error: 'New position is required.' };
     if (!values.effectiveDate) return { ok: false, error: 'Effective date is required.' };
     if (!values.reason.trim()) return { ok: false, error: 'Reason is required.' };
@@ -132,46 +209,49 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
 
     const position = positions.find(p => p.id === values.positionId)!;
     const dept = departments.find(d => d.id === position.departmentId);
-    const updatedAssignments = assignments.map(a => {
-      if (
-        a.employeeId === employeeId &&
-        a.status === 'active' &&
-        a.effectiveTo === null &&
-        a.positionId !== values.positionId
-      ) {
-        return { ...a, effectiveTo: values.effectiveDate, status: 'ended' as const };
-      }
-      return a;
-    });
 
-    useOrganizationStore.setState({
-      assignments: [
-        ...updatedAssignments,
-        {
-          id: createId('asgn'),
-          employeeId,
-          positionId: values.positionId,
-          effectiveFrom: values.effectiveDate,
-          effectiveTo: null,
-          status: 'active',
-          notes: values.reason.trim()
-        }
-      ]
+    const accessResult = useAccessStore.getState().applyPositionChangeAccess({
+      actorOrgEmployeeId,
+      targetEmployeeId: employeeId,
+      actionType: 'transfer',
+      targetPositionId: values.positionId,
+      effectiveDate: values.effectiveDate,
+      grants: values.accessGrants
     });
+    if (!accessResult.ok) return accessResult;
+
+    if (!accessResult.requiresApproval) {
+      const assignmentResult = applyEmployeePositionAssignment(
+        employeeId,
+        values.positionId,
+        values.effectiveDate,
+        positions,
+        assignments,
+        values.reason.trim()
+      );
+      if (!assignmentResult.ok || !assignmentResult.assignments) {
+        return { ok: false, error: assignmentResult.error ?? 'Unable to update position assignment.' };
+      }
+      useOrganizationStore.setState({ assignments: assignmentResult.assignments });
+    }
+
+    const toastMsg = accessResult.requiresApproval
+      ? 'Transfer submitted. Access changes require approval.'
+      : 'Employee transferred successfully.';
 
     set({
       activity: [
         appendActivity({
           employeeId,
           type: 'transfer',
-          label: 'Transfer completed',
+          label: accessResult.requiresApproval ? 'Transfer submitted' : 'Transfer completed',
           detail: `Moved to ${position.name}${dept ? ` · ${dept.name}` : ''}`,
           occurredAt: new Date().toISOString()
         }),
         ...get().activity
       ],
       activeModal: null,
-      toast: 'Employee transferred successfully.'
+      toast: toastMsg
     });
     return { ok: true };
   },
@@ -179,6 +259,8 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
   startOffboarding: (employeeId, values) => {
     if (!values.lastWorkingDay) return { ok: false, error: 'Last working day is required.' };
     if (!values.templateId) return { ok: false, error: 'Offboarding template is required.' };
+
+    useChecklistTaskStore.getState().generateTasksForEmployee(employeeId, 'offboarding', values.lastWorkingDay);
 
     const template = SEED_CHECKLIST_TEMPLATES.find(t => t.id === values.templateId);
     set({
@@ -330,12 +412,43 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
       ],
       toast: 'Document uploaded.'
     });
+  },
+
+  recordPositionChangeActivity: (employeeId, actionType, label, detail) => {
+    set({
+      activity: [
+        appendActivity({
+          employeeId,
+          type: actionType,
+          label,
+          detail,
+          occurredAt: new Date().toISOString()
+        }),
+        ...get().activity
+      ]
+    });
   }
 }));
 
-export function previewTransferManager(positionId: string): string {
-  const { positions, assignments, employees } = useOrganizationStore.getState();
+export function previewPositionContext(positionId: string): {
+  reportingManager: string;
+  departmentName: string;
+} {
+  const { positions, assignments, employees, departments } = useOrganizationStore.getState();
   const position = positions.find(p => p.id === positionId);
-  if (!position) return '—';
-  return getReportingManagerPreviewForPosition(position, positions, assignments, employees).label;
+  if (!position) return { reportingManager: '—', departmentName: '—' };
+  const dept = departments.find(d => d.id === position.departmentId);
+  return {
+    reportingManager: getReportingManagerPreviewForPosition(
+      position,
+      positions,
+      assignments,
+      employees
+    ).label,
+    departmentName: dept?.name ?? '—'
+  };
+}
+
+export function previewTransferManager(positionId: string): string {
+  return previewPositionContext(positionId).reportingManager;
 }

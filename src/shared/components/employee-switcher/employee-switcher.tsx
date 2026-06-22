@@ -4,15 +4,17 @@ import type { EmployeeId } from '../../../features/employees/types/employee.type
 
 interface EmployeeSwitcherProps {
   collapsed?: boolean;
+  onAfterSelect?: () => void;
 }
 
-export const EmployeeSwitcher: React.FC<EmployeeSwitcherProps> = ({ collapsed = false }) => {
+export const EmployeeSwitcher: React.FC<EmployeeSwitcherProps> = ({ collapsed = false, onAfterSelect }) => {
   const { employees, selectedEmployeeId, setSelectedEmployeeId } = useEmployeeContext();
 
   const handleSelect = (id: EmployeeId) => {
     if (id !== selectedEmployeeId) {
       setSelectedEmployeeId(id);
     }
+    onAfterSelect?.();
   };
 
   return (

@@ -1,18 +1,8 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { MyCalendarTab } from '../../components/my-calendar/my-calendar-tab';
 
-export const EmployeeCalendar: React.FC = () => {
-  return (
-    <div className="content-card">
-      <span style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', color: 'var(--accent)' }}>
-        <Calendar size={40} />
-      </span>
-      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-h)', marginBottom: '8px' }}>
-        Employee Calendar Portal
-      </h3>
-      <p style={{ fontSize: '0.85rem', color: '#6b7280', maxWidth: '400px', margin: '0 auto' }}>
-        This is a dedicated workspace panel for the employee's custom calendar interface.
-      </p>
-    </div>
-  );
-};
+export const EmployeeCalendar: React.FC = () => (
+  <div className="content-card" style={{ textAlign: 'left' }}>
+    <MyCalendarTab />
+  </div>
+);

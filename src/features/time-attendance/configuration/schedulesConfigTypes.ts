@@ -13,8 +13,11 @@ export interface WorkSchedule {
   workHourType: WorkHourType;
   startTime?: string;
   endTime?: string;
+  breakPeriods?: BreakPeriod[];
   flexibleHours?: number;
   flexibleMinutes?: number;
+  flexibleBreakHours?: number;
+  flexibleBreakMinutes?: number;
   assignmentTarget: AssignmentTarget;
   departmentIds: string[];
   employeeIds: string[];
@@ -22,6 +25,13 @@ export interface WorkSchedule {
   holidayCount: number;
   assignedCount: number;
   createdAt: string;
+}
+
+export interface BreakPeriod {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
 }
 
 export interface WorkScheduleFormState {
@@ -82,8 +92,11 @@ export interface WorkScheduleFormValues {
   workHourType: WorkHourType;
   startTime: string;
   endTime: string;
+  breakPeriods: BreakPeriod[];
   flexibleHours: string;
   flexibleMinutes: string;
+  flexibleBreakHours: string;
+  flexibleBreakMinutes: string;
   assignmentTarget: AssignmentTarget;
   departmentIds: string[];
   employeeIds: string[];
@@ -97,8 +110,18 @@ export const EMPTY_FORM_VALUES = (): WorkScheduleFormValues => ({
   workHourType: 'fixed',
   startTime: '09:00',
   endTime: '17:00',
+  breakPeriods: [
+    {
+      id: 'break-lunch',
+      name: 'Lunch break',
+      startTime: '13:00',
+      endTime: '14:00'
+    }
+  ],
   flexibleHours: '7',
   flexibleMinutes: '30',
+  flexibleBreakHours: '0',
+  flexibleBreakMinutes: '0',
   assignmentTarget: 'company',
   departmentIds: [],
   employeeIds: [],
