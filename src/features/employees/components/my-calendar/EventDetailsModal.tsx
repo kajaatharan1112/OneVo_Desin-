@@ -67,6 +67,42 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
               </div>
             )}
 
+            {event.attendeeRsvp && (
+              <div className="emc-modal__rsvp-list">
+                {Object.entries(event.attendeeRsvp).map(([name, rsvp]) => (
+                  <span key={name} className={`emc-rsvp-badge emc-rsvp-badge--${rsvp}`}>
+                    {name} · {rsvp}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {event.status === 'pending' && event.source === 'company' && (
+              <div className="emc-modal__approval">
+                <p className="emc-modal__approval-label">Manager review (demo)</p>
+                <div className="emc-modal__approval-actions">
+                  <button
+                    type="button"
+                    className="era-btn emc-modal__action"
+                    onClick={() => onSave({ ...event, status: 'confirmed' })}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    className="era-btn emc-modal__action emc-modal__action--danger"
+                    onClick={() => onSave({ ...event, status: 'rejected' })}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {event.status === 'rejected' && (
+              <p className="emc-modal__rejected-note">Rejected by manager.</p>
+            )}
+
             <div className="emc-modal__actions">
               <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>
                 <Pencil size={13} />
