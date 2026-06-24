@@ -151,6 +151,12 @@ export const MyCalendarTab: React.FC = () => {
   const [newEventOpen, setNewEventOpen] = useState(false);
   const handleCreateEvents = (events: CalendarEvent[]) => {
     setLocalEvents(prev => [...prev, ...events]);
+    setScope('my');
+    setEnabledTypes(prev => {
+      const next = new Set(prev);
+      events.forEach(ev => next.add(ev.type));
+      return next;
+    });
   };
 
   // Event details modal
