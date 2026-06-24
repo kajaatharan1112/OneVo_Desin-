@@ -8,6 +8,7 @@ import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
+import { NewEventWizard } from './NewEventWizard';
 
 const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder'];
 
@@ -145,6 +146,12 @@ export const MyCalendarTab: React.FC = () => {
   // Calendar settings popup
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTabId>('sync');
+
+  // New event wizard
+  const [newEventOpen, setNewEventOpen] = useState(false);
+  const handleCreateEvents = (events: CalendarEvent[]) => {
+    setLocalEvents(prev => [...prev, ...events]);
+  };
 
   // Event details modal
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -521,7 +528,7 @@ export const MyCalendarTab: React.FC = () => {
           <span className="emc-header__sub">Schedule · June 2026</span>
         </div>
         <div className="emc-header__actions">
-          <button type="button" className="era-btn era-btn--ghost emc-header__btn">
+          <button type="button" className="era-btn era-btn--ghost emc-header__btn" onClick={() => setNewEventOpen(true)}>
             <Plus size={13} />
             New Event
           </button>
@@ -734,6 +741,14 @@ export const MyCalendarTab: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {newEventOpen && (
+        <NewEventWizard
+          onClose={() => setNewEventOpen(false)}
+          onCreate={handleCreateEvents}
+          existingMyEvents={localEvents.filter(ev => ev.scope === 'my')}
+        />
       )}
     </div>
   );
