@@ -1,10 +1,37 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
-  ChevronLeft, ChevronRight, CalendarDays,
-  Users, RefreshCw, Filter, Plus, Check, X
+  ChevronLeft, ChevronRight, CalendarDays, ChevronDown,
+  Users, RefreshCw, Filter, Plus, Check, X,
+  Sun, Plane, Clock, Bell, CalendarX2, Settings
 } from 'lucide-react';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
-import type { CalendarEvent, CalendarViewMode } from '../../types/employee-calendar.types';
+import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
+import { EventDetailsModal } from './EventDetailsModal';
+import { CalendarFilterPanel } from './CalendarFilterPanel';
+
+const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder'];
+
+type SettingsTabId = 'sync';
+
+const SETTINGS_TABS: { id: SettingsTabId; label: string }[] = [
+  { id: 'sync', label: 'Calendar Sync' },
+];
+
+const SCOPE_OPTIONS: { value: CalendarScopeFilter; label: string }[] = [
+  { value: 'my',           label: 'My Schedule' },
+  { value: 'team',         label: 'Team' },
+  { value: 'department',   label: 'Department' },
+  { value: 'organization', label: 'Organization' },
+  { value: 'combined',     label: 'Combined' },
+];
+
+const AGENDA_TYPE_ICON: Record<CalendarEventType, React.ComponentType<{ size?: number }>> = {
+  meeting: Users,
+  holiday: Sun,
+  leave: Plane,
+  shift: Clock,
+  reminder: Bell,
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -47,12 +74,107 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
-  const { events, syncStatus } = employeeCalendarData;
+  const { syncStatus } = employeeCalendarData;
+
+  // Local mutable copy of the one events table — Edit/Delete write back here.
+  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(employeeCalendarData.events);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
   const [anchor, setAnchor] = useState<Date>(() => parseLocalDate(TODAY_KEY));
+
+  // Scope (whose calendar) — independent of viewMode (Day/Week/Month/Agenda)
+  const [scope, setScope] = useState<CalendarScopeFilter>('my');
+  const [scopeMenuOpen, setScopeMenuOpen] = useState(false);
+  const scopeMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scopeMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (scopeMenuRef.current && !scopeMenuRef.current.contains(e.target as Node)) {
+        setScopeMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [scopeMenuOpen]);
+
+  const scopeLabel = SCOPE_OPTIONS.find(o => o.value === scope)?.label ?? 'My Schedule';
+
+  const scopedEvents = useMemo(() => {
+    if (scope === 'combined') return localEvents;
+    return localEvents.filter(ev => ev.scope === scope);
+  }, [localEvents, scope]);
+
+  // Type filter + title search — independent of scope and viewMode, compose together
+  const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_EVENT_TYPES));
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const filterPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filterPanelOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (filterPanelRef.current && !filterPanelRef.current.contains(e.target as Node)) {
+        setFilterPanelOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [filterPanelOpen]);
+
+  const toggleType = (type: CalendarEventType) => {
+    setEnabledTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type); else next.add(type);
+      return next;
+    });
+  };
+
+  const clearTypeFilters = () => setEnabledTypes(new Set());
+  const selectAllTypeFilters = () => setEnabledTypes(new Set(ALL_EVENT_TYPES));
+
+  const filteredEvents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return scopedEvents.filter(ev =>
+      enabledTypes.has(ev.type) && (!q || ev.title.toLowerCase().includes(q))
+    );
+  }, [scopedEvents, enabledTypes, searchQuery]);
+
+  // Calendar settings popup
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTabId>('sync');
+
+  // Event details modal
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const openEvent = (e: React.MouseEvent, ev: CalendarEvent) => {
+    e.stopPropagation();
+    setSelectedEvent(ev);
+  };
+  const handleDeleteEvent = (id: string) => {
+    setLocalEvents(prev => prev.filter(e => e.id !== id));
+    setSelectedEvent(null);
+  };
+  const handleSaveEvent = (updated: CalendarEvent) => {
+    setLocalEvents(prev => prev.map(e => (e.id === updated.id ? updated : e)));
+    setSelectedEvent(updated);
+  };
+
+  // "+N more" day popover (Month view)
+  const [dayPopover, setDayPopover] = useState<{ key: string; top: number; left: number } | null>(null);
+  const dayPopoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dayPopover) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (dayPopoverRef.current && !dayPopoverRef.current.contains(e.target as Node)) {
+        setDayPopover(null);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [dayPopover]);
 
   const navigate = (dir: -1 | 0 | 1) => {
     if (dir === 0) { setAnchor(parseLocalDate(TODAY_KEY)); return; }
@@ -84,14 +206,14 @@ export const MyCalendarTab: React.FC = () => {
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
-    events.forEach(ev => {
+    filteredEvents.forEach(ev => {
       if (!map[ev.date]) map[ev.date] = [];
       map[ev.date].push(ev);
     });
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
-  const pendingInvites = useMemo(() => events.filter(e => e.needsResponse), [events]);
+  const pendingInvites = useMemo(() => scopedEvents.filter(e => e.needsResponse), [scopedEvents]);
 
   const anchorKey = toDateKey(anchor);
   const anchorEvents = eventsByDate[anchorKey] ?? [];
@@ -133,12 +255,25 @@ export const MyCalendarTab: React.FC = () => {
                 <span className="emc-month__num">{date.getDate()}</span>
                 <div className="emc-month__events">
                   {dayEvts.slice(0, 3).map(ev => (
-                    <div key={ev.id} className={`emc-month__evpill emc-evpill--${ev.type}`}>
+                    <div
+                      key={ev.id}
+                      className={`emc-month__evpill emc-evpill--${ev.type}`}
+                      onClick={e => openEvent(e, ev)}
+                    >
                       {ev.title}
                     </div>
                   ))}
                   {dayEvts.length > 3 && (
-                    <div className="emc-month__evpill emc-evpill--more">+{dayEvts.length - 3} more</div>
+                    <div
+                      className="emc-month__evpill emc-evpill--more"
+                      onClick={e => {
+                        e.stopPropagation();
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        setDayPopover({ key, top: rect.bottom + 4, left: rect.left });
+                      }}
+                    >
+                      +{dayEvts.length - 3} more
+                    </div>
                   )}
                 </div>
               </div>
@@ -187,7 +322,7 @@ export const MyCalendarTab: React.FC = () => {
             {days.map((d, i) => (
               <div key={toDateKey(d)} className="emc-week__alldaycell">
                 {allDayRows[i].map(ev => (
-                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}`}>{ev.title}</div>
+                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
                 ))}
               </div>
             ))}
@@ -206,7 +341,7 @@ export const MyCalendarTab: React.FC = () => {
                 return (
                   <div key={key} className={`emc-week__cell${isToday ? ' emc-week__cell--today' : ''}`}>
                     {hourEvts.map(ev => (
-                      <div key={ev.id} className={`emc-week__ev emc-evpill--${ev.type}`}>
+                      <div key={ev.id} className={`emc-week__ev emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>
                         <span className="emc-week__ev-time">{formatTime(ev.start!)}</span>
                         <span className="emc-week__ev-title">{ev.title}</span>
                       </div>
@@ -234,7 +369,7 @@ export const MyCalendarTab: React.FC = () => {
           <div className="emc-day__allday">
             <span className="emc-day__allday-label">All day</span>
             {allDay.map(ev => (
-              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}`}>{ev.title}</div>
+              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
             ))}
           </div>
         )}
@@ -247,7 +382,7 @@ export const MyCalendarTab: React.FC = () => {
                 <div className="emc-day__time">{formatHour(h)}</div>
                 <div className="emc-day__slot">
                   {hourEvts.map(ev => (
-                    <div key={ev.id} className={`emc-day__ev emc-evpill--${ev.type}`}>
+                    <div key={ev.id} className={`emc-day__ev emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>
                       <div className="emc-day__ev-title">{ev.title}</div>
                       <div className="emc-day__ev-time">
                         {formatTime(ev.start!)}{ev.end ? ` – ${formatTime(ev.end)}` : ''}
@@ -260,6 +395,62 @@ export const MyCalendarTab: React.FC = () => {
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  // ── Agenda view ────────────────────────────────────────────────────────────
+  const renderAgenda = () => {
+    const dateKeys = Object.keys(eventsByDate).sort();
+
+    if (dateKeys.length === 0) {
+      return (
+        <div className="emc-agenda emc-agenda--empty">
+          <CalendarX2 size={22} className="emc-agenda__empty-icon" />
+          <p className="emc-agenda__empty-text">No events in this range</p>
+        </div>
+      );
+    }
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return (
+      <div className="emc-agenda">
+        {dateKeys.map(key => {
+          const d = parseLocalDate(key);
+          const dayEvts = [...eventsByDate[key]].sort((a, b) => (a.start ?? '').localeCompare(b.start ?? ''));
+          const isToday = isSameDay(d, today);
+          const isTomorrow = isSameDay(d, tomorrow);
+          return (
+            <div key={key} className={`emc-agenda__group${isToday ? ' emc-agenda__group--today' : ''}`}>
+              <div className="emc-agenda__date">
+                {isToday && <span className="emc-agenda__date-badge">Today</span>}
+                {isTomorrow && <span className="emc-agenda__date-badge emc-agenda__date-badge--muted">Tomorrow</span>}
+                <span className="emc-agenda__date-text">
+                  {DAY_SHORT[d.getDay()]}, {MONTH_NAMES[d.getMonth()]} {d.getDate()}
+                </span>
+              </div>
+              <div className="emc-agenda__events">
+                {dayEvts.map(ev => {
+                  const Icon = AGENDA_TYPE_ICON[ev.type];
+                  return (
+                    <div key={ev.id} className="emc-agenda__ev" onClick={e => openEvent(e, ev)}>
+                      <div className={`emc-agenda__icon emc-evpill--${ev.type}`}>
+                        <Icon size={13} />
+                      </div>
+                      <span className="emc-agenda__ev-time">
+                        {ev.allDay ? 'All day' : ev.start ? `${formatTime(ev.start)}${ev.end ? ` – ${formatTime(ev.end)}` : ''}` : ''}
+                      </span>
+                      <span className="emc-agenda__ev-title">{ev.title}</span>
+                      {ev.ownerName && <span className="emc-agenda__ev-owner">{ev.ownerName}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -299,13 +490,50 @@ export const MyCalendarTab: React.FC = () => {
       {/* Header */}
       <div className="emc-header">
         <div className="emc-header__title">
-          <h2 className="emc-page-title">My Calendar</h2>
+          <div className="emc-scope" ref={scopeMenuRef}>
+            <button
+              type="button"
+              className="emc-scope__trigger"
+              onClick={() => setScopeMenuOpen(o => !o)}
+              aria-haspopup="listbox"
+              aria-expanded={scopeMenuOpen}
+            >
+              <h2 className="emc-page-title">{scopeLabel}</h2>
+              <ChevronDown size={16} className="emc-scope__chevron" />
+            </button>
+            {scopeMenuOpen && (
+              <div className="emc-scope__menu" role="listbox">
+                {SCOPE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="option"
+                    aria-selected={scope === opt.value}
+                    className={`emc-scope__menu-item${scope === opt.value ? ' emc-scope__menu-item--active' : ''}`}
+                    onClick={() => { setScope(opt.value); setScopeMenuOpen(false); }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <span className="emc-header__sub">Schedule · June 2026</span>
         </div>
-        <button type="button" className="era-btn era-btn--ghost emc-header__btn">
-          <Plus size={13} />
-          New Event
-        </button>
+        <div className="emc-header__actions">
+          <button type="button" className="era-btn era-btn--ghost emc-header__btn">
+            <Plus size={13} />
+            New Event
+          </button>
+          <button
+            type="button"
+            className="era-btn era-btn--ghost emc-header__btn emc-header__btn--icon"
+            aria-label="Calendar settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings size={13} />
+          </button>
+        </div>
       </div>
 
       {/* Controls */}
@@ -325,7 +553,7 @@ export const MyCalendarTab: React.FC = () => {
         <span className="emc-period">{periodLabel}</span>
 
         <div className="emc-viewswitch">
-          {(['day', 'week', 'month'] as CalendarViewMode[]).map(v => (
+          {(['day', 'week', 'month', 'agenda'] as CalendarViewMode[]).map(v => (
             <button
               key={v}
               type="button"
@@ -337,9 +565,27 @@ export const MyCalendarTab: React.FC = () => {
           ))}
         </div>
 
-        <button type="button" className="emc-navbtn" aria-label="Filter events">
-          <Filter size={13} />
-        </button>
+        <div className="emc-filter" ref={filterPanelRef}>
+          <button
+            type="button"
+            className={`emc-navbtn${enabledTypes.size < ALL_EVENT_TYPES.length || searchQuery ? ' emc-navbtn--active' : ''}`}
+            aria-label="Filter events"
+            aria-expanded={filterPanelOpen}
+            onClick={() => setFilterPanelOpen(o => !o)}
+          >
+            <Filter size={13} />
+          </button>
+          {filterPanelOpen && (
+            <CalendarFilterPanel
+              enabledTypes={enabledTypes}
+              onToggleType={toggleType}
+              onClearTypes={clearTypeFilters}
+              onSelectAllTypes={selectAllTypeFilters}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          )}
+        </div>
       </div>
 
       {/* Body */}
@@ -347,9 +593,10 @@ export const MyCalendarTab: React.FC = () => {
 
         {/* Calendar surface */}
         <div className="era-panel emc-surface">
-          {viewMode === 'month' && renderMonth()}
-          {viewMode === 'week'  && renderWeek()}
-          {viewMode === 'day'   && renderDay()}
+          {viewMode === 'month'  && renderMonth()}
+          {viewMode === 'week'   && renderWeek()}
+          {viewMode === 'day'    && renderDay()}
+          {viewMode === 'agenda' && renderAgenda()}
         </div>
 
         {/* Right rail */}
@@ -389,31 +636,105 @@ export const MyCalendarTab: React.FC = () => {
             </div>
           )}
 
-          {/* Sync status */}
-          <div className="era-panel emc-rail__section">
-            <div className="emc-rail__head">
-              <RefreshCw size={13} />
-              <span className="emc-rail__title">Calendar Sync</span>
-            </div>
-            <div className="emc-sync">
-              {([
-                { key: 'google',  label: 'Google',  status: syncStatus.google  },
-                { key: 'outlook', label: 'Outlook', status: syncStatus.outlook }
-              ] as const).map(s => (
-                <div key={s.key} className="emc-sync__row">
-                  <div className={`emc-sync__dot emc-sync__dot--${s.status}`} />
-                  <span className="emc-sync__label">{s.label}</span>
-                  <span className={`emc-sync__badge emc-sync__badge--${s.status}`}>
-                    {s.status === 'connected' ? 'Connected' : 'Not connected'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="emc-sync__meta">Synced {syncStatus.lastSynced}</div>
-          </div>
-
         </div>
       </div>
+
+      {/* "+N more" day popover */}
+      {dayPopover && (
+        <div
+          ref={dayPopoverRef}
+          className="emc-daypopover"
+          style={{ top: dayPopover.top, left: dayPopover.left }}
+        >
+          <div className="emc-daypopover__head">
+            {(() => {
+              const d = parseLocalDate(dayPopover.key);
+              return `${DAY_SHORT[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+            })()}
+          </div>
+          <div className="emc-daypopover__events">
+            {(eventsByDate[dayPopover.key] ?? []).map(ev => (
+              <div
+                key={ev.id}
+                className="emc-daypopover__ev"
+                onClick={e => { setDayPopover(null); openEvent(e, ev); }}
+              >
+                <span className={`emc-daypopover__dot emc-evpill--${ev.type}`} />
+                <span className="emc-daypopover__ev-title">{ev.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Event details / edit modal */}
+      {selectedEvent && (
+        <EventDetailsModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onDelete={handleDeleteEvent}
+          onSave={handleSaveEvent}
+        />
+      )}
+
+      {/* Calendar settings (placeholder) */}
+      {settingsOpen && (
+        <div className="emc-modal-overlay" onClick={() => setSettingsOpen(false)}>
+          <div
+            className="emc-modal emc-modal--lg"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Calendar settings"
+            onClick={e => e.stopPropagation()}
+          >
+            <header className="emc-modal__header">
+              <h3 className="emc-modal__title">Calendar Settings</h3>
+              <button type="button" className="emc-modal__close" onClick={() => setSettingsOpen(false)} aria-label="Close">
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="emc-settings__tabs">
+              {SETTINGS_TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`emc-settings__tab${settingsTab === tab.id ? ' emc-settings__tab--active' : ''}`}
+                  onClick={() => setSettingsTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="emc-modal__body emc-modal__body--lg">
+              {settingsTab === 'sync' && (
+                <div className="emc-settings__panel">
+                  <div className="emc-rail__head">
+                    <RefreshCw size={13} />
+                    <span className="emc-rail__title">Calendar Sync</span>
+                  </div>
+                  <div className="emc-sync">
+                    {([
+                      { key: 'google',  label: 'Google',  status: syncStatus.google  },
+                      { key: 'outlook', label: 'Outlook', status: syncStatus.outlook }
+                    ] as const).map(s => (
+                      <div key={s.key} className="emc-sync__row">
+                        <div className={`emc-sync__dot emc-sync__dot--${s.status}`} />
+                        <span className="emc-sync__label">{s.label}</span>
+                        <span className={`emc-sync__badge emc-sync__badge--${s.status}`}>
+                          {s.status === 'connected' ? 'Connected' : 'Not connected'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="emc-sync__meta">Synced {syncStatus.lastSynced}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
