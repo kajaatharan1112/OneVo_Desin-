@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import type { CalendarEvent } from '../../types/employee-calendar.types';
 import {
   EMPTY_NEW_EVENT_FORM,
+  MOCK_ATTENDEES,
   type NewEventFormState,
   type NewEventType,
 } from './new-event-wizard.utils';
@@ -33,6 +34,12 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     if (step === 1) {
       if (!form.date) return 'Date is required.';
       if (!form.allDay && form.end <= form.start) return 'End time must be after start time.';
+    }
+    if (step === 2 && form.type === 'meeting' && form.attendees.length === 0) {
+      return 'Select at least one attendee.';
+    }
+    if (step === 3 && form.recurring && (form.occurrences < 1 || form.occurrences > 12)) {
+      return 'Occurrences must be between 1 and 12.';
     }
     return null;
   };
@@ -104,6 +111,84 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
+  const toggleAttendee = (name: string) => {
+    setForm(f => ({
+      ...f,
+      attendees: f.attendees.includes(name)
+        ? f.attendees.filter(a => a !== name)
+        : [...f.attendees, name],
+    }));
+  };
+
+  const renderMoreInfoStep = () => (
+    <div className="emc-wizard__body">
+      <label className="emc-wizard__field">
+        <span>Location</span>
+        <input value={form.location} onChange={e => update({ location: e.target.value })} placeholder="Optional" />
+      </label>
+      <label className="emc-wizard__field">
+        <span>Notes</span>
+        <textarea value={form.notes} onChange={e => update({ notes: e.target.value })} placeholder="Optional" rows={3} />
+      </label>
+      {form.type === 'meeting' && (
+        <div className="emc-wizard__field">
+          <span>Attendees</span>
+          <div className="emc-wizard__attendees">
+            {MOCK_ATTENDEES.map(name => (
+              <label key={name} className="emc-wizard__radio">
+                <input type="checkbox" checked={form.attendees.includes(name)} onChange={() => toggleAttendee(name)} />
+                <span>{name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderRemindersStep = () => (
+    <div className="emc-wizard__body">
+      <label className="emc-wizard__field">
+        <span>Reminder</span>
+        <select
+          value={form.reminderMinutesBefore}
+          onChange={e => update({ reminderMinutesBefore: Number(e.target.value) })}
+        >
+          <option value={0}>None</option>
+          <option value={10}>10 minutes before</option>
+          <option value={60}>1 hour before</option>
+          <option value={1440}>1 day before</option>
+        </select>
+      </label>
+      <label className="emc-wizard__field emc-wizard__field--checkbox">
+        <input type="checkbox" checked={form.recurring} onChange={e => update({ recurring: e.target.checked })} />
+        <span>Recurring</span>
+      </label>
+      {form.recurring && (
+        <div className="emc-wizard__field-row">
+          <label className="emc-wizard__field">
+            <span>Frequency</span>
+            <select value={form.frequency} onChange={e => update({ frequency: e.target.value as NewEventFormState['frequency'] })}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+          <label className="emc-wizard__field">
+            <span>Occurrences</span>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={form.occurrences}
+              onChange={e => update({ occurrences: Math.min(12, Math.max(1, Number(e.target.value))) })}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="emc-modal-overlay" onClick={onClose}>
       <div className="emc-modal emc-wizard" role="dialog" aria-modal="true" aria-label="New event" onClick={e => e.stopPropagation()}>
@@ -124,6 +209,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
 
         {step === 0 && renderDetailsStep()}
         {step === 1 && renderScheduleStep()}
+        {step === 2 && renderMoreInfoStep()}
+        {step === 3 && renderRemindersStep()}
 
         {stepError && <p className="emc-wizard__error">{stepError}</p>}
 
