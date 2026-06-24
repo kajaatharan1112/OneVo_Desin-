@@ -1356,3 +1356,223 @@
     width: 40px;
   }
 }
+
+/* ── New Event Wizard ───────────────────────────────────────────────────── */
+
+.emc-wizard {
+  width: 420px;
+}
+
+.emc-wizard__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0 1rem;
+  margin-top: 0.5rem;
+}
+
+.emc-wizard__step {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--nexus-text-muted);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.emc-wizard__step--active {
+  color: #fff;
+  background: var(--accent);
+}
+
+.emc-wizard__step--done {
+  color: var(--accent);
+  background: var(--accent-bg, color-mix(in srgb, var(--accent) 10%, transparent));
+}
+
+.emc-wizard__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.emc-wizard__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  font-size: 0.75rem;
+  color: var(--nexus-text-muted);
+}
+
+.emc-wizard__field input,
+.emc-wizard__field select,
+.emc-wizard__field textarea {
+  padding: 0.4375rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-muted);
+  font-size: 0.8125rem;
+  font-family: var(--sans);
+  color: var(--text-h);
+  outline: none;
+  resize: vertical;
+}
+
+.emc-wizard__field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emc-wizard__field-row {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.emc-wizard__field-row .emc-wizard__field {
+  flex: 1;
+}
+
+.emc-wizard__radio-group,
+.emc-wizard__attendees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.emc-wizard__radio {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.78rem;
+  color: var(--text-h);
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.emc-wizard__error {
+  margin: 0;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+.emc-wizard__conflict-intro {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.emc-wizard__conflict-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emc-wizard__conflict-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-h);
+}
+
+.emc-wizard__review-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--nexus-text-muted);
+}
+
+.emc-wizard__review-row strong {
+  color: var(--text-h);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ── RSVP badges & manager approval ──────────────────────────────────────── */
+
+.emc-modal__rsvp-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.emc-rsvp-badge {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.emc-rsvp-badge--pending {
+  color: var(--nexus-text-muted);
+  background: var(--surface-muted);
+}
+
+.emc-rsvp-badge--accepted {
+  color: var(--success, #047857);
+  background: color-mix(in srgb, var(--success, #10b981) 12%, transparent);
+}
+
+.emc-rsvp-badge--declined {
+  color: #dc2626;
+  background: color-mix(in srgb, #dc2626 10%, transparent);
+}
+
+.emc-rsvp-badge--tentative {
+  color: var(--nexus-warning, #b45309);
+  background: color-mix(in srgb, var(--nexus-warning, #f59e0b) 12%, transparent);
+}
+
+.emc-modal__approval {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.emc-modal__approval-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.emc-modal__approval-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.emc-modal__rejected-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #dc2626;
+}
+
+/* Pending / rejected event pills */
+.emc-month__evpill.emc-evpill--pending-status,
+.emc-week__evpill.emc-evpill--pending-status,
+.emc-week__ev.emc-evpill--pending-status,
+.emc-day__ev.emc-evpill--pending-status {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.emc-evpill--rejected-status {
+  --ev-color: #dc2626;
+  --ev-bg: color-mix(in srgb, #dc2626 10%, transparent);
+  border-style: dashed;
+}

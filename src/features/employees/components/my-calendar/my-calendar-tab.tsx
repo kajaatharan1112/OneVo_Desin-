@@ -264,7 +264,7 @@ export const MyCalendarTab: React.FC = () => {
                   {dayEvts.slice(0, 3).map(ev => (
                     <div
                       key={ev.id}
-                      className={`emc-month__evpill emc-evpill--${ev.type}`}
+                      className={`emc-month__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}
                       onClick={e => openEvent(e, ev)}
                     >
                       {ev.title}
@@ -329,7 +329,7 @@ export const MyCalendarTab: React.FC = () => {
             {days.map((d, i) => (
               <div key={toDateKey(d)} className="emc-week__alldaycell">
                 {allDayRows[i].map(ev => (
-                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
+                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
                 ))}
               </div>
             ))}
@@ -348,7 +348,7 @@ export const MyCalendarTab: React.FC = () => {
                 return (
                   <div key={key} className={`emc-week__cell${isToday ? ' emc-week__cell--today' : ''}`}>
                     {hourEvts.map(ev => (
-                      <div key={ev.id} className={`emc-week__ev emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>
+                      <div key={ev.id} className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>
                         <span className="emc-week__ev-time">{formatTime(ev.start!)}</span>
                         <span className="emc-week__ev-title">{ev.title}</span>
                       </div>
@@ -376,7 +376,7 @@ export const MyCalendarTab: React.FC = () => {
           <div className="emc-day__allday">
             <span className="emc-day__allday-label">All day</span>
             {allDay.map(ev => (
-              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
+              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
             ))}
           </div>
         )}
@@ -389,7 +389,7 @@ export const MyCalendarTab: React.FC = () => {
                 <div className="emc-day__time">{formatHour(h)}</div>
                 <div className="emc-day__slot">
                   {hourEvts.map(ev => (
-                    <div key={ev.id} className={`emc-day__ev emc-evpill--${ev.type}`} onClick={e => openEvent(e, ev)}>
+                    <div key={ev.id} className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>
                       <div className="emc-day__ev-title">{ev.title}</div>
                       <div className="emc-day__ev-time">
                         {formatTime(ev.start!)}{ev.end ? ` – ${formatTime(ev.end)}` : ''}
@@ -443,7 +443,7 @@ export const MyCalendarTab: React.FC = () => {
                   const Icon = AGENDA_TYPE_ICON[ev.type];
                   return (
                     <div key={ev.id} className="emc-agenda__ev" onClick={e => openEvent(e, ev)}>
-                      <div className={`emc-agenda__icon emc-evpill--${ev.type}`}>
+                      <div className={`emc-agenda__icon emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}>
                         <Icon size={13} />
                       </div>
                       <span className="emc-agenda__ev-time">
