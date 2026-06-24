@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { CalendarEvent } from '../../types/employee-calendar.types';
 import {
+  buildEventsFromForm,
   EMPTY_NEW_EVENT_FORM,
+  findConflicts,
   MOCK_ATTENDEES,
   type NewEventFormState,
   type NewEventType,
@@ -26,6 +28,7 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<NewEventFormState>(EMPTY_NEW_EVENT_FORM);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
 
   const update = (patch: Partial<NewEventFormState>) => setForm(f => ({ ...f, ...patch }));
 
@@ -189,6 +192,65 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
+  const finalizeCreate = () => {
+    onCreate(buildEventsFromForm(form));
+    onClose();
+  };
+
+  const handleCreateClick = () => {
+    const found = findConflicts(form, existingMyEvents);
+    if (found.length > 0) {
+      setConflicts(found);
+      return;
+    }
+    finalizeCreate();
+  };
+
+  const handleReschedule = () => {
+    setConflicts(null);
+    setStep(1);
+  };
+
+  const handleConfirmAnyway = () => {
+    setConflicts(null);
+    finalizeCreate();
+  };
+
+  const renderConflictStep = () => (
+    <div className="emc-wizard__body">
+      <p className="emc-wizard__conflict-intro">This clashes with:</p>
+      <ul className="emc-wizard__conflict-list">
+        {(conflicts ?? []).map(ev => (
+          <li key={ev.id} className="emc-wizard__conflict-item">
+            <span className={`emc-filterpanel__swatch emc-evpill--${ev.type}`} />
+            {ev.title}
+            {ev.allDay ? ' · All day' : ev.start ? ` · ${ev.start}${ev.end ? `–${ev.end}` : ''}` : ''}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  const renderReviewStep = () => (
+    <div className="emc-wizard__body">
+      <div className="emc-wizard__review-row"><span>Title</span><strong>{form.title}</strong></div>
+      <div className="emc-wizard__review-row"><span>Type</span><strong>{TYPE_OPTIONS.find(o => o.value === form.type)?.label}</strong></div>
+      <div className="emc-wizard__review-row">
+        <span>When</span>
+        <strong>
+          {form.date}{form.allDay ? (form.endDate && form.endDate > form.date ? ` – ${form.endDate}` : ' · All day') : ` · ${form.start}–${form.end}`}
+        </strong>
+      </div>
+      {form.location && <div className="emc-wizard__review-row"><span>Location</span><strong>{form.location}</strong></div>}
+      {form.type === 'meeting' && form.attendees.length > 0 && (
+        <div className="emc-wizard__review-row"><span>Attendees</span><strong>{form.attendees.join(', ')}</strong></div>
+      )}
+      {form.recurring && (
+        <div className="emc-wizard__review-row"><span>Repeats</span><strong>{form.frequency}, {form.occurrences}x</strong></div>
+      )}
+    </div>
+  );
+
   return (
     <div className="emc-modal-overlay" onClick={onClose}>
       <div className="emc-modal emc-wizard" role="dialog" aria-modal="true" aria-label="New event" onClick={e => e.stopPropagation()}>
@@ -207,22 +269,46 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
           ))}
         </div>
 
-        {step === 0 && renderDetailsStep()}
-        {step === 1 && renderScheduleStep()}
-        {step === 2 && renderMoreInfoStep()}
-        {step === 3 && renderRemindersStep()}
+        {conflicts ? renderConflictStep() : (
+          <>
+            {step === 0 && renderDetailsStep()}
+            {step === 1 && renderScheduleStep()}
+            {step === 2 && renderMoreInfoStep()}
+            {step === 3 && renderRemindersStep()}
+            {step === 4 && renderReviewStep()}
+          </>
+        )}
 
         {stepError && <p className="emc-wizard__error">{stepError}</p>}
 
         <div className="emc-modal__actions">
-          {step > 0 && (
-            <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={goBack}>
-              Back
-            </button>
+          {conflicts ? (
+            <>
+              <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={handleReschedule}>
+                Reschedule
+              </button>
+              <button type="button" className="era-btn emc-modal__action" onClick={handleConfirmAnyway}>
+                Confirm anyway
+              </button>
+            </>
+          ) : (
+            <>
+              {step > 0 && (
+                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={goBack}>
+                  Back
+                </button>
+              )}
+              {step < STEPS.length - 1 ? (
+                <button type="button" className="era-btn emc-modal__action" onClick={goNext}>
+                  Next
+                </button>
+              ) : (
+                <button type="button" className="era-btn emc-modal__action" onClick={handleCreateClick}>
+                  Create Event
+                </button>
+              )}
+            </>
           )}
-          <button type="button" className="era-btn emc-modal__action" onClick={goNext}>
-            Next
-          </button>
         </div>
       </div>
     </div>
