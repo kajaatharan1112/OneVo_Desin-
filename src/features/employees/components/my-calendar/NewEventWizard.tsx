@@ -10,8 +10,6 @@ import {
   type NewEventType,
 } from './new-event-wizard.utils';
 
-const STEPS = ['Details', 'Schedule', 'More info', 'Reminders & repeat', 'Review'] as const;
-
 const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
   { value: 'leave', label: 'Leave' },
   { value: 'meeting', label: 'Meeting' },
@@ -25,42 +23,62 @@ interface NewEventWizardProps {
 }
 
 export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreate, existingMyEvents }) => {
-  const [step, setStep] = useState(0);
   const [form, setForm] = useState<NewEventFormState>(EMPTY_NEW_EVENT_FORM);
-  const [stepError, setStepError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
 
   const update = (patch: Partial<NewEventFormState>) => setForm(f => ({ ...f, ...patch }));
 
-  const validateStep = (): string | null => {
-    if (step === 0 && !form.title.trim()) return 'Title is required.';
-    if (step === 1) {
-      if (!form.date) return 'Date is required.';
-      if (!form.allDay && form.end <= form.start) return 'End time must be after start time.';
-    }
-    if (step === 2 && form.type === 'meeting' && form.attendees.length === 0) {
-      return 'Select at least one attendee.';
-    }
-    if (step === 3 && form.recurring && (form.occurrences < 1 || form.occurrences > 12)) {
-      return 'Occurrences must be between 1 and 12.';
-    }
-    return null;
+  const toggleAttendee = (name: string) => {
+    setForm(f => ({
+      ...f,
+      attendees: f.attendees.includes(name)
+        ? f.attendees.filter(a => a !== name)
+        : [...f.attendees, name],
+    }));
   };
 
-  const goNext = () => {
-    const error = validateStep();
-    if (error) { setStepError(error); return; }
-    setStepError(null);
-    setStep(s => Math.min(s + 1, STEPS.length - 1));
+  const validateForm = (): string[] => {
+    const found: string[] = [];
+    if (!form.title.trim()) found.push('Title is required.');
+    if (!form.date) found.push('Date is required.');
+    if (!form.allDay && form.end <= form.start) found.push('End time must be after start time.');
+    if (form.type === 'meeting' && form.attendees.length === 0) found.push('Select at least one attendee.');
+    if (form.recurring && (form.occurrences < 1 || form.occurrences > 12)) {
+      found.push('Occurrences must be between 1 and 12.');
+    }
+    return found;
   };
 
-  const goBack = () => {
-    setStepError(null);
-    setStep(s => Math.max(s - 1, 0));
+  const finalizeCreate = () => {
+    onCreate(buildEventsFromForm(form));
+    onClose();
   };
 
-  const renderDetailsStep = () => (
-    <div className="emc-wizard__body">
+  const handleCreateClick = () => {
+    const found = validateForm();
+    if (found.length > 0) {
+      setErrors(found);
+      return;
+    }
+    setErrors([]);
+    const clashes = findConflicts(form, existingMyEvents);
+    if (clashes.length > 0) {
+      setConflicts(clashes);
+      return;
+    }
+    finalizeCreate();
+  };
+
+  const handleReschedule = () => setConflicts(null);
+  const handleConfirmAnyway = () => {
+    setConflicts(null);
+    finalizeCreate();
+  };
+
+  const renderTitleTypeSection = () => (
+    <div className="emc-wizard__section">
+      <h4 className="emc-wizard__section-title">Title &amp; type</h4>
       <label className="emc-wizard__field">
         <span>Title</span>
         <input value={form.title} onChange={e => update({ title: e.target.value })} placeholder="Event title" />
@@ -84,14 +102,15 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
-  const renderScheduleStep = () => (
-    <div className="emc-wizard__body">
+  const renderScheduleSection = () => (
+    <div className="emc-wizard__section">
+      <h4 className="emc-wizard__section-title">Schedule</h4>
       <label className="emc-wizard__field emc-wizard__field--checkbox">
         <input type="checkbox" checked={form.allDay} onChange={e => update({ allDay: e.target.checked })} />
         <span>All-day</span>
       </label>
       <label className="emc-wizard__field">
-        <span>{form.allDay ? 'Date' : 'Date'}</span>
+        <span>Date</span>
         <input type="date" value={form.date} onChange={e => update({ date: e.target.value })} />
       </label>
       {form.allDay ? (
@@ -114,17 +133,9 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
-  const toggleAttendee = (name: string) => {
-    setForm(f => ({
-      ...f,
-      attendees: f.attendees.includes(name)
-        ? f.attendees.filter(a => a !== name)
-        : [...f.attendees, name],
-    }));
-  };
-
-  const renderMoreInfoStep = () => (
-    <div className="emc-wizard__body">
+  const renderDetailsSection = () => (
+    <div className="emc-wizard__section">
+      <h4 className="emc-wizard__section-title">Details</h4>
       <label className="emc-wizard__field">
         <span>Location</span>
         <input value={form.location} onChange={e => update({ location: e.target.value })} placeholder="Optional" />
@@ -149,8 +160,9 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
-  const renderRemindersStep = () => (
-    <div className="emc-wizard__body">
+  const renderRemindersSection = () => (
+    <div className="emc-wizard__section">
+      <h4 className="emc-wizard__section-title">Reminders &amp; repeat</h4>
       <label className="emc-wizard__field">
         <span>Reminder</span>
         <select
@@ -192,32 +204,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
-  const finalizeCreate = () => {
-    onCreate(buildEventsFromForm(form));
-    onClose();
-  };
-
-  const handleCreateClick = () => {
-    const found = findConflicts(form, existingMyEvents);
-    if (found.length > 0) {
-      setConflicts(found);
-      return;
-    }
-    finalizeCreate();
-  };
-
-  const handleReschedule = () => {
-    setConflicts(null);
-    setStep(1);
-  };
-
-  const handleConfirmAnyway = () => {
-    setConflicts(null);
-    finalizeCreate();
-  };
-
-  const renderConflictStep = () => (
-    <div className="emc-wizard__body">
+  const renderConflictSection = () => (
+    <div className="emc-wizard__section">
       <p className="emc-wizard__conflict-intro">This clashes with:</p>
       <ul className="emc-wizard__conflict-list">
         {(conflicts ?? []).map(ev => (
@@ -231,26 +219,6 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
-  const renderReviewStep = () => (
-    <div className="emc-wizard__body">
-      <div className="emc-wizard__review-row"><span>Title</span><strong>{form.title}</strong></div>
-      <div className="emc-wizard__review-row"><span>Type</span><strong>{TYPE_OPTIONS.find(o => o.value === form.type)?.label}</strong></div>
-      <div className="emc-wizard__review-row">
-        <span>When</span>
-        <strong>
-          {form.date}{form.allDay ? (form.endDate && form.endDate > form.date ? ` – ${form.endDate}` : ' · All day') : ` · ${form.start}–${form.end}`}
-        </strong>
-      </div>
-      {form.location && <div className="emc-wizard__review-row"><span>Location</span><strong>{form.location}</strong></div>}
-      {form.type === 'meeting' && form.attendees.length > 0 && (
-        <div className="emc-wizard__review-row"><span>Attendees</span><strong>{form.attendees.join(', ')}</strong></div>
-      )}
-      {form.recurring && (
-        <div className="emc-wizard__review-row"><span>Repeats</span><strong>{form.frequency}, {form.occurrences}x</strong></div>
-      )}
-    </div>
-  );
-
   return (
     <div className="emc-modal-overlay" onClick={onClose}>
       <div className="emc-modal emc-wizard" role="dialog" aria-modal="true" aria-label="New event" onClick={e => e.stopPropagation()}>
@@ -261,25 +229,22 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
           </button>
         </header>
 
-        <div className="emc-wizard__steps">
-          {STEPS.map((label, i) => (
-            <span key={label} className={`emc-wizard__step${i === step ? ' emc-wizard__step--active' : ''}${i < step ? ' emc-wizard__step--done' : ''}`}>
-              {label}
-            </span>
-          ))}
+        <div className="emc-wizard__body">
+          {conflicts ? renderConflictSection() : (
+            <>
+              {renderTitleTypeSection()}
+              {renderScheduleSection()}
+              {renderDetailsSection()}
+              {renderRemindersSection()}
+            </>
+          )}
         </div>
 
-        {conflicts ? renderConflictStep() : (
-          <>
-            {step === 0 && renderDetailsStep()}
-            {step === 1 && renderScheduleStep()}
-            {step === 2 && renderMoreInfoStep()}
-            {step === 3 && renderRemindersStep()}
-            {step === 4 && renderReviewStep()}
-          </>
+        {errors.length > 0 && (
+          <ul className="emc-wizard__error-list">
+            {errors.map(err => <li key={err}>{err}</li>)}
+          </ul>
         )}
-
-        {stepError && <p className="emc-wizard__error">{stepError}</p>}
 
         <div className="emc-modal__actions">
           {conflicts ? (
@@ -292,22 +257,9 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
               </button>
             </>
           ) : (
-            <>
-              {step > 0 && (
-                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={goBack}>
-                  Back
-                </button>
-              )}
-              {step < STEPS.length - 1 ? (
-                <button type="button" className="era-btn emc-modal__action" onClick={goNext}>
-                  Next
-                </button>
-              ) : (
-                <button type="button" className="era-btn emc-modal__action" onClick={handleCreateClick}>
-                  Create Event
-                </button>
-              )}
-            </>
+            <button type="button" className="era-btn emc-modal__action" onClick={handleCreateClick}>
+              Create Event
+            </button>
           )}
         </div>
       </div>
