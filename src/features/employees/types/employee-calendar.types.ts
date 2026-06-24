@@ -1,6 +1,6 @@
 export type CalendarViewMode = 'day' | 'week' | 'month' | 'agenda';
 export type CalendarEventType = 'meeting' | 'holiday' | 'leave' | 'shift' | 'reminder';
-export type CalendarEventStatus = 'confirmed' | 'pending' | 'needs-response';
+export type CalendarEventStatus = 'confirmed' | 'pending' | 'needs-response' | 'rejected';
 export type CalendarEventSource = 'company' | 'personal' | 'schedule' | 'leave';
 export type SyncConnectionStatus = 'connected' | 'disconnected';
 
@@ -24,6 +24,8 @@ export interface CalendarEvent {
   note?: string;
   location?: string;
   attendees?: string[];
+  reminderMinutesBefore?: number;
+  attendeeRsvp?: Record<string, 'pending' | 'accepted' | 'declined' | 'tentative'>;
 }
 
 export interface CalendarSyncStatus {
