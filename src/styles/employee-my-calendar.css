@@ -486,6 +486,10 @@
   background: color-mix(in srgb, var(--accent) 3%, transparent);
 }
 
+.emc-week__cell--dragselect {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .emc-week__ev {
   display: flex;
   flex-direction: column;
@@ -561,6 +565,10 @@
 
 .emc-day__row:last-child {
   border-bottom: none;
+}
+
+.emc-day__row--dragselect {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .emc-day__time {
