@@ -259,26 +259,14 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
             <span>Recurring</span>
           </label>
           {form.recurring && (
-            <div className="emc-wizard__field-row">
-              <label className="emc-wizard__field">
-                <span>Frequency</span>
-                <select value={form.frequency} onChange={e => update({ frequency: e.target.value as NewEventFormState['frequency'] })}>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </label>
-              <label className="emc-wizard__field">
-                <span>Occurrences</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={form.occurrences}
-                  onChange={e => update({ occurrences: Math.min(12, Math.max(1, Number(e.target.value))) })}
-                />
-              </label>
-            </div>
+            <label className="emc-wizard__field">
+              <span>Frequency</span>
+              <select value={form.frequency} onChange={e => update({ frequency: e.target.value as NewEventFormState['frequency'] })}>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
           )}
         </>
       )}

@@ -24,12 +24,12 @@ export interface TypeFieldConfig {
 
 export const TYPE_FIELD_CONFIG: Record<NewEventType, TypeFieldConfig> = {
   meeting: {
-    showCategoryPriority: true, showLeaveType: false, allowTimedSchedule: true,
+    showCategoryPriority: false, showLeaveType: false, allowTimedSchedule: true,
     locationLabel: 'Meeting link / Room', notesLabel: 'Agenda',
     showAttendees: true, showReminder: true, showRecurring: true,
   },
   training: {
-    showCategoryPriority: true, showLeaveType: false, allowTimedSchedule: true,
+    showCategoryPriority: false, showLeaveType: false, allowTimedSchedule: true,
     locationLabel: 'Location', notesLabel: 'Notes',
     showAttendees: true, showReminder: true, showRecurring: true,
   },
