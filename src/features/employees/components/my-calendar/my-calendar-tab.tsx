@@ -430,8 +430,15 @@ export const MyCalendarTab: React.FC = () => {
                 const hStr = String(h).padStart(2, '0');
                 const hourEvts = (eventsByDate[key] ?? []).filter(ev => !ev.allDay && ev.start?.startsWith(hStr));
                 const isToday = isSameDay(d, today);
+                const inDrag = isHourInDragRange(key, h);
                 return (
-                  <div key={key} className={`emc-week__cell${isToday ? ' emc-week__cell--today' : ''}`}>
+                  <div
+                    key={key}
+                    className={`emc-week__cell${isToday ? ' emc-week__cell--today' : ''}${inDrag ? ' emc-week__cell--dragselect' : ''}`}
+                    data-drag-day={key}
+                    data-drag-hour={h}
+                    onMouseDown={e => handleCellMouseDown(e, key, h)}
+                  >
                     {hourEvts.map(ev => (
                       <div key={ev.id} className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>
                         <span className="emc-week__ev-time">{formatTime(ev.start!)}</span>
