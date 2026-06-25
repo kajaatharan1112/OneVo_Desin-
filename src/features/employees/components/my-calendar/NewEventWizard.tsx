@@ -5,10 +5,11 @@ import {
   buildEventsFromForm,
   EMPTY_NEW_EVENT_FORM,
   findConflicts,
-  MOCK_ATTENDEES,
+  getDefaultEndTime,
   type NewEventFormState,
   type NewEventType,
 } from './new-event-wizard.utils';
+import { AttendeeSearchField } from './AttendeeSearchField';
 
 const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
   { value: 'leave', label: 'Leave' },
@@ -55,15 +56,6 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
 
   const update = (patch: Partial<NewEventFormState>) => setForm(f => ({ ...f, ...patch }));
-
-  const toggleAttendee = (name: string) => {
-    setForm(f => ({
-      ...f,
-      attendees: f.attendees.includes(name)
-        ? f.attendees.filter(a => a !== name)
-        : [...f.attendees, name],
-    }));
-  };
 
   const validateForm = (): string[] => {
     const found: string[] = [];
@@ -125,7 +117,7 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
                 type="radio"
                 name="event-type"
                 checked={form.type === opt.value}
-                onChange={() => update({ type: opt.value })}
+                onChange={() => update({ type: opt.value, end: getDefaultEndTime(form.start, opt.value) })}
               />
               <span>{opt.label}</span>
             </label>
@@ -170,7 +162,14 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
         <div className="emc-wizard__field-row">
           <label className="emc-wizard__field">
             <span>Start time</span>
-            <input type="time" value={form.start} onChange={e => update({ start: e.target.value })} />
+            <input
+              type="time"
+              value={form.start}
+              onChange={e => {
+                const start = e.target.value;
+                update({ start, end: getDefaultEndTime(start, form.type) });
+              }}
+            />
           </label>
           <label className="emc-wizard__field">
             <span>End time</span>
@@ -195,14 +194,7 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
       {(form.type === 'meeting' || form.type === 'training') && (
         <div className="emc-wizard__field">
           <span>Attendees</span>
-          <div className="emc-wizard__attendees">
-            {MOCK_ATTENDEES.map(name => (
-              <label key={name} className="emc-wizard__radio">
-                <input type="checkbox" checked={form.attendees.includes(name)} onChange={() => toggleAttendee(name)} />
-                <span>{name}</span>
-              </label>
-            ))}
-          </div>
+          <AttendeeSearchField selected={form.attendees} onChange={attendees => update({ attendees })} />
         </div>
       )}
     </div>
