@@ -10,6 +10,7 @@ import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeF
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
+import { addMinutesToTime, type NewEventFormState } from './new-event-wizard.utils';
 
 const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
@@ -67,6 +68,23 @@ function formatTime(t: string): string {
   const ampm = h < 12 ? 'AM' : 'PM';
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+interface DragPointInfo {
+  dayKey: string;
+  minutes: number;
+}
+
+function getDragPointInfo(clientX: number, clientY: number): DragPointInfo | null {
+  const el = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+  const cell = el?.closest<HTMLElement>('[data-drag-day][data-drag-hour]');
+  if (!cell) return null;
+  const dayKey = cell.dataset.dragDay!;
+  const hour = Number(cell.dataset.dragHour);
+  const rect = cell.getBoundingClientRect();
+  const fraction = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
+  const withinHour = Math.min(45, Math.round((fraction * 60) / 15) * 15);
+  return { dayKey, minutes: hour * 60 + withinHour };
 }
 
 const MONTH_NAMES = [
@@ -153,6 +171,7 @@ export const MyCalendarTab: React.FC = () => {
 
   // New event wizard
   const [newEventOpen, setNewEventOpen] = useState(false);
+  const [dragPrefill, setDragPrefill] = useState<Partial<NewEventFormState> | null>(null);
   const handleCreateEvents = (events: CalendarEvent[]) => {
     setLocalEvents(prev => [...prev, ...events]);
     setScope('my');
@@ -162,6 +181,62 @@ export const MyCalendarTab: React.FC = () => {
       return next;
     });
   };
+
+  // Drag-to-create-event (Week/Day views)
+  const [dragDayKey, setDragDayKey] = useState<string | null>(null);
+  const [dragRange, setDragRange] = useState<{ startMinutes: number; endMinutes: number } | null>(null);
+  const dragStateRef = useRef<{ dayKey: string; startMinutes: number; endMinutes: number } | null>(null);
+
+  const handleCellMouseDown = (e: React.MouseEvent<HTMLElement>, dayKey: string, hour: number) => {
+    if ((e.target as HTMLElement).closest('.emc-week__ev, .emc-day__ev')) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fraction = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+    const withinHour = Math.min(45, Math.round((fraction * 60) / 15) * 15);
+    const startMinutes = hour * 60 + withinHour;
+    const endMinutes = startMinutes + 30;
+    dragStateRef.current = { dayKey, startMinutes, endMinutes };
+    setDragDayKey(dayKey);
+    setDragRange({ startMinutes, endMinutes });
+  };
+
+  const isHourInDragRange = (dayKey: string, hour: number): boolean => {
+    if (dragDayKey !== dayKey || !dragRange) return false;
+    const hourStart = hour * 60;
+    const hourEnd = hourStart + 60;
+    return hourStart < dragRange.endMinutes && hourEnd > dragRange.startMinutes;
+  };
+
+  useEffect(() => {
+    if (!dragDayKey) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const info = getDragPointInfo(e.clientX, e.clientY);
+      const current = dragStateRef.current;
+      if (!info || !current || info.dayKey !== current.dayKey) return;
+      const endMinutes = Math.max(current.startMinutes + 15, info.minutes);
+      dragStateRef.current = { ...current, endMinutes };
+      setDragRange({ startMinutes: current.startMinutes, endMinutes });
+    };
+    const handleMouseUp = () => {
+      const current = dragStateRef.current;
+      dragStateRef.current = null;
+      setDragDayKey(null);
+      setDragRange(null);
+      if (current) {
+        const startTime = addMinutesToTime('00:00', current.startMinutes);
+        const endTime = addMinutesToTime('00:00', current.endMinutes);
+        console.log('Selected:', current.dayKey, startTime, '–', endTime);
+        setDragPrefill({ date: current.dayKey, start: startTime, end: endTime, allDay: false, type: 'meeting' });
+        setNewEventOpen(true);
+      }
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragDayKey]);
 
   // Event details modal
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -538,7 +613,7 @@ export const MyCalendarTab: React.FC = () => {
           <span className="emc-header__sub">Schedule · June 2026</span>
         </div>
         <div className="emc-header__actions">
-          <button type="button" className="era-btn era-btn--ghost emc-header__btn" onClick={() => setNewEventOpen(true)}>
+          <button type="button" className="era-btn era-btn--ghost emc-header__btn" onClick={() => { setDragPrefill(null); setNewEventOpen(true); }}>
             <Plus size={13} />
             New Event
           </button>
@@ -755,9 +830,10 @@ export const MyCalendarTab: React.FC = () => {
 
       {newEventOpen && (
         <NewEventWizard
-          onClose={() => setNewEventOpen(false)}
+          onClose={() => { setNewEventOpen(false); setDragPrefill(null); }}
           onCreate={handleCreateEvents}
           existingMyEvents={localEvents.filter(ev => ev.scope === 'my')}
+          initialOverrides={dragPrefill ?? undefined}
         />
       )}
     </div>
