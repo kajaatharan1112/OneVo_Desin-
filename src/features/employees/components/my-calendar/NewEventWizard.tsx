@@ -49,10 +49,11 @@ interface NewEventWizardProps {
   onClose: () => void;
   onCreate: (events: CalendarEvent[]) => void;
   existingMyEvents: CalendarEvent[];
+  initialOverrides?: Partial<NewEventFormState>;
 }
 
-export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreate, existingMyEvents }) => {
-  const [form, setForm] = useState<NewEventFormState>(EMPTY_NEW_EVENT_FORM);
+export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreate, existingMyEvents, initialOverrides }) => {
+  const [form, setForm] = useState<NewEventFormState>(() => ({ ...EMPTY_NEW_EVENT_FORM, ...initialOverrides }));
   const [errors, setErrors] = useState<string[]>([]);
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
 
