@@ -3,14 +3,18 @@ import type {
   CalendarEventType,
   CalendarEventStatus,
   CalendarEventSource,
+  CalendarEventCategory,
+  CalendarEventPriority,
 } from '../../types/employee-calendar.types';
 
-export type NewEventType = 'leave' | 'meeting' | 'holiday';
+export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'out-of-office' | 'holiday';
 export type RsvpStatus = 'pending' | 'accepted' | 'declined' | 'tentative';
 
 export interface NewEventFormState {
   title: string;
   type: NewEventType;
+  category: CalendarEventCategory | '';
+  priority: CalendarEventPriority;
   allDay: boolean;
   date: string;
   endDate: string;
@@ -28,6 +32,8 @@ export interface NewEventFormState {
 export const EMPTY_NEW_EVENT_FORM: NewEventFormState = {
   title: '',
   type: 'leave',
+  category: '',
+  priority: 'medium',
   allDay: true,
   date: '',
   endDate: '',
@@ -44,7 +50,7 @@ export const EMPTY_NEW_EVENT_FORM: NewEventFormState = {
 
 export const MOCK_ATTENDEES = ['Priya Nair', 'Arun Kumar', 'Sara Lee'];
 
-const CONFLICT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave'];
+const CONFLICT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday'];
 
 function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -114,7 +120,10 @@ export function findConflicts(form: NewEventFormState, existingMyEvents: Calenda
 
 const TYPE_META: Record<NewEventType, { calendarType: CalendarEventType; source: CalendarEventSource }> = {
   leave: { calendarType: 'leave', source: 'leave' },
+  'out-of-office': { calendarType: 'out-of-office', source: 'personal' },
   meeting: { calendarType: 'meeting', source: 'personal' },
+  training: { calendarType: 'training', source: 'personal' },
+  'company-event': { calendarType: 'company-event', source: 'company' },
   holiday: { calendarType: 'holiday', source: 'company' },
 };
 
@@ -122,7 +131,8 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
   const dates = buildOccurrenceDates(form);
   const ts = Date.now();
   const { calendarType, source } = TYPE_META[form.type];
-  const status: CalendarEventStatus = form.type === 'holiday' ? 'pending' : 'confirmed';
+  const status: CalendarEventStatus = form.type === 'company-event' ? 'pending' : 'confirmed';
+  const needsAttendees = form.type === 'meeting' || form.type === 'training';
 
   return dates.map((date, i) => {
     const event: CalendarEvent = {
@@ -134,15 +144,17 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
       source,
       scope: 'my',
       allDay: form.allDay,
+      priority: form.priority,
     };
 
+    if (form.category) event.category = form.category;
     if (form.location.trim()) event.location = form.location.trim();
     if (form.notes.trim()) event.note = form.notes.trim();
     if (!form.allDay) {
       event.start = form.start;
       event.end = form.end;
     }
-    if (form.type === 'meeting' && form.attendees.length > 0) {
+    if (needsAttendees && form.attendees.length > 0) {
       event.attendees = form.attendees;
       event.attendeeRsvp = form.attendees.reduce<Record<string, RsvpStatus>>((acc, name) => {
         acc[name] = 'pending';
