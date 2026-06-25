@@ -1377,11 +1377,13 @@
 
 .emc-wizard {
   width: 920px;
+  min-height: 600px;
   display: flex;
   flex-direction: column;
 }
 
 .emc-wizard__layout {
+  flex: 1;
   display: flex;
   align-items: flex-start;
 }

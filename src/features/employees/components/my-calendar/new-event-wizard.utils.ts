@@ -7,7 +7,7 @@ import type {
   CalendarEventPriority,
 } from '../../types/employee-calendar.types';
 
-export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'out-of-office' | 'holiday';
+export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'holiday';
 export type RsvpStatus = 'pending' | 'accepted' | 'declined' | 'tentative';
 
 export interface NewEventFormState {
@@ -83,7 +83,6 @@ const TYPE_DEFAULT_DURATION_MINUTES: Record<NewEventType, number> = {
   meeting: 30,
   'company-event': 60,
   training: 60,
-  'out-of-office': 60,
   holiday: 60,
 };
 
@@ -169,7 +168,6 @@ export function findConflicts(form: NewEventFormState, existingMyEvents: Calenda
 
 const TYPE_META: Record<NewEventType, { calendarType: CalendarEventType; source: CalendarEventSource }> = {
   leave: { calendarType: 'leave', source: 'leave' },
-  'out-of-office': { calendarType: 'out-of-office', source: 'personal' },
   meeting: { calendarType: 'meeting', source: 'personal' },
   training: { calendarType: 'training', source: 'personal' },
   'company-event': { calendarType: 'company-event', source: 'company' },

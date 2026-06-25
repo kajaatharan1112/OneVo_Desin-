@@ -16,7 +16,6 @@ const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
   { value: 'meeting', label: 'Meeting' },
   { value: 'company-event', label: 'Company event' },
   { value: 'training', label: 'Training' },
-  { value: 'out-of-office', label: 'Out of office' },
   { value: 'holiday', label: 'Holiday' },
 ];
 
