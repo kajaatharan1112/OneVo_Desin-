@@ -104,7 +104,7 @@ export const MyCalendarTab: React.FC = () => {
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 
-  const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
+  const [viewMode, setViewMode] = useState<CalendarViewMode>('week');
   const [anchor, setAnchor] = useState<Date>(() => parseLocalDate(TODAY_KEY));
 
   // Scope (whose calendar) — independent of viewMode (Day/Week/Month/Agenda)
