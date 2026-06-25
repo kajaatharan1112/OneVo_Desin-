@@ -22,7 +22,7 @@ export interface NewEventFormState {
   end: string;
   location: string;
   notes: string;
-  attendees: string[];
+  attendees: AttendeeRef[];
   reminderMinutesBefore: number;
   recurring: boolean;
   frequency: 'daily' | 'weekly' | 'monthly';
@@ -48,7 +48,56 @@ export const EMPTY_NEW_EVENT_FORM: NewEventFormState = {
   occurrences: 8,
 };
 
-export const MOCK_ATTENDEES = ['Priya Nair', 'Arun Kumar', 'Sara Lee'];
+export interface DirectoryPerson {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+}
+
+export const CALENDAR_DIRECTORY: DirectoryPerson[] = [
+  { id: 'd-1', name: 'Priya Nair', role: 'Product Manager', avatar: 'PN' },
+  { id: 'd-2', name: 'Arun Kumar', role: 'Backend Developer', avatar: 'AK' },
+  { id: 'd-3', name: 'Sara Lee', role: 'UX Designer', avatar: 'SL' },
+  { id: 'd-4', name: 'Marcus Chen', role: 'Chief Executive Officer', avatar: 'MC' },
+  { id: 'd-5', name: 'Dana Brooks', role: 'Manager', avatar: 'DB' },
+  { id: 'd-6', name: 'Alexander Pierce', role: 'Back End Developer', avatar: 'AP' },
+  { id: 'd-7', name: 'Riya Sharma', role: 'QA Engineer', avatar: 'RS' },
+  { id: 'd-8', name: 'James Wilson', role: 'DevOps Engineer', avatar: 'JW' },
+  { id: 'd-9', name: 'Meera Iyer', role: 'HR Business Partner', avatar: 'MI' },
+  { id: 'd-10', name: 'Tom Becker', role: 'Sales Lead', avatar: 'TB' },
+  { id: 'd-11', name: 'Lakshmi Rao', role: 'Finance Analyst', avatar: 'LR' },
+  { id: 'd-12', name: 'Carlos Diaz', role: 'Frontend Developer', avatar: 'CD' },
+];
+
+export type AttendeeRef =
+  | { kind: 'user'; id: string; name: string; role: string }
+  | { kind: 'external'; email: string };
+
+export function attendeeKey(a: AttendeeRef): string {
+  return a.kind === 'user' ? a.name : a.email;
+}
+
+const TYPE_DEFAULT_DURATION_MINUTES: Record<NewEventType, number> = {
+  leave: 60,
+  meeting: 30,
+  'company-event': 60,
+  training: 60,
+  'out-of-office': 60,
+  holiday: 60,
+};
+
+export function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number);
+  const wrapped = (((h * 60 + m + minutes) % 1440) + 1440) % 1440;
+  const hh = Math.floor(wrapped / 60);
+  const mm = wrapped % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+export function getDefaultEndTime(start: string, type: NewEventType): string {
+  return addMinutesToTime(start, TYPE_DEFAULT_DURATION_MINUTES[type]);
+}
 
 const CONFLICT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday'];
 
@@ -155,9 +204,9 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
       event.end = form.end;
     }
     if (needsAttendees && form.attendees.length > 0) {
-      event.attendees = form.attendees;
-      event.attendeeRsvp = form.attendees.reduce<Record<string, RsvpStatus>>((acc, name) => {
-        acc[name] = 'pending';
+      event.attendees = form.attendees.map(attendeeKey);
+      event.attendeeRsvp = form.attendees.reduce<Record<string, RsvpStatus>>((acc, a) => {
+        acc[attendeeKey(a)] = 'pending';
         return acc;
       }, {});
     }
