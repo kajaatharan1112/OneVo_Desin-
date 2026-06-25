@@ -1158,6 +1158,16 @@
   flex-direction: column;
 }
 
+.emc-modal--details {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.emc-modal--details .emc-modal__body {
+  flex: 1;
+}
+
 .emc-modal__body--lg {
   flex: 1;
   overflow-y: auto;

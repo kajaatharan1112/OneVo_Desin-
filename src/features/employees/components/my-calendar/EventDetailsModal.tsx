@@ -36,7 +36,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
 
   return (
     <div className="emc-modal-overlay" onClick={onClose}>
-      <div className="emc-modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+      <div className="emc-modal emc-modal--details" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <header className="emc-modal__header">
           <h3 className="emc-modal__title">{editing ? 'Edit Event' : event.title}</h3>
           <button type="button" className="emc-modal__close" onClick={onClose} aria-label="Close">
