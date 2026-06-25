@@ -2,17 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Expand the New Event form's Basic Info and Schedule sections (5 creatable types, Category, Priority), widen conflict detection to include holidays, and add a jump-nav sidebar to the popup — the first sub-project of the larger calendar enhancement.
+**Goal:** Expand the New Event form's Basic Info and Schedule sections (6 creatable types, Category, Priority), widen conflict detection to include holidays, and add a jump-nav sidebar to the popup — the first sub-project of the larger calendar enhancement.
 
-**Architecture:** Extend the existing `CalendarEventType` union with `'training' | 'out-of-office' | 'company-event'` (the wizard's old "Company event" option, which created type `'holiday'`, is replaced by the new dedicated `company-event` type — `holiday` becomes system-only, like `shift`/`reminder`). Add `CalendarEventCategory`/`CalendarEventPriority` types and `category?`/`priority?` fields to `CalendarEvent`. `new-event-wizard.utils.ts` grows its `NewEventType`/`TYPE_META`/`CONFLICT_TYPES`/`buildEventsFromForm` to match. `NewEventWizard.tsx` gets the new Basic Info fields and a jump-nav sidebar (click a section name, scroll to it — no gating, consistent with the existing single-screen form). `my-calendar-tab.tsx`, `EventDetailsModal.tsx`, and `CalendarFilterPanel.tsx` get small additions so the new types render, label, and filter correctly everywhere `CalendarEventType` is already switched on. CSS gains pill/rail-dot colors for the 3 new types plus sidebar layout styles.
+**Architecture:** Extend the existing `CalendarEventType` union with `'training' | 'out-of-office' | 'company-event'` (the wizard's old "Company event" option, which created type `'holiday'`, is replaced by the new dedicated `company-event` type for the approval-required flow). `holiday` itself also becomes directly creatable from the wizard again — as a plain, immediately-confirmed entry (no approval, no attendees) representing an admin-created/overridden public holiday. This prototype has no login/role system wired into My Calendar, so there's no real admin-only gating — the option is simply present in the type list, consistent with the rest of this no-backend prototype. Add `CalendarEventCategory`/`CalendarEventPriority` types and `category?`/`priority?` fields to `CalendarEvent`. `new-event-wizard.utils.ts` grows its `NewEventType`/`TYPE_META`/`CONFLICT_TYPES`/`buildEventsFromForm` to match. `NewEventWizard.tsx` gets the new Basic Info fields and a jump-nav sidebar (click a section name, scroll to it — no gating, consistent with the existing single-screen form). `my-calendar-tab.tsx`, `EventDetailsModal.tsx`, and `CalendarFilterPanel.tsx` get small additions so the new types render, label, and filter correctly everywhere `CalendarEventType` is already switched on. CSS gains pill/rail-dot colors for the 3 brand-new types plus sidebar layout styles.
 
 **Tech Stack:** React 19 + TypeScript, Vite. No test framework configured in this repo. Verification for every task is: (1) `npx tsc -b --noEmit`, and (2) manual check via `npm run dev`. Do not invent a fake test command.
 
 ## Global Constraints
 
-- `holiday` stays system-only (not creatable from the wizard) — represents real public holidays only.
-- New creatable types: Training and Out Of Office join Leave/Meeting/Company Event (5 total, was 3).
-- Attendees are required for Meeting **and** Training; not for Leave, Out Of Office, or Company Event.
+- `holiday` is creatable from the wizard (admin-created/overridden public holiday) — `confirmed` immediately, no approval, no attendees. No real role/permission check gates this in the prototype.
+- New creatable types: Training, Out Of Office, and Holiday join Leave/Meeting/Company Event (6 total, was 3).
+- Attendees are required for Meeting **and** Training; not for Leave, Out Of Office, Company Event, or Holiday.
 - Category (7 fixed values) and Priority (Low/Medium/High/Critical, default Medium) are both optional except Priority always has a value (defaults to Medium, never blank).
 - Conflict detection checks `meeting`, `holiday`, `shift`, `leave` (added `holiday`); leave conflicts count regardless of status (unchanged). Still warning-only.
 - No advanced recurrence, no multi-day timed events, no Audience/Collaboration/Business-Context/Approval sections — all explicitly out of scope for this sub-project.
@@ -104,7 +104,7 @@ import type {
   CalendarEventPriority,
 } from '../../types/employee-calendar.types';
 
-export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'out-of-office';
+export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'out-of-office' | 'holiday';
 export type RsvpStatus = 'pending' | 'accepted' | 'declined' | 'tentative';
 ```
 
@@ -171,6 +171,7 @@ const TYPE_META: Record<NewEventType, { calendarType: CalendarEventType; source:
   meeting: { calendarType: 'meeting', source: 'personal' },
   training: { calendarType: 'training', source: 'personal' },
   'company-event': { calendarType: 'company-event', source: 'company' },
+  holiday: { calendarType: 'holiday', source: 'company' },
 };
 
 export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
@@ -225,7 +226,7 @@ Expected: same pre-existing set of errors as Task 1's Step 2 (not yet fixed — 
 
 ```bash
 git add src/features/employees/components/my-calendar/new-event-wizard.utils.ts
-git commit -m "feat(calendar): widen New Event form state, conflict types, and creation rules to 5 types"
+git commit -m "feat(calendar): widen New Event form state, conflict types, and creation rules to 6 types"
 ```
 
 ---
@@ -237,7 +238,7 @@ git commit -m "feat(calendar): widen New Event form state, conflict types, and c
 
 **Interfaces:**
 - Consumes: `NewEventType`, `NewEventFormState` from `./new-event-wizard.utils` (Task 2); `CalendarEventCategory`, `CalendarEventPriority` from `../../types/employee-calendar.types` (Task 1).
-- Produces: updated `TYPE_OPTIONS` (5 entries), new `CATEGORY_OPTIONS`/`PRIORITY_OPTIONS` constants, extended `renderTitleTypeSection`, `renderDetailsSection`, and `validateForm` — consumed visually by Task 4 (sidebar wraps these same sections).
+- Produces: updated `TYPE_OPTIONS` (6 entries), new `CATEGORY_OPTIONS`/`PRIORITY_OPTIONS` constants, extended `renderTitleTypeSection`, `renderDetailsSection`, and `validateForm` — consumed visually by Task 4 (sidebar wraps these same sections).
 
 - [ ] **Step 1: Update imports and option constants**
 
@@ -262,6 +263,7 @@ const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
   { value: 'company-event', label: 'Company event' },
   { value: 'training', label: 'Training' },
   { value: 'out-of-office', label: 'Out of office' },
+  { value: 'holiday', label: 'Holiday' },
 ];
 
 const CATEGORY_OPTIONS: { value: CalendarEventCategory; label: string }[] = [
@@ -808,9 +810,9 @@ git commit -m "feat(calendar): surface training/out-of-office/company-event type
 
 Run: `npm run dev`, open the My Calendar tab in the browser.
 
-- [ ] **Step 2: Verify the sidebar and 5 type options**
+- [ ] **Step 2: Verify the sidebar and 6 type options**
 
-Click "New Event". Confirm a left sidebar lists Basic Info / Schedule / Details / Reminders & Repeat, and the Basic Info section shows 5 type radios (Leave, Meeting, Company event, Training, Out of office) plus Category and Priority dropdowns. Click each sidebar item and confirm the form scrolls to that section without losing any entered values.
+Click "New Event". Confirm a left sidebar lists Basic Info / Schedule / Details / Reminders & Repeat, and the Basic Info section shows 6 type radios (Leave, Meeting, Company event, Training, Out of office, Holiday) plus Category and Priority dropdowns. Click each sidebar item and confirm the form scrolls to that section without losing any entered values.
 
 - [ ] **Step 3: Verify Training requires attendees**
 
@@ -824,18 +826,22 @@ Create an Out Of Office event with no attendees — confirm it's created immedia
 
 Create a Company Event — confirm it's `pending`/dashed-pill same as before, and Approve/Reject in `EventDetailsModal` still work (this flow is untouched by this sub-project, just renamed/retyped).
 
-- [ ] **Step 6: Verify Category/Priority persist**
+- [ ] **Step 6: Verify Holiday is directly creatable**
+
+Create a Holiday event (e.g. title "Office Closure Day", all-day) — confirm it's created immediately as `confirmed` (no approval step, no attendee section shown), and appears with the same Holiday pill styling as the existing system holidays already in the mock data.
+
+- [ ] **Step 7: Verify Category/Priority persist**
 
 Create any event with Category "Compliance" and Priority "Critical" set. Confirm no validation error blocks submission (both are optional/defaulted). There's no UI to view these fields yet (Event Details Modal display is a later sub-project) — verify via React DevTools or a temporary `console.log` in `handleCreateEvents` (`my-calendar-tab.tsx`) that the created event object has `category: 'compliance'` and `priority: 'critical'`, then remove the temporary log.
 
-- [ ] **Step 7: Verify widened conflict detection**
+- [ ] **Step 8: Verify widened conflict detection**
 
 Find a date with an existing Holiday in the mock data (`employee-calendar.data.ts`), or temporarily note one. Create an event on that same date — confirm the Conflict Warning screen now appears (previously holidays weren't checked), and both Reschedule and Confirm anyway still work.
 
-- [ ] **Step 8: Verify the filter panel**
+- [ ] **Step 9: Verify the filter panel**
 
 Open the filter panel (funnel icon) — confirm Training, Out of Office, and Company Event now appear as togglable type filters with their own swatch colors, and toggling them hides/shows matching pills on the calendar.
 
-- [ ] **Step 9: Final check**
+- [ ] **Step 10: Final check**
 
 Run: `npx tsc -b --noEmit` and `npm run lint`. Confirm no new errors beyond the pre-existing unrelated ones (`Step6ConfirmImport.tsx`, `navbar.tsx`, and the pre-existing lint findings noted in the previous sub-project's plan).

@@ -12,7 +12,7 @@ This sub-project builds on the single-screen form from `docs/superpowers/specs/2
 ## Scope
 
 In scope:
-- Expand creatable event types from 3 to 5: Leave, Meeting, Company Event, Training, Out Of Office.
+- Expand creatable event types from 3 to 6: Leave, Meeting, Company Event, Training, Out Of Office, Holiday (admin-created/overridden public holiday — this prototype has no login/role system in My Calendar, so it's just a plain option in the type list, no real permission gate).
 - Add Category (fixed dropdown) and Priority (fixed dropdown) fields to Basic Info.
 - Widen conflict detection to include `holiday` alongside `meeting`/`shift`/`leave`.
 - Add a jump-nav sidebar to the popup (mechanism only — lists today's 4 sections; later sub-projects add their own section names to this list).
@@ -42,11 +42,11 @@ export interface CalendarEvent {
 }
 ```
 
-`holiday` remains system-only (like `shift`/`reminder`) — it represents real public holidays and is not creatable from the wizard. The wizard's previous "Company event" option, which used to create `type: 'holiday'`, is replaced by the new dedicated `company-event` type.
+The wizard's previous "Company event" option, which used to create `type: 'holiday'`, is replaced by the new dedicated `company-event` type. `holiday` itself becomes directly creatable again from the wizard — a separate option representing an admin-created/overridden public holiday, confirmed immediately with no approval step.
 
 ## Wizard Creatable Types (`new-event-wizard.utils.ts`)
 
-`NewEventType` becomes `'leave' | 'meeting' | 'company-event' | 'training' | 'out-of-office'` (5 values, was 3). `TYPE_META` and `TYPE_OPTIONS` extend accordingly:
+`NewEventType` becomes `'leave' | 'meeting' | 'company-event' | 'training' | 'out-of-office' | 'holiday'` (6 values, was 3). `TYPE_META` and `TYPE_OPTIONS` extend accordingly:
 
 | NewEventType | CalendarEventType | source | status on create | attendees |
 |---|---|---|---|---|
@@ -55,11 +55,12 @@ export interface CalendarEvent {
 | `meeting` | `meeting` | `personal` | `confirmed` (+ RSVP per attendee) | required, ≥1 |
 | `training` | `training` | `personal` | `confirmed` (+ RSVP per attendee) | required, ≥1 |
 | `company-event` | `company-event` | `company` | `pending` (manager approval) | none |
+| `holiday` | `holiday` | `company` | `confirmed` | none |
 
 ## Section 1 — Basic Info (replaces today's "Title & type" section)
 
 - Title — text input, required
-- Event type — radio, 5 options above, required
+- Event type — radio, 6 options above, required
 - Category — dropdown, 7 fixed values (HR / Project / Training / Review / Client / Compliance / Management), optional
 - Priority — dropdown, Low / Medium / High / Critical, optional, defaults to Medium
 
@@ -90,7 +91,7 @@ The popup widens further to fit a left sidebar listing section names (Basic Info
 
 - `src/features/employees/types/employee-calendar.types.ts`: extend `CalendarEventType`; add `CalendarEventCategory`, `CalendarEventPriority`; add `category?`/`priority?` to `CalendarEvent`.
 - `src/features/employees/components/my-calendar/new-event-wizard.utils.ts`: extend `NewEventType`, `TYPE_META`; extend `CONFLICT_TYPES` in `findConflicts`; extend `buildEventsFromForm` for Training's RSVP and the new statuses.
-- `src/features/employees/components/my-calendar/NewEventWizard.tsx`: Basic Info section gains Category/Priority fields and 5 type options; add jump-nav sidebar; extend `validateForm`.
+- `src/features/employees/components/my-calendar/NewEventWizard.tsx`: Basic Info section gains Category/Priority fields and 6 type options; add jump-nav sidebar; extend `validateForm`.
 - `src/features/employees/components/my-calendar/my-calendar-tab.tsx`: `ALL_EVENT_TYPES` and `AGENDA_TYPE_ICON` gain entries for `training` (icon: `GraduationCap`), `out-of-office` (icon: `LogOut`), `company-event` (icon: `Building2`).
 - `src/features/employees/components/my-calendar/CalendarFilterPanel.tsx`: add the 3 new types as filterable options.
 - `src/styles/employee-my-calendar.css`: pill color variants for `emc-evpill--training`, `emc-evpill--out-of-office`, `emc-evpill--company-event`; sidebar layout styles (`emc-wizard__nav`, two-column wrapper).
@@ -102,6 +103,7 @@ The popup widens further to fit a left sidebar listing section names (Basic Info
 3. Create an Out Of Office event → confirmed immediately, no attendee section shown, pill renders with its own color/icon.
 4. Create a Company Event → `pending` status, dashed pill (existing pending-status styling), Approve/Reject still works in `EventDetailsModal` (untouched in this sub-project).
 5. Set Category to "Compliance" and Priority to "Critical" on any event — no validation error (both optional), values persist on the created event (visible via console/state inspection — display in Event Details Modal is a later sub-project).
-6. Create an event overlapping an existing Holiday in the mock data → Conflict Warning screen now appears (previously holidays weren't checked).
-7. Click each sidebar nav item (Basic Info, Schedule, Details, Reminders & Repeat) → form scrolls to that section, no fields lose their entered values.
-8. Filter panel shows Training/Out Of Office/Company Event as togglable type filters; toggling them hides/shows matching pills on the calendar.
+6. Create a Holiday event → confirmed immediately, no attendee section, no approval step.
+7. Create an event overlapping an existing Holiday in the mock data → Conflict Warning screen now appears (previously holidays weren't checked).
+8. Click each sidebar nav item (Basic Info, Schedule, Details, Reminders & Repeat) → form scrolls to that section, no fields lose their entered values.
+9. Filter panel shows Training/Out Of Office/Company Event as togglable type filters; toggling them hides/shows matching pills on the calendar.
