@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import type { CalendarEvent } from '../../types/employee-calendar.types';
+import { Bell, CalendarClock, FileText, Tag, X } from 'lucide-react';
+import type { CalendarEvent, CalendarEventCategory, CalendarEventPriority } from '../../types/employee-calendar.types';
 import {
   buildEventsFromForm,
   EMPTY_NEW_EVENT_FORM,
@@ -13,7 +13,27 @@ import {
 const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
   { value: 'leave', label: 'Leave' },
   { value: 'meeting', label: 'Meeting' },
-  { value: 'holiday', label: 'Company event' },
+  { value: 'company-event', label: 'Company event' },
+  { value: 'training', label: 'Training' },
+  { value: 'out-of-office', label: 'Out of office' },
+  { value: 'holiday', label: 'Holiday' },
+];
+
+const CATEGORY_OPTIONS: { value: CalendarEventCategory; label: string }[] = [
+  { value: 'hr', label: 'HR' },
+  { value: 'project', label: 'Project' },
+  { value: 'training', label: 'Training' },
+  { value: 'review', label: 'Review' },
+  { value: 'client', label: 'Client' },
+  { value: 'compliance', label: 'Compliance' },
+  { value: 'management', label: 'Management' },
+];
+
+const PRIORITY_OPTIONS: { value: CalendarEventPriority; label: string }[] = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ];
 
 interface NewEventWizardProps {
@@ -43,7 +63,9 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     if (!form.title.trim()) found.push('Title is required.');
     if (!form.date) found.push('Date is required.');
     if (!form.allDay && form.end <= form.start) found.push('End time must be after start time.');
-    if (form.type === 'meeting' && form.attendees.length === 0) found.push('Select at least one attendee.');
+    if ((form.type === 'meeting' || form.type === 'training') && form.attendees.length === 0) {
+      found.push('Select at least one attendee.');
+    }
     if (form.recurring && (form.occurrences < 1 || form.occurrences > 12)) {
       found.push('Occurrences must be between 1 and 12.');
     }
@@ -77,8 +99,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   };
 
   const renderTitleTypeSection = () => (
-    <div className="emc-wizard__section">
-      <h4 className="emc-wizard__section-title">Title &amp; type</h4>
+    <div className="emc-wizard__section" id="basic-info">
+      <h4 className="emc-wizard__section-title"><Tag size={14} /> Basic info</h4>
       <label className="emc-wizard__field">
         <span>Title</span>
         <input value={form.title} onChange={e => update({ title: e.target.value })} placeholder="Event title" />
@@ -99,18 +121,33 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
           ))}
         </div>
       </div>
+      <div className="emc-wizard__field-row">
+        <label className="emc-wizard__field">
+          <span>Category</span>
+          <select value={form.category} onChange={e => update({ category: e.target.value as NewEventFormState['category'] })}>
+            <option value="">None</option>
+            {CATEGORY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </select>
+        </label>
+        <label className="emc-wizard__field">
+          <span>Priority</span>
+          <select value={form.priority} onChange={e => update({ priority: e.target.value as NewEventFormState['priority'] })}>
+            {PRIORITY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </select>
+        </label>
+      </div>
     </div>
   );
 
   const renderScheduleSection = () => (
-    <div className="emc-wizard__section">
-      <h4 className="emc-wizard__section-title">Schedule</h4>
+    <div className="emc-wizard__section" id="schedule">
+      <h4 className="emc-wizard__section-title"><CalendarClock size={14} /> Schedule</h4>
       <label className="emc-wizard__field emc-wizard__field--checkbox">
         <input type="checkbox" checked={form.allDay} onChange={e => update({ allDay: e.target.checked })} />
         <span>All-day</span>
       </label>
       <label className="emc-wizard__field">
-        <span>Date</span>
+        <span>Start date</span>
         <input type="date" value={form.date} onChange={e => update({ date: e.target.value })} />
       </label>
       {form.allDay ? (
@@ -134,8 +171,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   );
 
   const renderDetailsSection = () => (
-    <div className="emc-wizard__section">
-      <h4 className="emc-wizard__section-title">Details</h4>
+    <div className="emc-wizard__section" id="details">
+      <h4 className="emc-wizard__section-title"><FileText size={14} /> Details</h4>
       <label className="emc-wizard__field">
         <span>Location</span>
         <input value={form.location} onChange={e => update({ location: e.target.value })} placeholder="Optional" />
@@ -144,7 +181,7 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
         <span>Notes</span>
         <textarea value={form.notes} onChange={e => update({ notes: e.target.value })} placeholder="Optional" rows={3} />
       </label>
-      {form.type === 'meeting' && (
+      {(form.type === 'meeting' || form.type === 'training') && (
         <div className="emc-wizard__field">
           <span>Attendees</span>
           <div className="emc-wizard__attendees">
@@ -161,8 +198,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   );
 
   const renderRemindersSection = () => (
-    <div className="emc-wizard__section">
-      <h4 className="emc-wizard__section-title">Reminders &amp; repeat</h4>
+    <div className="emc-wizard__section" id="reminders">
+      <h4 className="emc-wizard__section-title"><Bell size={14} /> Reminders &amp; repeat</h4>
       <label className="emc-wizard__field">
         <span>Reminder</span>
         <select
@@ -231,12 +268,12 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
 
         <div className="emc-wizard__body">
           {conflicts ? renderConflictSection() : (
-            <>
+            <div className="emc-wizard__grid">
               {renderTitleTypeSection()}
               {renderScheduleSection()}
               {renderDetailsSection()}
               {renderRemindersSection()}
-            </>
+            </div>
           )}
         </div>
 
