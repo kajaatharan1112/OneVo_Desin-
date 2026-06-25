@@ -61,6 +61,13 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
 
   const fieldConfig = TYPE_FIELD_CONFIG[form.type];
 
+  // A drag-selected time range (initialOverrides.allDay === false) implies a specific
+  // start/end time was chosen — types that force all-day (Holiday, Leave) would silently
+  // discard that selection, so hide them from the picker in that case.
+  const visibleTypeOptions = initialOverrides?.allDay === false
+    ? TYPE_OPTIONS.filter(opt => TYPE_FIELD_CONFIG[opt.value].allowTimedSchedule)
+    : TYPE_OPTIONS;
+
   const handleTypeChange = (nextType: NewEventType) => {
     update({
       type: nextType,
@@ -123,7 +130,7 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
       <div className="emc-wizard__field">
         <span>Event type</span>
         <div className="emc-wizard__radio-group">
-          {TYPE_OPTIONS.map(opt => (
+          {visibleTypeOptions.map(opt => (
             <label key={opt.value} className="emc-wizard__radio">
               <input
                 type="radio"
