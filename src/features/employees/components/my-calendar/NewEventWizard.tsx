@@ -6,6 +6,8 @@ import {
   EMPTY_NEW_EVENT_FORM,
   findConflicts,
   getDefaultEndTime,
+  TYPE_FIELD_CONFIG,
+  type LeaveTypeKey,
   type NewEventFormState,
   type NewEventType,
 } from './new-event-wizard.utils';
@@ -36,7 +38,7 @@ const PRIORITY_OPTIONS: { value: CalendarEventPriority; label: string }[] = [
   { value: 'critical', label: 'Critical' },
 ];
 
-const NAV_SECTIONS: { id: string; label: string }[] = [
+const ALL_NAV_SECTIONS: { id: string; label: string }[] = [
   { id: 'basic-info', label: 'Basic Info' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'details', label: 'Details' },
@@ -55,6 +57,16 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
 
   const update = (patch: Partial<NewEventFormState>) => setForm(f => ({ ...f, ...patch }));
+
+  const fieldConfig = TYPE_FIELD_CONFIG[form.type];
+
+  const handleTypeChange = (nextType: NewEventType) => {
+    update({
+      type: nextType,
+      end: getDefaultEndTime(form.start, nextType),
+      allDay: TYPE_FIELD_CONFIG[nextType].allowTimedSchedule ? form.allDay : true,
+    });
+  };
 
   const validateForm = (): string[] => {
     const found: string[] = [];
@@ -116,43 +128,59 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
                 type="radio"
                 name="event-type"
                 checked={form.type === opt.value}
-                onChange={() => update({ type: opt.value, end: getDefaultEndTime(form.start, opt.value) })}
+                onChange={() => handleTypeChange(opt.value)}
               />
               <span>{opt.label}</span>
             </label>
           ))}
         </div>
       </div>
-      <div className="emc-wizard__field-row">
-        <label className="emc-wizard__field">
-          <span>Category</span>
-          <select value={form.category} onChange={e => update({ category: e.target.value as NewEventFormState['category'] })}>
-            <option value="">None</option>
-            {CATEGORY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-        </label>
-        <label className="emc-wizard__field">
-          <span>Priority</span>
-          <select value={form.priority} onChange={e => update({ priority: e.target.value as NewEventFormState['priority'] })}>
-            {PRIORITY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-        </label>
-      </div>
+      {fieldConfig.showCategoryPriority && (
+        <div className="emc-wizard__field-row">
+          <label className="emc-wizard__field">
+            <span>Category</span>
+            <select value={form.category} onChange={e => update({ category: e.target.value as NewEventFormState['category'] })}>
+              <option value="">None</option>
+              {CATEGORY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+          </label>
+          <label className="emc-wizard__field">
+            <span>Priority</span>
+            <select value={form.priority} onChange={e => update({ priority: e.target.value as NewEventFormState['priority'] })}>
+              {PRIORITY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+      {fieldConfig.showLeaveType && (
+        <div className="emc-wizard__field-row">
+          <label className="emc-wizard__field">
+            <span>Leave Type</span>
+            <select value={form.leaveType} onChange={e => update({ leaveType: e.target.value as LeaveTypeKey })}>
+              <option value="Annual">Annual</option>
+              <option value="Sick">Sick</option>
+              <option value="Casual">Casual</option>
+            </select>
+          </label>
+        </div>
+      )}
     </div>
   );
 
   const renderScheduleSection = () => (
     <div className="emc-wizard__section" id="schedule">
       <h4 className="emc-wizard__section-title"><CalendarClock size={14} /> Schedule</h4>
-      <label className="emc-wizard__field emc-wizard__field--checkbox">
-        <input type="checkbox" checked={form.allDay} onChange={e => update({ allDay: e.target.checked })} />
-        <span>All-day</span>
-      </label>
+      {fieldConfig.allowTimedSchedule && (
+        <label className="emc-wizard__field emc-wizard__field--checkbox">
+          <input type="checkbox" checked={form.allDay} onChange={e => update({ allDay: e.target.checked })} />
+          <span>All-day</span>
+        </label>
+      )}
       <label className="emc-wizard__field">
         <span>Start date</span>
         <input type="date" value={form.date} onChange={e => update({ date: e.target.value })} />
       </label>
-      {form.allDay ? (
+      {form.allDay || !fieldConfig.allowTimedSchedule ? (
         <label className="emc-wizard__field">
           <span>End date (optional, for multi-day)</span>
           <input type="date" value={form.endDate} onChange={e => update({ endDate: e.target.value })} />
@@ -179,18 +207,24 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
+  const showDetailsSection = fieldConfig.locationLabel !== null || fieldConfig.notesLabel !== null || fieldConfig.showAttendees;
+
   const renderDetailsSection = () => (
     <div className="emc-wizard__section" id="details">
       <h4 className="emc-wizard__section-title"><FileText size={14} /> Details</h4>
-      <label className="emc-wizard__field">
-        <span>Location</span>
-        <input value={form.location} onChange={e => update({ location: e.target.value })} placeholder="Optional" />
-      </label>
-      <label className="emc-wizard__field">
-        <span>Notes</span>
-        <textarea value={form.notes} onChange={e => update({ notes: e.target.value })} placeholder="Optional" rows={3} />
-      </label>
-      {(form.type === 'meeting' || form.type === 'training') && (
+      {fieldConfig.locationLabel !== null && (
+        <label className="emc-wizard__field">
+          <span>{fieldConfig.locationLabel}</span>
+          <input value={form.location} onChange={e => update({ location: e.target.value })} placeholder="Optional" />
+        </label>
+      )}
+      {fieldConfig.notesLabel !== null && (
+        <label className="emc-wizard__field">
+          <span>{fieldConfig.notesLabel}</span>
+          <textarea value={form.notes} onChange={e => update({ notes: e.target.value })} placeholder="Optional" rows={3} />
+        </label>
+      )}
+      {fieldConfig.showAttendees && (
         <div className="emc-wizard__field">
           <span>Attendees</span>
           <AttendeeSearchField selected={form.attendees} onChange={attendees => update({ attendees })} />
@@ -199,46 +233,54 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
     </div>
   );
 
+  const showRemindersSection = fieldConfig.showReminder || fieldConfig.showRecurring;
+
   const renderRemindersSection = () => (
     <div className="emc-wizard__section" id="reminders">
       <h4 className="emc-wizard__section-title"><Bell size={14} /> Reminders &amp; repeat</h4>
-      <label className="emc-wizard__field">
-        <span>Reminder</span>
-        <select
-          value={form.reminderMinutesBefore}
-          onChange={e => update({ reminderMinutesBefore: Number(e.target.value) })}
-        >
-          <option value={0}>None</option>
-          <option value={10}>10 minutes before</option>
-          <option value={60}>1 hour before</option>
-          <option value={1440}>1 day before</option>
-        </select>
-      </label>
-      <label className="emc-wizard__field emc-wizard__field--checkbox">
-        <input type="checkbox" checked={form.recurring} onChange={e => update({ recurring: e.target.checked })} />
-        <span>Recurring</span>
-      </label>
-      {form.recurring && (
-        <div className="emc-wizard__field-row">
-          <label className="emc-wizard__field">
-            <span>Frequency</span>
-            <select value={form.frequency} onChange={e => update({ frequency: e.target.value as NewEventFormState['frequency'] })}>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
+      {fieldConfig.showReminder && (
+        <label className="emc-wizard__field">
+          <span>Reminder</span>
+          <select
+            value={form.reminderMinutesBefore}
+            onChange={e => update({ reminderMinutesBefore: Number(e.target.value) })}
+          >
+            <option value={0}>None</option>
+            <option value={10}>10 minutes before</option>
+            <option value={60}>1 hour before</option>
+            <option value={1440}>1 day before</option>
+          </select>
+        </label>
+      )}
+      {fieldConfig.showRecurring && (
+        <>
+          <label className="emc-wizard__field emc-wizard__field--checkbox">
+            <input type="checkbox" checked={form.recurring} onChange={e => update({ recurring: e.target.checked })} />
+            <span>Recurring</span>
           </label>
-          <label className="emc-wizard__field">
-            <span>Occurrences</span>
-            <input
-              type="number"
-              min={1}
-              max={12}
-              value={form.occurrences}
-              onChange={e => update({ occurrences: Math.min(12, Math.max(1, Number(e.target.value))) })}
-            />
-          </label>
-        </div>
+          {form.recurring && (
+            <div className="emc-wizard__field-row">
+              <label className="emc-wizard__field">
+                <span>Frequency</span>
+                <select value={form.frequency} onChange={e => update({ frequency: e.target.value as NewEventFormState['frequency'] })}>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </label>
+              <label className="emc-wizard__field">
+                <span>Occurrences</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={form.occurrences}
+                  onChange={e => update({ occurrences: Math.min(12, Math.max(1, Number(e.target.value))) })}
+                />
+              </label>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -271,11 +313,14 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
         <div className="emc-wizard__layout">
           {!conflicts && (
             <nav className="emc-wizard__nav" aria-label="Form sections">
-              {NAV_SECTIONS.map(s => (
-                <button key={s.id} type="button" className="emc-wizard__nav-item" onClick={() => scrollToSection(s.id)}>
-                  {s.label}
-                </button>
-              ))}
+              {ALL_NAV_SECTIONS
+                .filter(s => s.id !== 'details' || showDetailsSection)
+                .filter(s => s.id !== 'reminders' || showRemindersSection)
+                .map(s => (
+                  <button key={s.id} type="button" className="emc-wizard__nav-item" onClick={() => scrollToSection(s.id)}>
+                    {s.label}
+                  </button>
+                ))}
             </nav>
           )}
           <div className="emc-wizard__body">
@@ -283,8 +328,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
               <div className="emc-wizard__grid">
                 {renderTitleTypeSection()}
                 {renderScheduleSection()}
-                {renderDetailsSection()}
-                {renderRemindersSection()}
+                {showDetailsSection && renderDetailsSection()}
+                {showRemindersSection && renderRemindersSection()}
               </div>
             )}
           </div>
