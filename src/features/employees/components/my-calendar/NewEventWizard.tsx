@@ -36,6 +36,13 @@ const PRIORITY_OPTIONS: { value: CalendarEventPriority; label: string }[] = [
   { value: 'critical', label: 'Critical' },
 ];
 
+const NAV_SECTIONS: { id: string; label: string }[] = [
+  { id: 'basic-info', label: 'Basic Info' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'details', label: 'Details' },
+  { id: 'reminders', label: 'Reminders & Repeat' },
+];
+
 interface NewEventWizardProps {
   onClose: () => void;
   onCreate: (events: CalendarEvent[]) => void;
@@ -90,6 +97,10 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
       return;
     }
     finalizeCreate();
+  };
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleReschedule = () => setConflicts(null);
@@ -266,15 +277,26 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
           </button>
         </header>
 
-        <div className="emc-wizard__body">
-          {conflicts ? renderConflictSection() : (
-            <div className="emc-wizard__grid">
-              {renderTitleTypeSection()}
-              {renderScheduleSection()}
-              {renderDetailsSection()}
-              {renderRemindersSection()}
-            </div>
+        <div className="emc-wizard__layout">
+          {!conflicts && (
+            <nav className="emc-wizard__nav" aria-label="Form sections">
+              {NAV_SECTIONS.map(s => (
+                <button key={s.id} type="button" className="emc-wizard__nav-item" onClick={() => scrollToSection(s.id)}>
+                  {s.label}
+                </button>
+              ))}
+            </nav>
           )}
+          <div className="emc-wizard__body">
+            {conflicts ? renderConflictSection() : (
+              <div className="emc-wizard__grid">
+                {renderTitleTypeSection()}
+                {renderScheduleSection()}
+                {renderDetailsSection()}
+                {renderRemindersSection()}
+              </div>
+            )}
+          </div>
         </div>
 
         {errors.length > 0 && (
