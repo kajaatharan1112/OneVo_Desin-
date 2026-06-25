@@ -476,8 +476,15 @@ export const MyCalendarTab: React.FC = () => {
           {HOURS.map(h => {
             const hStr = String(h).padStart(2, '0');
             const hourEvts = timed.filter(ev => ev.start?.startsWith(hStr));
+            const inDrag = isHourInDragRange(key, h);
             return (
-              <div key={h} className="emc-day__row">
+              <div
+                key={h}
+                className={`emc-day__row${inDrag ? ' emc-day__row--dragselect' : ''}`}
+                data-drag-day={key}
+                data-drag-hour={h}
+                onMouseDown={e => handleCellMouseDown(e, key, h)}
+              >
                 <div className="emc-day__time">{formatHour(h)}</div>
                 <div className="emc-day__slot">
                   {hourEvts.map(ev => (
