@@ -9,12 +9,53 @@ import type {
 
 export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'holiday';
 export type RsvpStatus = 'pending' | 'accepted' | 'declined' | 'tentative';
+export type LeaveTypeKey = 'Annual' | 'Sick' | 'Casual';
+
+export interface TypeFieldConfig {
+  showCategoryPriority: boolean;
+  showLeaveType: boolean;
+  allowTimedSchedule: boolean;
+  locationLabel: string | null;
+  notesLabel: string | null;
+  showAttendees: boolean;
+  showReminder: boolean;
+  showRecurring: boolean;
+}
+
+export const TYPE_FIELD_CONFIG: Record<NewEventType, TypeFieldConfig> = {
+  meeting: {
+    showCategoryPriority: true, showLeaveType: false, allowTimedSchedule: true,
+    locationLabel: 'Meeting link / Room', notesLabel: 'Agenda',
+    showAttendees: true, showReminder: true, showRecurring: true,
+  },
+  training: {
+    showCategoryPriority: true, showLeaveType: false, allowTimedSchedule: true,
+    locationLabel: 'Location', notesLabel: 'Notes',
+    showAttendees: true, showReminder: true, showRecurring: true,
+  },
+  'company-event': {
+    showCategoryPriority: false, showLeaveType: false, allowTimedSchedule: true,
+    locationLabel: 'Location', notesLabel: 'Notes',
+    showAttendees: false, showReminder: false, showRecurring: false,
+  },
+  holiday: {
+    showCategoryPriority: false, showLeaveType: false, allowTimedSchedule: false,
+    locationLabel: null, notesLabel: null,
+    showAttendees: false, showReminder: false, showRecurring: false,
+  },
+  leave: {
+    showCategoryPriority: false, showLeaveType: true, allowTimedSchedule: false,
+    locationLabel: null, notesLabel: 'Reason',
+    showAttendees: false, showReminder: false, showRecurring: false,
+  },
+};
 
 export interface NewEventFormState {
   title: string;
   type: NewEventType;
   category: CalendarEventCategory | '';
   priority: CalendarEventPriority;
+  leaveType: LeaveTypeKey;
   allDay: boolean;
   date: string;
   endDate: string;
@@ -34,6 +75,7 @@ export const EMPTY_NEW_EVENT_FORM: NewEventFormState = {
   type: 'leave',
   category: '',
   priority: 'medium',
+  leaveType: 'Annual',
   allDay: true,
   date: '',
   endDate: '',
@@ -197,6 +239,7 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
     if (form.category) event.category = form.category;
     if (form.location.trim()) event.location = form.location.trim();
     if (form.notes.trim()) event.note = form.notes.trim();
+    if (form.type === 'leave') event.leaveType = form.leaveType;
     if (!form.allDay) {
       event.start = form.start;
       event.end = form.end;
