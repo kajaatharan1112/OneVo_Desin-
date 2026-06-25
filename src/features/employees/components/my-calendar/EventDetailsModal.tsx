@@ -70,6 +70,13 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
               </div>
             )}
 
+            {event.leaveType && (
+              <div className="emc-modal__row">
+                <span className="emc-modal__row-label">Leave Type</span>
+                <span className="emc-modal__row-value">{event.leaveType}</span>
+              </div>
+            )}
+
             {event.attendeeRsvp && (
               <div className="emc-modal__rsvp-list">
                 {Object.entries(event.attendeeRsvp).map(([name, rsvp]) => (

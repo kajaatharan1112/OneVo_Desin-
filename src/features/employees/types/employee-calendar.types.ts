@@ -1,3 +1,5 @@
+import type { LeaveTypeKey } from '../components/my-calendar/new-event-wizard.utils';
+
 export type CalendarViewMode = 'day' | 'week' | 'month' | 'agenda';
 export type CalendarEventType = 'meeting' | 'holiday' | 'leave' | 'shift' | 'reminder' | 'training' | 'out-of-office' | 'company-event';
 export type CalendarEventCategory = 'hr' | 'project' | 'training' | 'review' | 'client' | 'compliance' | 'management';
@@ -30,6 +32,7 @@ export interface CalendarEvent {
   attendeeRsvp?: Record<string, 'pending' | 'accepted' | 'declined' | 'tentative'>;
   category?: CalendarEventCategory;
   priority?: CalendarEventPriority;
+  leaveType?: LeaveTypeKey;
 }
 
 export interface CalendarSyncStatus {
