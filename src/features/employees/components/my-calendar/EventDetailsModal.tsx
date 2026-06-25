@@ -6,8 +6,11 @@ export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
   meeting: 'Meeting',
   leave: 'Leave',
-  holiday: 'Company event',
+  holiday: 'Holiday',
   reminder: 'Deadline/Form',
+  training: 'Training',
+  'out-of-office': 'Out of Office',
+  'company-event': 'Company Event',
 };
 
 function formatTime(t: string): string {

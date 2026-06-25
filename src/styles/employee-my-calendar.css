@@ -232,6 +232,9 @@
 .emc-evpill--shift    { --ev-color: var(--nexus-accent, #4338ca);          --ev-bg: color-mix(in srgb, var(--nexus-accent, #6366f1) 12%, transparent); }
 .emc-evpill--reminder { --ev-color: var(--nexus-warning, #c2410c);         --ev-bg: color-mix(in srgb, var(--nexus-warning, #f97316) 14%, transparent); }
 .emc-evpill--more     { --ev-color: var(--nexus-text-muted);               --ev-bg: var(--surface-muted); }
+.emc-evpill--training      { --ev-color: #7c3aed; --ev-bg: color-mix(in srgb, #7c3aed 12%, transparent); }
+.emc-evpill--out-of-office { --ev-color: #0891b2; --ev-bg: color-mix(in srgb, #0891b2 12%, transparent); }
+.emc-evpill--company-event { --ev-color: #be123c; --ev-bg: color-mix(in srgb, #be123c 12%, transparent); }
 
 /* ── Month view ──────────────────────────────────────────────────────────── */
 
@@ -804,6 +807,9 @@
 .emc-rail__dot--leave    { background: var(--success, #10b981); }
 .emc-rail__dot--shift    { background: var(--nexus-accent, #6366f1); }
 .emc-rail__dot--reminder { background: var(--nexus-warning, #f97316); }
+.emc-rail__dot--training      { background: #7c3aed; }
+.emc-rail__dot--out-of-office { background: #0891b2; }
+.emc-rail__dot--company-event { background: #be123c; }
 
 .emc-rail__ev-info {
   flex: 1;

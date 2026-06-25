@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, CalendarDays, ChevronDown,
   Users, RefreshCw, Filter, Plus, Check, X,
-  Sun, Plane, Clock, Bell, CalendarX2, Settings
+  Sun, Plane, Clock, Bell, CalendarX2, Settings,
+  GraduationCap, LogOut, Building2
 } from 'lucide-react';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
@@ -10,7 +11,7 @@ import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
 
-const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder'];
+const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
 type SettingsTabId = 'sync';
 
@@ -32,6 +33,9 @@ const AGENDA_TYPE_ICON: Record<CalendarEventType, React.ComponentType<{ size?: n
   leave: Plane,
   shift: Clock,
   reminder: Bell,
+  training: GraduationCap,
+  'out-of-office': LogOut,
+  'company-event': Building2,
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────

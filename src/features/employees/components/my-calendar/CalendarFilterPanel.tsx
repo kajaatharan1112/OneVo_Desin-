@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import type { CalendarEventType } from '../../types/employee-calendar.types';
 import { EVENT_TYPE_LABEL } from './EventDetailsModal';
 
-const TYPE_ORDER: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder'];
+const TYPE_ORDER: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
 interface CalendarFilterPanelProps {
   enabledTypes: Set<CalendarEventType>;
