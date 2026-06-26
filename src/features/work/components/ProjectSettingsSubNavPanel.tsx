@@ -1,5 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ChevronDown, PanelLeftClose } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronDown,
+  PanelLeftClose,
+  Settings,
+  Calendar,
+  Users,
+  Clock,
+  RotateCw,
+  Kanban,
+  CheckSquare,
+  Tag,
+  Database,
+  Layers,
+  Link,
+  Sliders,
+} from 'lucide-react';
 import { useWork } from '../context/work-context';
 import { PROJECT_SETTINGS_NAV, type ProjectSettingsSectionId } from '../projectSettingsNav';
 import { ProjectIcon } from './project/projectIcon';
@@ -8,6 +24,21 @@ import {
   canAccessProject,
   type WorkProject,
 } from '../workMockData';
+
+const SETTINGS_ICON_MAP: Record<ProjectSettingsSectionId, React.ComponentType<{ size?: number; className?: string }>> = {
+  general: Settings,
+  schedule: Calendar,
+  members: Users,
+  worklogs: Clock,
+  cycle: RotateCw,
+  planner: Kanban,
+  'work-items': CheckSquare,
+  labels: Tag,
+  'custom-fields': Database,
+  'participating-workspaces': Layers,
+  'related-projects': Link,
+  advanced: Sliders,
+};
 
 function projectRoleLabel(project: WorkProject, userId = CURRENT_USER_ID): string {
   const member = project.members.find(m => m.employeeId === userId && m.status === 'active');
@@ -131,17 +162,23 @@ export const ProjectSettingsSubNavPanel: React.FC<Props> = ({ onCollapse }) => {
         {PROJECT_SETTINGS_NAV.map(group => (
           <div key={group.title} className="sub-nav-section">
             <p className="sub-nav-section__header">{group.title}</p>
-            {group.items.map(item => (
-              <button
-                key={item.id}
-                type="button"
-                className={`sub-nav-panel__item${settingsSectionId === item.id ? ' sub-nav-panel__item--active' : ''}`}
-                onClick={() => setSettingsSectionId(item.id as ProjectSettingsSectionId)}
-                aria-current={settingsSectionId === item.id ? 'page' : undefined}
-              >
-                <span className="sub-nav-panel__item-label">{item.label}</span>
-              </button>
-            ))}
+            {group.items.map(item => {
+              const Icon = SETTINGS_ICON_MAP[item.id] || Settings;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`sub-nav-panel__item${settingsSectionId === item.id ? ' sub-nav-panel__item--active' : ''}`}
+                  onClick={() => setSettingsSectionId(item.id as ProjectSettingsSectionId)}
+                  aria-current={settingsSectionId === item.id ? 'page' : undefined}
+                >
+                  <span className="sub-nav-panel__item-icon" aria-hidden="true">
+                    <Icon size={14} />
+                  </span>
+                  <span className="sub-nav-panel__item-label">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         ))}
       </nav>

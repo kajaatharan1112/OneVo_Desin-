@@ -2,7 +2,6 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronDown,
-  ChevronRight,
   FileText,
   FolderKanban,
   ListTodo,
@@ -11,7 +10,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { useWork } from '../context/work-context';
-import { PROJECT_NAV_TOOLS, type ProjectNavId } from '../projectNav';
 import { ALL_WORKSPACES_ID, accessibleProjects } from '../workMockData';
 
 interface WorkSubNavPanelProps {
@@ -33,14 +31,12 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
     openModal,
     projects,
     selectedProjectId,
-    projectNavId,
     openProject,
     closeProject,
   } = useWork();
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [menuRect, setMenuRect] = useState({ top: 0, left: 0, width: 0 });
   const [projectsOpen, setProjectsOpen] = useState(false);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const selectorRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
@@ -81,33 +77,14 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
   useEffect(() => {
     if (selectedProjectId) {
       setProjectsOpen(true);
-      setExpandedIds(prev => new Set(prev).add(selectedProjectId));
     }
   }, [selectedProjectId]);
-
-  const toggleProjectExpanded = (id: string) => {
-    setExpandedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const selectTool = (projectId: string, nav: ProjectNavId) => {
-    openProject(projectId, nav);
-  };
 
   const toggleProjectsOpen = () => {
     setProjectsOpen(o => !o);
   };
 
   const handleProjectClick = (id: string) => {
-    if (selectedProjectId === id) {
-      toggleProjectExpanded(id);
-      return;
-    }
-    setExpandedIds(prev => new Set(prev).add(id));
     openProject(id, 'overview');
   };
 
@@ -251,41 +228,19 @@ export const WorkSubNavPanel: React.FC<WorkSubNavPanelProps> = ({
           </div>
 
           {projectsOpen && (
-            <div className="work-sub-nav__project-list">
+            <div className="work-sub-nav__project-list" style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '8px' }}>
               {projectList.map(p => {
-                const expanded = expandedIds.has(p.id);
                 const isSelectedProject = selectedProjectId === p.id;
                 return (
-                  <div key={p.id} className="work-sub-nav__project-branch">
-                    <button
-                      type="button"
-                      className={`sub-nav-panel__item work-sub-nav__project-row${isSelectedProject ? ' sub-nav-panel__item--active' : ''}`}
-                      onClick={() => handleProjectClick(p.id)}
-                      aria-expanded={expanded}
-                    >
-                      <ChevronRight
-                        size={13}
-                        className={`work-sub-nav__project-chevron sub-nav-panel__item-icon${expanded ? ' work-sub-nav__project-chevron--open' : ''}`}
-                        aria-hidden
-                      />
-                      <span className="sub-nav-panel__item-label">{p.name}</span>
-                    </button>
-                    {expanded && (
-                      <div className="work-sub-nav__tree">
-                        {PROJECT_NAV_TOOLS.map(tool => (
-                          <button
-                            key={tool.id}
-                            type="button"
-                            className={`sub-nav-panel__item work-sub-nav__tree-item${isSelectedProject && projectNavId === tool.id ? ' sub-nav-panel__item--active' : ''}`}
-                            onClick={() => selectTool(p.id, tool.id)}
-                            aria-current={isSelectedProject && projectNavId === tool.id ? 'page' : undefined}
-                          >
-                            <span className="sub-nav-panel__item-label">{tool.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`sub-nav-panel__item work-sub-nav__project-row${isSelectedProject ? ' sub-nav-panel__item--active' : ''}`}
+                    onClick={() => handleProjectClick(p.id)}
+                    style={{ paddingLeft: '12px' }}
+                  >
+                    <span className="sub-nav-panel__item-label">{p.name}</span>
+                  </button>
                 );
               })}
               {projectList.length === 0 && (

@@ -33,6 +33,8 @@ export const Step6ConfirmImport: React.FC = () => {
         lastName: row.lastName,
         email: row.workEmail,
         phone: '',
+        employeeNumber: '',
+        legalEntity: '',
         employmentType,
         startDate: row.startDate,
         workMode: 'onsite',

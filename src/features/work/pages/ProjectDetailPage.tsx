@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart3, Filter, Plus, Search, Settings, SlidersHorizontal } from 'lucide-react';
 import { useWork } from '../context/work-context';
-import { projectNavLabel } from '../projectNav';
+import { PROJECT_NAV_TOOLS, projectNavLabel } from '../projectNav';
 import {
   formatWorkDate,
   healthBadgeClass,
@@ -16,11 +16,22 @@ import { ProjectWorkItems } from '../components/project/ProjectWorkItems';
 import { ProjectCycle } from '../components/project/ProjectCycle';
 import { ProjectPlanner } from '../components/project/ProjectPlanner';
 import { ProjectSettingsPage } from '../components/project/ProjectSettingsPage';
+import { ProjectMembersSettings } from '../components/project/ProjectMembersSettings';
+import { ProjectMilestonesPage } from '../components/project/ProjectMilestonesPage';
+import { ProjectFilesPage } from '../components/project/ProjectFilesPage';
+import { ProjectProgressPage } from '../components/project/ProjectProgressPage';
+import { ProjectActivityLogPage } from '../components/project/ProjectActivityLogPage';
+import { ProjectReportsPage } from '../components/project/ProjectReportsPage';
+import { ProjectStatusPage } from '../components/project/ProjectStatusPage';
+import { ProjectCompletionPage } from '../components/project/ProjectCompletionPage';
+import { ProjectBudgetPage } from '../components/project/ProjectBudgetPage';
+import { ProjectRisksPage } from '../components/project/ProjectRisksPage';
 
 export const ProjectDetailPage: React.FC = () => {
   const {
     selectedProjectId,
     projectNavId,
+    setProjectNavId,
     getProject,
     workspaces,
     requestAddWorkItem,
@@ -50,6 +61,16 @@ export const ProjectDetailPage: React.FC = () => {
       case 'work-items': return <ProjectWorkItems project={project} />;
       case 'cycle': return <ProjectCycle project={project} />;
       case 'planner': return <ProjectPlanner project={project} />;
+      case 'members': return <ProjectMembersSettings project={project} />;
+      case 'milestones': return <ProjectMilestonesPage project={project} />;
+      case 'files': return <ProjectFilesPage project={project} />;
+      case 'budget': return <ProjectBudgetPage project={project} />;
+      case 'risks': return <ProjectRisksPage project={project} />;
+      case 'progress': return <ProjectProgressPage project={project} />;
+      case 'activity': return <ProjectActivityLogPage project={project} />;
+      case 'reports': return <ProjectReportsPage project={project} />;
+      case 'status': return <ProjectStatusPage project={project} />;
+      case 'completion': return <ProjectCompletionPage project={project} />;
       default: return null;
     }
   };
@@ -109,7 +130,11 @@ export const ProjectDetailPage: React.FC = () => {
           </button>
         );
       default:
-        return null;
+        return (
+          <button type="button" className="org-btn org-btn--secondary org-btn--sm" onClick={() => openProjectSettings()}>
+            <Settings size={14} /> Project settings
+          </button>
+        );
     }
   };
 
@@ -120,15 +145,11 @@ export const ProjectDetailPage: React.FC = () => {
           <nav className="work-proj-breadcrumb" aria-label="Breadcrumb">
             <button type="button" className="work-proj-breadcrumb__link" onClick={returnToProjectList}>Projects</button>
             <span className="work-proj-breadcrumb__sep">›</span>
-            {!isOverview && (
-              <>
-                <span className="work-proj-breadcrumb__icon" aria-hidden="true">
-                  <ProjectIcon icon={project.icon} size={14} />
-                </span>
-                <span className="work-proj-breadcrumb__current">{project.name}</span>
-                <span className="work-proj-breadcrumb__sep">›</span>
-              </>
-            )}
+            <span className="work-proj-breadcrumb__icon" aria-hidden="true">
+              <ProjectIcon icon={project.icon} size={14} />
+            </span>
+            <span className="work-proj-breadcrumb__current">{project.name}</span>
+            <span className="work-proj-breadcrumb__sep">›</span>
             <span className="work-proj-breadcrumb__current">{toolLabel}</span>
           </nav>
           {!isOverview && (
@@ -161,6 +182,41 @@ export const ProjectDetailPage: React.FC = () => {
         </div>
         <div className="work-proj-header__actions">{renderActions()}</div>
       </header>
+
+      {/* Main horizontal navigation menu tabs for all projects */}
+      <div className="work-proj-tabs" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border)', padding: '0 20px', overflowX: 'auto', background: 'var(--surface-panel)', flexShrink: 0, position: 'relative', zIndex: 10 }}>
+        {PROJECT_NAV_TOOLS.map(tool => {
+          const isActive = projectNavId === tool.id;
+          return (
+            <button
+              key={tool.id}
+              type="button"
+              className={`work-proj-tab-btn${isActive ? ' active' : ''}`}
+              onClick={() => setProjectNavId(tool.id)}
+              onMouseEnter={e => {
+                if (!isActive) e.currentTarget.style.color = 'var(--accent)';
+              }}
+              onMouseLeave={e => {
+                if (!isActive) e.currentTarget.style.color = 'var(--text-m)';
+              }}
+              style={{
+                padding: '12px 16px',
+                border: 'none',
+                background: 'none',
+                borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+                color: isActive ? 'var(--accent)' : 'var(--text-m)',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {tool.label}
+            </button>
+          );
+        })}
+      </div>
 
       <div className="work-proj-body">{renderContent()}</div>
     </div>

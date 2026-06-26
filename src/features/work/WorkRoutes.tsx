@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useWork } from './context/work-context';
 import { CreateWorkspaceDrawer } from './components/CreateWorkspaceDrawer';
 import { ManageWorkspacesDrawer } from './components/ManageWorkspacesDrawer';
-import { CreateProjectModal } from './components/CreateProjectModal';
+import { CreateProjectWizard } from './components/CreateProjectWizard';
 import { MyWorkPage } from './pages/MyWorkPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
@@ -23,7 +23,7 @@ export const WorkRoutes: React.FC<WorkRoutesProps> = ({ activeSubItemId }) => {
         <ProjectDetailPage />
         <CreateWorkspaceDrawer />
         <ManageWorkspacesDrawer />
-        <CreateProjectModal />
+        <CreateProjectWizard />
       </>
     );
   }
@@ -47,7 +47,7 @@ export const WorkRoutes: React.FC<WorkRoutesProps> = ({ activeSubItemId }) => {
       {page}
       <CreateWorkspaceDrawer />
       <ManageWorkspacesDrawer />
-      <CreateProjectModal />
+      <CreateProjectWizard />
     </>
   );
 };

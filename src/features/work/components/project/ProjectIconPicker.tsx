@@ -49,6 +49,7 @@ export const ProjectIconPicker: React.FC<Props> = ({ open, anchorRef, value, onC
       style={{ top: rect.bottom + 6, left: rect.left }}
       role="dialog"
       aria-label="Choose project icon"
+      onClick={e => e.stopPropagation()}
     >
       <div className="work-icon-picker__tabs">
         <button

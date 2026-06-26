@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { projectTasks, type WorkProject } from '../../workMockData';
+import { projectTasks, type PlannerMilestone, type WorkProject } from '../../workMockData';
 
 export interface AddMilestoneInput {
   name: string;
@@ -14,9 +14,11 @@ interface Props {
   onClose: () => void;
   project: WorkProject;
   onSubmit: (input: AddMilestoneInput) => void;
+  /** If provided, the drawer will pre-populate fields for editing */
+  editTarget?: PlannerMilestone;
 }
 
-export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, onSubmit }) => {
+export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, onSubmit, editTarget }) => {
   const projectTaskList = projectTasks(project.id);
   const [form, setForm] = useState({
     name: '',
@@ -25,7 +27,23 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
     linkedWorkItemIds: [] as string[],
   });
 
+  // Sync form when editTarget changes
+  useEffect(() => {
+    if (editTarget) {
+      setForm({
+        name: editTarget.name,
+        description: editTarget.description,
+        dueDate: editTarget.dueDate,
+        linkedWorkItemIds: [...editTarget.linkedWorkItemIds],
+      });
+    } else {
+      setForm({ name: '', description: '', dueDate: '', linkedWorkItemIds: [] });
+    }
+  }, [editTarget, open]);
+
   if (!open) return null;
+
+  const isEdit = Boolean(editTarget);
 
   const toggleWorkItem = (id: string) => {
     setForm(f => ({
@@ -54,11 +72,11 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
         className="org-slideover org-slideover--narrow"
         role="dialog"
         aria-modal="true"
-        aria-label="Add milestone"
+        aria-label={isEdit ? 'Edit milestone' : 'Add milestone'}
         onClick={e => e.stopPropagation()}
       >
         <header className="org-slideover__header">
-          <h2>Add milestone</h2>
+          <h2>{isEdit ? 'Edit milestone' : 'Add milestone'}</h2>
           <button type="button" className="org-slideover__close" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
@@ -111,10 +129,16 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
         </div>
         <footer className="org-slideover__footer">
           <button type="button" className="org-btn org-btn--secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="org-btn org-btn--primary" onClick={handleSubmit}>Add milestone</button>
+          <button
+            type="button"
+            className="org-btn org-btn--primary"
+            onClick={handleSubmit}
+            disabled={!form.name.trim() || !form.dueDate}
+          >
+            {isEdit ? 'Save changes' : 'Add milestone'}
+          </button>
         </footer>
       </div>
     </div>
   );
 };
-

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Lock, Search, UserCircle, Users, X } from 'lucide-react';
+import { Image, Lock, Search, UserCircle, Users, X, LayoutGrid } from 'lucide-react';
 import { useWork } from '../context/work-context';
 import { CompactPillDropdown, type PillDropdownOption } from './CompactPillDropdown';
 import { ProjectIconPicker } from './project/ProjectIconPicker';
@@ -36,6 +36,29 @@ const VISIBILITY_OPTIONS: PillDropdownOption[] = [
   },
 ];
 
+const TEMPLATE_OPTIONS: PillDropdownOption[] = [
+  {
+    id: 'none',
+    label: 'Blank Project',
+    subtext: 'Start with an empty workspace layout.',
+  },
+  {
+    id: 'software',
+    label: 'Software Development',
+    subtext: 'Initializes with development backlog and release milestones.',
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing Campaign',
+    subtext: 'Initializes with promotion tasks and campaign assets.',
+  },
+  {
+    id: 'kanban',
+    label: 'Kanban Board',
+    subtext: 'Initializes with pre-set columns and support task list.',
+  },
+];
+
 export const CreateProjectModal: React.FC = () => {
   const { activeModal, closeModal, workspaceFilterId, projects, createProject, openProject } = useWork();
   const iconRef = useRef<HTMLButtonElement>(null);
@@ -53,6 +76,9 @@ export const CreateProjectModal: React.FC = () => {
     coverImage: null as string | null,
     iconColor: null as string | null,
     invites: [] as InviteRow[],
+    startDate: new Date().toISOString().slice(0, 10),
+    dueDate: '',
+    template: 'none',
   });
   const [wsSearch, setWsSearch] = useState('');
   const [peopleSearch, setPeopleSearch] = useState('');
@@ -73,6 +99,9 @@ export const CreateProjectModal: React.FC = () => {
         coverImage: null,
         iconColor: null,
         invites: [],
+        startDate: new Date().toISOString().slice(0, 10),
+        dueDate: '',
+        template: 'none',
       });
       setWsSearch('');
       setPeopleSearch('');
@@ -188,6 +217,9 @@ export const CreateProjectModal: React.FC = () => {
         ...inv,
         workspaceSourceId: form.workspaceId,
       })),
+      startDate: form.startDate,
+      dueDate: form.dueDate || null,
+      template: form.template,
     });
     closeModal();
     openProject(id, 'overview');
@@ -272,6 +304,27 @@ export const CreateProjectModal: React.FC = () => {
                 </div>
               </div>
 
+              <div className="work-create-modal__row work-create-modal__row--name-key">
+                <div className="org-form-field" style={{ flex: 1 }}>
+                  <label htmlFor="proj-start-date" className="work-create-modal__field-label">Start Date</label>
+                  <input
+                    id="proj-start-date"
+                    type="date"
+                    value={form.startDate}
+                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  />
+                </div>
+                <div className="org-form-field" style={{ flex: 1 }}>
+                  <label htmlFor="proj-due-date" className="work-create-modal__field-label">Due Date</label>
+                  <input
+                    id="proj-due-date"
+                    type="date"
+                    value={form.dueDate}
+                    onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+
               <div className="work-create-modal__row work-create-modal__row--controls">
                 <CompactPillDropdown
                   icon={visibilityIcon}
@@ -287,6 +340,14 @@ export const CreateProjectModal: React.FC = () => {
                   onChange={id => setForm(f => ({ ...f, leadId: id }))}
                   ariaLabel="Project lead"
                   prefixLabel="Lead"
+                />
+                <CompactPillDropdown
+                  icon={<LayoutGrid size={14} />}
+                  value={form.template}
+                  options={TEMPLATE_OPTIONS}
+                  onChange={id => setForm(f => ({ ...f, template: id }))}
+                  ariaLabel="Project template"
+                  prefixLabel="Template"
                 />
               </div>
 
