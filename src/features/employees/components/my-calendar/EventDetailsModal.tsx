@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MapPin, Users as UsersIcon, Trash2, Pencil } from 'lucide-react';
+import { X, MapPin, Users as UsersIcon, Trash2, Pencil, Copy } from 'lucide-react';
 import type { CalendarEvent, CalendarEventType } from '../../types/employee-calendar.types';
 import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
@@ -28,10 +28,11 @@ interface EventDetailsModalProps {
   onClose: () => void;
   onDelete: (id: string) => void;
   onSave: (updated: CalendarEvent) => void;
+  onDuplicate: (event: CalendarEvent) => void;
   existingMyEvents?: CalendarEvent[];
 }
 
-export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onClose, onDelete, onSave, existingMyEvents = [] }) => {
+export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onClose, onDelete, onSave, onDuplicate, existingMyEvents = [] }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(event);
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
@@ -146,6 +147,12 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
                 <Pencil size={13} />
                 Edit
               </button>
+              {event.type === 'meeting' && (
+                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => onDuplicate(event)}>
+                  <Copy size={13} />
+                  Duplicate
+                </button>
+              )}
               <button type="button" className="era-btn emc-modal__action emc-modal__action--danger" onClick={() => onDelete(event.id)}>
                 <Trash2 size={13} />
                 Delete

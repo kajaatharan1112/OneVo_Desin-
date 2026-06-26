@@ -10,7 +10,7 @@ import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeF
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
-import { addMinutesToTime, findEventConflicts, type NewEventFormState } from './new-event-wizard.utils';
+import { addMinutesToTime, eventToFormOverrides, findEventConflicts, type NewEventFormState } from './new-event-wizard.utils';
 
 const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
@@ -319,6 +319,11 @@ export const MyCalendarTab: React.FC = () => {
     setLocalEvents(prev => prev.map(e => (
       e.id === id ? { ...e, needsResponse: false, status: accepted ? 'confirmed' : 'rejected' } : e
     )));
+  };
+  const handleDuplicateEvent = (event: CalendarEvent) => {
+    setSelectedEvent(null);
+    setDragPrefill(eventToFormOverrides(event));
+    setNewEventOpen(true);
   };
 
   // "+N more" day popover (Month view)
@@ -872,6 +877,7 @@ export const MyCalendarTab: React.FC = () => {
           onClose={() => setSelectedEvent(null)}
           onDelete={handleDeleteEvent}
           onSave={handleSaveEvent}
+          onDuplicate={handleDuplicateEvent}
           existingMyEvents={localEvents.filter(ev => ev.scope === 'my')}
         />
       )}
