@@ -281,3 +281,32 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
     return event;
   });
 }
+
+export function eventToFormOverrides(event: CalendarEvent): Partial<NewEventFormState> {
+  const attendees: AttendeeRef[] = (event.attendees ?? []).map(name => {
+    const match = CALENDAR_DIRECTORY.find(person => person.name === name);
+    return match
+      ? { kind: 'user', id: match.id, name: match.name, role: match.role }
+      : { kind: 'external', email: name };
+  });
+
+  const overrides: Partial<NewEventFormState> = {
+    title: event.title,
+    type: 'meeting',
+    allDay: false,
+    date: event.date,
+    audience: event.scope,
+    recurring: false,
+    attendees,
+  };
+
+  if (event.start) overrides.start = event.start;
+  if (event.end) overrides.end = event.end;
+  if (event.location) overrides.location = event.location;
+  if (event.note) overrides.notes = event.note;
+  if (event.category) overrides.category = event.category;
+  if (event.priority) overrides.priority = event.priority;
+  if (event.reminderMinutesBefore) overrides.reminderMinutesBefore = event.reminderMinutesBefore;
+
+  return overrides;
+}
