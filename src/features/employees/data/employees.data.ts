@@ -8,21 +8,27 @@ export const employees: EmployeeProfile[] = [
     name: 'Marcus Chen',
     role: 'Chief Executive Officer',
     avatar: 'MC',
-    avatarUrl: 'https://i.pravatar.cc/150?u=marcus'
+    avatarUrl: 'https://i.pravatar.cc/150?u=marcus',
+    country: 'USA',
+    timezone: 'America/New_York'
   },
   {
     id: 'manager',
     name: 'Dana Brooks',
     role: 'Manager',
     avatar: 'DB',
-    avatarUrl: 'https://i.pravatar.cc/150?u=dana'
+    avatarUrl: 'https://i.pravatar.cc/150?u=dana',
+    country: 'UK',
+    timezone: 'Europe/London'
   },
   {
     id: 'alex',
     name: 'Alexander Pierce',
     role: 'Back end developer',
     avatar: 'AP',
-    avatarUrl: 'https://i.pravatar.cc/150?u=alex'
+    avatarUrl: 'https://i.pravatar.cc/150?u=alex',
+    country: 'Sri Lanka',
+    timezone: 'Asia/Colombo'
   }
 ];
 
