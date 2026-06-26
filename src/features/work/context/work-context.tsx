@@ -13,6 +13,8 @@ import {
   MOCK_RELATED_PROJECTS,
   MOCK_TASKS,
   MOCK_WORKSPACES,
+  MOCK_BUDGET_EXPENSES,
+  MOCK_RISKS,
   countOpenTasks,
   nextTaskKey,
   projectAdminIds,
@@ -32,6 +34,8 @@ import {
   type WorkProject,
   type WorkTask,
   type WorkWorkspace,
+  type ProjectBudgetExpense,
+  type ProjectRisk,
 } from '../workMockData';
 import {
   buildProjectInviteNotification,
@@ -63,6 +67,13 @@ interface CreateProjectInput {
   coverColor: string;
   coverImage: string | null;
   invites: { employeeId: string; accessLevel: ProjectAccessLevel; workspaceSourceId: string | null }[];
+  startDate?: string;
+  dueDate?: string | null;
+  template?: string;
+  allocatedHours?: number;
+  budgetLimit?: number;
+  riskLevel?: 'Low' | 'Medium' | 'High' | 'Critical';
+  tags?: string[];
 }
 
 interface AddTaskInput {
@@ -73,8 +84,11 @@ interface AddTaskInput {
   priority: TaskPriority;
   assigneeId: string;
   dueDate?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   linkedWorkspaceId?: string | null;
   labels?: string[];
+  customFieldValues?: Record<string, string | number>;
 }
 
 interface WorkContextValue {
@@ -88,6 +102,8 @@ interface WorkContextValue {
   milestones: PlannerMilestone[];
   documents: WorkDocument[];
   relatedProjects: RelatedProjectLink[];
+  budgetExpenses: ProjectBudgetExpense[];
+  risks: ProjectRisk[];
   selectedProjectId: string | null;
   selectedTaskId: string | null;
   projectNavId: ProjectNavId;
@@ -98,6 +114,8 @@ interface WorkContextValue {
   returnToProjectList: () => void;
   createProject: (input: CreateProjectInput) => string;
   updateProject: (id: string, patch: Partial<WorkProject>) => void;
+  restoreProject: (id: string) => void;
+  duplicateProject: (projectId: string, cloneTasks: boolean) => string;
   addTask: (input: AddTaskInput) => void;
   updateTask: (id: string, patch: Partial<WorkTask>) => void;
   openTaskDetail: (taskId: string) => void;
@@ -106,6 +124,8 @@ interface WorkContextValue {
   closeAnalytics: () => void;
   addCycle: (cycle: ProjectCycle) => void;
   addMilestone: (milestone: PlannerMilestone) => void;
+  updateMilestone: (id: string, patch: Partial<PlannerMilestone>) => void;
+  deleteMilestone: (id: string) => void;
   updateDocument: (id: string, patch: Partial<WorkDocument>) => void;
   addProjectMember: (projectId: string, employeeId: string, accessLevel: ProjectAccessLevel, workspaceSourceId: string | null) => void;
   removeProjectMember: (projectId: string, memberId: string) => void;
@@ -131,6 +151,11 @@ interface WorkContextValue {
   addRelatedProject: (projectId: string, relatedProjectId: string, relationship: RelatedProjectRelationship) => void;
   requestRelatedProjectLink: (projectId: string, relationship: RelatedProjectRelationship, reason: string, manualLabel?: string, manualKey?: string) => void;
   removeRelatedProject: (linkId: string) => void;
+  addBudgetExpense: (expense: Omit<ProjectBudgetExpense, 'id'>) => void;
+  deleteBudgetExpense: (id: string) => void;
+  addRisk: (risk: Omit<ProjectRisk, 'id'>) => void;
+  updateRisk: (id: string, patch: Partial<ProjectRisk>) => void;
+  deleteRisk: (id: string) => void;
   activeModal: WorkModal;
   openModal: (modal: WorkModal) => void;
   closeModal: () => void;
@@ -163,6 +188,8 @@ export const WorkProvider: React.FC<{
   const [milestones, setMilestones] = useState<PlannerMilestone[]>(MOCK_MILESTONES);
   const [documents, setDocuments] = useState<WorkDocument[]>(MOCK_DOCUMENTS);
   const [relatedProjects, setRelatedProjects] = useState<RelatedProjectLink[]>(MOCK_RELATED_PROJECTS);
+  const [budgetExpenses, setBudgetExpenses] = useState<ProjectBudgetExpense[]>(MOCK_BUDGET_EXPENSES);
+  const [risks, setRisks] = useState<ProjectRisk[]>(MOCK_RISKS);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [projectNavId, setProjectNavId] = useState<ProjectNavId>('work-items');
@@ -258,13 +285,60 @@ export const WorkProvider: React.FC<{
         status: 'invited' as const,
         workspaceSourceId: inv.workspaceSourceId,
       }));
+
+    // Template presets
+    const defaultTasks: WorkTask[] = [];
+    const defaultMilestones: PlannerMilestone[] = [];
+    let defaultDesc = input.description;
+    let budgetLimit = 100000;
+    let priority: 'Low' | 'Medium' | 'High' = 'Medium';
+    if (input.template && input.template !== 'none') {
+      if (input.template === 'software') {
+        defaultDesc = input.description || "Software development project template for designing, building, and deploying new features.";
+        budgetLimit = 150000;
+        priority = 'High';
+        defaultTasks.push(
+          { id: `task-${Date.now()}-1`, key: `${key}-1`, title: 'Setup repository and dev environment', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'Medium', labels: ['infra'] },
+          { id: `task-${Date.now()}-2`, key: `${key}-2`, title: 'Design system integration and components mapping', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'High', labels: ['design'] },
+          { id: `task-${Date.now()}-3`, key: `${key}-3`, title: 'Core API schema & server routes implementation', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'High', labels: ['backend'] },
+          { id: `task-${Date.now()}-4`, key: `${key}-4`, title: 'CI/CD pipeline and automated test suite setup', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'backlog', dueDate: null, priority: 'Medium', labels: ['infra'] }
+        );
+        defaultMilestones.push(
+          { id: `ms-${Date.now()}-1`, name: 'v1.0-alpha release', description: 'Core features implemented and running in staging', projectId: id, dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), status: 'upcoming', ownerId: CURRENT_USER_ID, linkedWorkItemIds: [`task-${Date.now()}-1`, `task-${Date.now()}-2`, `task-${Date.now()}-3`] },
+          { id: `ms-${Date.now()}-2`, name: 'Production launch', description: 'Stable v1.0 deployment to production environment', projectId: id, dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), status: 'upcoming', ownerId: CURRENT_USER_ID, linkedWorkItemIds: [`task-${Date.now()}-4`] }
+        );
+      } else if (input.template === 'marketing') {
+        defaultDesc = input.description || "Marketing campaign template for product launches, brand awareness campaigns, and events.";
+        budgetLimit = 50000;
+        priority = 'Medium';
+        defaultTasks.push(
+          { id: `task-${Date.now()}-1`, key: `${key}-1`, title: 'Define campaign goals & target audience personas', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'High', labels: ['planning'] },
+          { id: `task-${Date.now()}-2`, key: `${key}-2`, title: 'Produce visual brand assets & promotional copy', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'Medium', labels: ['design'] },
+          { id: `task-${Date.now()}-3`, key: `${key}-3`, title: 'Configure email newsletter and drip campaigns', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'backlog', dueDate: null, priority: 'Medium', labels: ['docs'] }
+        );
+        defaultMilestones.push(
+          { id: `ms-${Date.now()}-1`, name: 'Assets finalized', description: 'All copywriting and design assets approved', projectId: id, dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), status: 'upcoming', ownerId: CURRENT_USER_ID, linkedWorkItemIds: [`task-${Date.now()}-1`, `task-${Date.now()}-2`] },
+          { id: `ms-${Date.now()}-2`, name: 'Campaign Launch', description: 'Press release and ads go live', projectId: id, dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), status: 'upcoming', ownerId: CURRENT_USER_ID, linkedWorkItemIds: [`task-${Date.now()}-3`] }
+        );
+      } else if (input.template === 'kanban') {
+        defaultDesc = input.description || "Simple Kanban board template for operations, support tasks, and quick cycles.";
+        budgetLimit = 20000;
+        priority = 'Low';
+        defaultTasks.push(
+          { id: `task-${Date.now()}-1`, key: `${key}-1`, title: 'Configure Kanban columns WIP limits', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'Low', labels: ['settings'] },
+          { id: `task-${Date.now()}-2`, key: `${key}-2`, title: 'Setup incoming issue integrations', description: '', projectId: id, projectName: input.name, projectKey: key, workspaceIds: [primaryWs], linkedWorkspaceId: primaryWs, assigneeId: CURRENT_USER_ID, status: 'todo', dueDate: null, priority: 'Medium', labels: ['settings'] }
+        );
+      }
+    }
+
     const newProject: WorkProject = {
       id,
       key,
       name: input.name,
-      description: input.description,
+      description: defaultDesc,
       status: 'active',
       health: 'on_track',
+      priority,
       workspaceIds: input.workspaceIds,
       linkedWorkspaces: [{
         workspaceId: primaryWs,
@@ -273,9 +347,9 @@ export const WorkProvider: React.FC<{
         access: input.visibility === 'public_workspace' ? 'workspace_visible' : 'private',
       }],
       members: [creatorMember, ...invitedMembers],
-      openTasks: 0,
-      dueDate: null,
-      startDate: new Date().toISOString().slice(0, 10),
+      openTasks: defaultTasks.length,
+      dueDate: input.dueDate ?? null,
+      startDate: input.startDate ?? new Date().toISOString().slice(0, 10),
       endDate: null,
       defaultPriority: 'Medium',
       timezone: 'UTC',
@@ -291,8 +365,24 @@ export const WorkProvider: React.FC<{
       defaultApproverId: null,
       visibility: input.visibility,
       primaryWorkspaceId: primaryWs,
+      budgetLimit: input.budgetLimit ?? budgetLimit,
+      spentBudget: 0,
+      customFieldDefinitions: [
+        { id: 'cf-stage', name: 'Stage', type: 'select', options: ['Planning', 'In Dev', 'Testing', 'Completed'] }
+      ],
+      allocatedHours: input.allocatedHours,
+      riskLevel: input.riskLevel ?? 'Medium',
+      tags: input.tags ?? [],
     };
+
     setProjects(prev => [...prev, newProject]);
+    if (defaultTasks.length > 0) {
+      setTasks(prev => [...prev, ...defaultTasks]);
+    }
+    if (defaultMilestones.length > 0) {
+      setMilestones(prev => [...prev, ...defaultMilestones]);
+    }
+
     if (input.visibility === 'private' && invitedMembers.length > 0) {
       addInboxItems(
         invitedMembers.map(m =>
@@ -318,6 +408,69 @@ export const WorkProvider: React.FC<{
     setProjects(prev => prev.map(p => (p.id === id ? { ...p, ...patch } : p)));
   }, [projects, addInboxItems]);
 
+  const restoreProject = useCallback((id: string) => {
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, status: 'active' } : p));
+  }, []);
+
+  const duplicateProject = useCallback((projectId: string, cloneTasks: boolean): string => {
+    const src = projects.find(p => p.id === projectId);
+    if (!src) return '';
+    const id = `proj-${Date.now()}`;
+    const existingKeys = projects.map(p => p.key);
+    const key = deriveProjectKey(`${src.name} Copy`, existingKeys).toUpperCase();
+    const duplicated: WorkProject = {
+      ...src,
+      id,
+      key,
+      name: `${src.name} (Copy)`,
+      status: 'active',
+      health: 'on_track',
+      openTasks: 0,
+      startDate: new Date().toISOString().slice(0, 10),
+      members: src.members.map((m, idx) => ({
+        ...m,
+        id: `pm-${Date.now()}-${idx}`,
+        status: 'active',
+      })),
+      spentBudget: 0,
+    };
+    setProjects(prev => [...prev, duplicated]);
+    if (cloneTasks) {
+      const srcTasks = tasks.filter(t => t.projectId === projectId);
+      const duplicatedTasks = srcTasks.map((t, idx) => {
+        const newTaskKey = `${key}-${idx + 1}`;
+        return {
+          ...t,
+          id: `task-${Date.now()}-${idx}`,
+          key: newTaskKey,
+          projectId: id,
+          projectName: duplicated.name,
+          projectKey: key,
+          status: 'todo' as TaskStatus,
+        };
+      });
+      setTasks(prev => {
+        const next = [...prev, ...duplicatedTasks];
+        setProjects(ps => ps.map(p => {
+          if (p.id !== id) return p;
+          return { ...p, openTasks: duplicatedTasks.length };
+        }));
+        return next;
+      });
+    }
+    const srcMilestones = milestones.filter(m => m.projectId === projectId);
+    if (srcMilestones.length > 0) {
+      const duplicatedMilestones = srcMilestones.map((m, idx) => ({
+        ...m,
+        id: `ms-${Date.now()}-${idx}`,
+        projectId: id,
+        linkedWorkItemIds: [],
+      }));
+      setMilestones(prev => [...prev, ...duplicatedMilestones]);
+    }
+    return id;
+  }, [projects, tasks, milestones]);
+
   const addTask = useCallback((input: AddTaskInput) => {
     const project = projects.find(p => p.id === input.projectId);
     if (!project) return;
@@ -336,8 +489,11 @@ export const WorkProvider: React.FC<{
       assigneeId: input.assigneeId,
       status: input.status,
       dueDate: input.dueDate ?? null,
+      startDate: input.startDate ?? null,
+      endDate: input.endDate ?? null,
       priority: input.priority,
       labels: input.labels ?? [],
+      customFieldValues: input.customFieldValues ?? {},
     };
     setTasks(prev => {
       const next = [...prev, task];
@@ -555,6 +711,14 @@ export const WorkProvider: React.FC<{
     setMilestones(prev => [...prev, milestone]);
   }, []);
 
+  const updateMilestone = useCallback((id: string, patch: Partial<PlannerMilestone>) => {
+    setMilestones(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
+  }, []);
+
+  const deleteMilestone = useCallback((id: string) => {
+    setMilestones(prev => prev.filter(m => m.id !== id));
+  }, []);
+
   const updateDocument = useCallback((id: string, patch: Partial<WorkDocument>) => {
     setDocuments(prev => prev.map(d => (d.id === id ? { ...d, ...patch } : d)));
   }, []);
@@ -616,6 +780,47 @@ export const WorkProvider: React.FC<{
     setRelatedProjects(prev => prev.filter(l => l.id !== linkId));
   }, []);
 
+  const addBudgetExpense = useCallback((expense: Omit<ProjectBudgetExpense, 'id'>) => {
+    const id = `exp-${Date.now()}`;
+    const newExpense = { ...expense, id };
+    setBudgetExpenses(prev => {
+      const next = [...prev, newExpense];
+      const totalSpent = next
+        .filter(e => e.projectId === expense.projectId)
+        .reduce((sum, e) => sum + e.cost, 0);
+      setProjects(ps => ps.map(p => p.id === expense.projectId ? { ...p, spentBudget: totalSpent } : p));
+      return next;
+    });
+  }, []);
+
+  const deleteBudgetExpense = useCallback((id: string) => {
+    setBudgetExpenses(prev => {
+      const target = prev.find(e => e.id === id);
+      const next = prev.filter(e => e.id !== id);
+      if (target) {
+        const totalSpent = next
+          .filter(e => e.projectId === target.projectId)
+          .reduce((sum, e) => sum + e.cost, 0);
+        setProjects(ps => ps.map(p => p.id === target.projectId ? { ...p, spentBudget: totalSpent } : p));
+      }
+      return next;
+    });
+  }, []);
+
+  const addRisk = useCallback((risk: Omit<ProjectRisk, 'id'>) => {
+    const id = `risk-${Date.now()}`;
+    const newRisk = { ...risk, id };
+    setRisks(prev => [...prev, newRisk]);
+  }, []);
+
+  const updateRisk = useCallback((id: string, patch: Partial<ProjectRisk>) => {
+    setRisks(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+  }, []);
+
+  const deleteRisk = useCallback((id: string) => {
+    setRisks(prev => prev.filter(r => r.id !== id));
+  }, []);
+
   const value = useMemo<WorkContextValue>(() => ({
     workspaceFilterId,
     setWorkspaceFilterId,
@@ -627,6 +832,8 @@ export const WorkProvider: React.FC<{
     milestones,
     documents,
     relatedProjects,
+    budgetExpenses,
+    risks,
     selectedProjectId,
     selectedTaskId,
     projectNavId,
@@ -637,6 +844,8 @@ export const WorkProvider: React.FC<{
     returnToProjectList,
     createProject,
     updateProject,
+    restoreProject,
+    duplicateProject,
     addTask,
     updateTask,
     openTaskDetail,
@@ -645,6 +854,8 @@ export const WorkProvider: React.FC<{
     closeAnalytics,
     addCycle,
     addMilestone,
+    updateMilestone,
+    deleteMilestone,
     updateDocument,
     addProjectMember,
     removeProjectMember,
@@ -657,6 +868,11 @@ export const WorkProvider: React.FC<{
     addRelatedProject,
     requestRelatedProjectLink,
     removeRelatedProject,
+    addBudgetExpense,
+    deleteBudgetExpense,
+    addRisk,
+    updateRisk,
+    deleteRisk,
     activeModal,
     openModal: setActiveModal,
     closeModal: () => setActiveModal(null),
@@ -674,12 +890,14 @@ export const WorkProvider: React.FC<{
     switchSettingsProject,
   }), [
     workspaceFilterId, workspaces, addWorkspace, projects, tasks, cycles, milestones, documents, relatedProjects,
+    budgetExpenses, risks,
     selectedProjectId, selectedTaskId, projectNavId, analyticsOpen, openProject, closeProject, returnToProjectList,
-    createProject, updateProject, addTask, updateTask, openTaskDetail, closeTaskDetail,
-    openAnalytics, closeAnalytics, addCycle, addMilestone, updateDocument,
+    createProject, updateProject, restoreProject, duplicateProject, addTask, updateTask, openTaskDetail, closeTaskDetail,
+    openAnalytics, closeAnalytics, addCycle, addMilestone, updateMilestone, deleteMilestone, updateDocument,
     addProjectMember, removeProjectMember, updateProjectMemberAccess,
     linkWorkspace, updateParticipatingWorkspace, unlinkWorkspace, requestWorkspaceLink, requestWorkspaceParticipation,
     addRelatedProject, requestRelatedProjectLink, removeRelatedProject,
+    addBudgetExpense, deleteBudgetExpense, addRisk, updateRisk, deleteRisk,
     activeModal, workspaceFilterLabel, getProject, addWorkItemSignal, requestAddWorkItem,
     addCycleSignal, requestAddCycle,
     projectSettingsOpen, settingsSectionId, openProjectSettings, closeProjectSettings, setSettingsSectionId, switchSettingsProject,

@@ -72,6 +72,32 @@ export interface WorkItemState {
   wipLimit?: number;
 }
 
+export interface CustomFieldDefinition {
+  id: string;
+  name: string;
+  type: 'text' | 'number' | 'select';
+  options?: string[];
+}
+
+export interface ProjectBudgetExpense {
+  id: string;
+  projectId: string;
+  name: string;
+  cost: number;
+  category: string;
+  date: string;
+}
+
+export interface ProjectRisk {
+  id: string;
+  projectId: string;
+  name: string;
+  likelihood: 'High' | 'Medium' | 'Low';
+  impact: 'High' | 'Medium' | 'Low';
+  mitigation: string;
+  status: 'identified' | 'mitigated' | 'triggered' | 'closed';
+}
+
 export interface WorkProject {
   id: string;
   key: string;
@@ -79,6 +105,7 @@ export interface WorkProject {
   description: string;
   status: ProjectStatus;
   health: ProjectHealth;
+  priority: 'Low' | 'Medium' | 'High';
   workspaceIds: string[];
   linkedWorkspaces: LinkedWorkspace[];
   members: ProjectMember[];
@@ -100,6 +127,12 @@ export interface WorkProject {
   defaultApproverId: string | null;
   visibility: ProjectVisibility;
   primaryWorkspaceId: string | null;
+  budgetLimit?: number;
+  spentBudget?: number;
+  customFieldDefinitions?: CustomFieldDefinition[];
+  allocatedHours?: number;
+  riskLevel?: 'Low' | 'Medium' | 'High' | 'Critical';
+  tags?: string[];
 }
 
 export interface UserWorkspaceScope {
@@ -162,6 +195,8 @@ export interface WorkTask {
   assigneeIds?: string[];
   status: TaskStatus;
   dueDate: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   priority: TaskPriority;
   labels: string[];
   estimate?: number;
@@ -175,6 +210,7 @@ export interface WorkTask {
   approverId?: string | null;
   watchers?: string[];
   activity?: WorkTaskActivity[];
+  customFieldValues?: Record<string, string | number>;
 }
 
 export interface PlannerItem {
@@ -299,7 +335,7 @@ export const MOCK_WORKSPACES: WorkWorkspace[] = [
 export const MOCK_PROJECTS: WorkProject[] = [
   {
     id: 'proj-1', key: 'ONEVO', name: 'OneVo Platform Refresh', description: 'Navigation and work experience improvements',
-    status: 'active', health: 'on_track', workspaceIds: ['ws-eng', 'ws-product'],
+    status: 'active', health: 'on_track', priority: 'High', workspaceIds: ['ws-eng', 'ws-product'],
     linkedWorkspaces: [
       { workspaceId: 'ws-eng', status: 'active', role: 'Main team', access: 'private' },
       { workspaceId: 'ws-product', status: 'active', role: 'Supporting team', access: 'private' },
@@ -314,10 +350,15 @@ export const MOCK_PROJECTS: WorkProject[] = [
     leadId: 'current-user', labels: DEFAULT_PROJECT_LABELS, workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: true, defaultApproverId: 'user-2',
     visibility: 'private', primaryWorkspaceId: 'ws-eng',
+    budgetLimit: 120000, spentBudget: 42500,
+    customFieldDefinitions: [
+      { id: 'cf-dept', name: 'Department Code', type: 'text' },
+      { id: 'cf-billing', name: 'Billing Status', type: 'select', options: ['Billable', 'Non-Billable', 'Internal'] }
+    ]
   },
   {
     id: 'proj-2', key: 'GATE', name: 'API Gateway Migration', description: 'Move internal services to unified gateway',
-    status: 'active', health: 'at_risk', workspaceIds: ['ws-backend', 'ws-eng'],
+    status: 'active', health: 'at_risk', priority: 'Medium', workspaceIds: ['ws-backend', 'ws-eng'],
     linkedWorkspaces: [
       { workspaceId: 'ws-backend', status: 'active', role: 'Backend squad' },
       { workspaceId: 'ws-eng', status: 'active', role: 'Platform support' },
@@ -331,10 +372,14 @@ export const MOCK_PROJECTS: WorkProject[] = [
     leadId: 'user-3', labels: DEFAULT_PROJECT_LABELS.slice(0, 8), workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: false, defaultApproverId: null,
     visibility: 'private', primaryWorkspaceId: 'ws-backend',
+    budgetLimit: 85000, spentBudget: 31000,
+    customFieldDefinitions: [
+      { id: 'cf-sec-review', name: 'Security Sign-off', type: 'select', options: ['Pending', 'Approved', 'Rejected'] }
+    ]
   },
   {
     id: 'proj-3', key: 'MOBL', name: 'Mobile App v2', description: 'Employee mobile experience',
-    status: 'active', health: 'on_track', workspaceIds: ['ws-product'],
+    status: 'active', health: 'on_track', priority: 'High', workspaceIds: ['ws-product'],
     linkedWorkspaces: [{ workspaceId: 'ws-product', status: 'active', role: 'Product delivery' }],
     members: [
       { id: 'pm-6', employeeId: 'current-user', accessLevel: 'member', status: 'active', workspaceSourceId: 'ws-product' },
@@ -345,10 +390,11 @@ export const MOCK_PROJECTS: WorkProject[] = [
     leadId: 'user-5', labels: DEFAULT_PROJECT_LABELS.slice(0, 6), workItemStates: DEFAULT_WORK_ITEM_STATES,
     approvalRequired: false, defaultApproverId: null,
     visibility: 'public_workspace', primaryWorkspaceId: 'ws-product',
+    budgetLimit: 200000, spentBudget: 125000
   },
   {
     id: 'proj-5', key: 'OBSV', name: 'Backend Observability', description: 'Tracing and metrics rollout',
-    status: 'active', health: 'on_track', workspaceIds: ['ws-backend'],
+    status: 'active', health: 'on_track', priority: 'Medium', workspaceIds: ['ws-backend'],
     linkedWorkspaces: [{ workspaceId: 'ws-backend', status: 'active', role: 'Infrastructure' }],
     members: [
       { id: 'pm-9', employeeId: 'current-user', accessLevel: 'member', status: 'active', workspaceSourceId: 'ws-backend' },
@@ -362,7 +408,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
   },
   {
     id: 'proj-fe', key: 'FEND', name: 'Frontend Refresh', description: 'Frontend delivery stream for platform refresh',
-    status: 'active', health: 'on_track', workspaceIds: ['ws-eng', 'ws-product'],
+    status: 'active', health: 'on_track', priority: 'Medium', workspaceIds: ['ws-eng', 'ws-product'],
     linkedWorkspaces: [
       { workspaceId: 'ws-eng', status: 'active', role: 'Delivery' },
       { workspaceId: 'ws-product', status: 'active', role: 'Product context' },
@@ -379,7 +425,7 @@ export const MOCK_PROJECTS: WorkProject[] = [
   },
   {
     id: 'proj-be', key: 'BEND', name: 'Backend Refresh', description: 'Backend delivery stream for platform refresh',
-    status: 'active', health: 'at_risk', workspaceIds: ['ws-backend'],
+    status: 'active', health: 'at_risk', priority: 'High', workspaceIds: ['ws-backend'],
     linkedWorkspaces: [{ workspaceId: 'ws-backend', status: 'active', role: 'Infrastructure' }],
     members: [
       { id: 'pm-be-1', employeeId: 'user-3', accessLevel: 'admin', status: 'active', workspaceSourceId: 'ws-backend' },
@@ -391,6 +437,22 @@ export const MOCK_PROJECTS: WorkProject[] = [
     visibility: 'private', primaryWorkspaceId: 'ws-backend',
   },
 ];
+
+export const MOCK_BUDGET_EXPENSES: ProjectBudgetExpense[] = [
+  { id: 'exp-1', projectId: 'proj-1', name: 'UI/UX Contractor', cost: 25000, category: 'Consulting', date: '2026-05-15' },
+  { id: 'exp-2', projectId: 'proj-1', name: 'Database Hosting Setup', cost: 5000, category: 'Infrastructure', date: '2026-06-01' },
+  { id: 'exp-3', projectId: 'proj-1', name: 'QA Automation Contractor', cost: 12500, category: 'Contractors', date: '2026-06-10' },
+  { id: 'exp-4', projectId: 'proj-2', name: 'Security Audit Review', cost: 15000, category: 'Professional Services', date: '2026-04-20' },
+  { id: 'exp-5', projectId: 'proj-2', name: 'API Gateway License Fee', cost: 16000, category: 'Software Licenses', date: '2026-05-01' },
+];
+
+export const MOCK_RISKS: ProjectRisk[] = [
+  { id: 'risk-1', projectId: 'proj-1', name: 'Scope creep on platform pages', likelihood: 'High', impact: 'Medium', mitigation: 'Implement strict sign-off for any changes to original mock designs', status: 'identified' },
+  { id: 'risk-2', projectId: 'proj-1', name: 'Key backend resource shortage', likelihood: 'Medium', impact: 'High', mitigation: 'Cross-train frontend devs on basic Node/Go APIs', status: 'mitigated' },
+  { id: 'risk-3', projectId: 'proj-1', name: 'App store approval delays', likelihood: 'Low', impact: 'High', mitigation: 'Submit draft review build early with minimal features', status: 'identified' },
+  { id: 'risk-4', projectId: 'proj-2', name: 'Performance degradation during cutover', likelihood: 'Medium', impact: 'High', mitigation: 'Load test using replica traffic in staging environment', status: 'mitigated' },
+];
+
 
 export const MOCK_RELATED_PROJECTS: RelatedProjectLink[] = [
   { id: 'rp-1', projectId: 'proj-1', relatedProjectId: 'proj-fe', relationship: 'child', status: 'active' },
@@ -510,6 +572,7 @@ export const MOCK_ACTIVITY = [
   { id: 'act-3', projectId: 'proj-1', text: 'James Chen linked Product Workspace', time: '1d ago' },
   { id: 'act-4', projectId: 'proj-2', text: 'Maria Lopez updated GATE-8 priority to High', time: '3h ago' },
 ];
+
 
 function matchesWorkspace(workspaceIds: string[], filterId: string): boolean {
   if (filterId === ALL_WORKSPACES_ID) return true;

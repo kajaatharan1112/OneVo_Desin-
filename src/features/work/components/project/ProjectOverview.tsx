@@ -406,6 +406,41 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
             </div>
           </div>
 
+          {project.allocatedHours && (
+            <div className="work-overview-doc__state-panel">
+              <h3 className="work-overview-doc__state-title">Allocated Hours</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--clr-text-secondary)' }}>Total Budgeted</span>
+                  <strong style={{ color: 'var(--text-h)' }}>{project.allocatedHours} hrs</strong>
+                </div>
+                {project.startDate && project.dueDate && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--clr-text-secondary)' }}>Daily Intensity</span>
+                    <strong style={{ color: 'var(--text-h)' }}>
+                      {(project.allocatedHours / Math.max(1, (() => {
+                        const ms = new Date(project.dueDate!).getTime() - new Date(project.startDate).getTime();
+                        return Math.max(1, Math.round(ms / 86400000));
+                      })())).toFixed(1)} hrs/day
+                    </strong>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--clr-text-secondary)' }}>Burned Hours</span>
+                  <strong style={{ color: 'var(--text-h)' }}>
+                    {Math.round(project.allocatedHours * (progressPct / 100))} hrs ({progressPct}%)
+                  </strong>
+                </div>
+                <div className="work-overview-doc__progress-track" style={{ height: 4 }}>
+                  <div
+                    className="work-overview-doc__progress-fill"
+                    style={{ width: `${progressPct}%`, background: 'var(--accent)' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="work-overview-doc__state-panel">
             <h3 className="work-overview-doc__state-title">Progress</h3>
             <div className="work-overview-doc__progress">

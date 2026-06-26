@@ -1604,21 +1604,28 @@
 
 .main-scrollable:has(.section-page),
 .main-scrollable:has(.content-card),
-.main-scrollable:has(.cfg-page) {
+.main-scrollable:has(.cfg-page),
+.main-scrollable:has(.proj-page) {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.main-scrollable:has(.cfg-page)::-webkit-scrollbar {
+.main-scrollable:has(.cfg-page)::-webkit-scrollbar,
+.main-scrollable:has(.proj-page)::-webkit-scrollbar {
   display: none;
 }
 
-.main-scrollable:has(.cfg-page) .main-content-slot {
+.main-scrollable:has(.cfg-page) .main-content-slot,
+.main-scrollable:has(.proj-page) .main-content-slot {
   flex: none;
   min-height: auto;
   overflow: visible;
+}
+
+.main-scrollable:has(.proj-page) .main-content-slot {
+  padding: 0;
 }
 
 /* Automation builder: fill viewport, scroll inside the builder body */

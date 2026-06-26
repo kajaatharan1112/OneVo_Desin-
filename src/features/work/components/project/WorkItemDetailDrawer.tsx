@@ -1,5 +1,66 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { AlertTriangle, Ban, Plus, X } from 'lucide-react';
+
+function useTaskElapsedTime(task?: { startDate?: string | null; endDate?: string | null; status: string }) {
+  const [elapsed, setElapsed] = useState('');
+
+  useEffect(() => {
+    if (!task || !task.startDate) {
+      setElapsed('');
+      return;
+    }
+
+    const calculate = () => {
+      const start = new Date(task.startDate + 'T00:00:00');
+      
+      if (task.status === 'done' && task.endDate) {
+        const end = new Date(task.endDate + 'T23:59:59');
+        const diffMs = end.getTime() - start.getTime();
+        if (diffMs <= 0) return '0s';
+        const diffSecs = Math.floor(diffMs / 1000);
+        const days = Math.floor(diffSecs / 86400);
+        const hours = Math.floor((diffSecs % 86400) / 3600);
+        const minutes = Math.floor((diffSecs % 3600) / 60);
+        const parts = [];
+        if (days > 0) parts.push(`${days}d`);
+        if (hours > 0) parts.push(`${hours}h`);
+        if (minutes > 0) parts.push(`${minutes}m`);
+        return parts.join(' ') || 'Completed';
+      }
+
+      if (task.status === 'in_progress') {
+        const now = new Date();
+        const diffMs = now.getTime() - start.getTime();
+        if (diffMs <= 0) return '0s';
+        const diffSecs = Math.floor(diffMs / 1000);
+        const days = Math.floor(diffSecs / 86400);
+        const hours = Math.floor((diffSecs % 86400) / 3600);
+        const minutes = Math.floor((diffSecs % 3600) / 60);
+        const secs = diffSecs % 60;
+        const parts = [];
+        if (days > 0) parts.push(`${days}d`);
+        parts.push(`${hours}h`, `${minutes}m`, `${secs}s`);
+        return parts.join(' ');
+      }
+
+      return '';
+    };
+
+    setElapsed(calculate());
+
+    if (task.status !== 'in_progress') {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setElapsed(calculate());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [task?.startDate, task?.endDate, task?.status]);
+
+  return elapsed;
+}
 import { useWork } from '../../context/work-context';
 import {
   MOCK_EMPLOYEES,
@@ -29,6 +90,7 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
     () => (selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : undefined),
     [selectedTaskId, tasks],
   );
+  const elapsed = useTaskElapsedTime(task);
   const project = projectProp ?? (task ? getProject(task.projectId) : undefined);
   const projectTaskList = useMemo(
     () => (project ? projectTasks(project.id, tasks) : []),
@@ -124,8 +186,15 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
         onClick={e => e.stopPropagation()}
       >
         <header className="org-slideover__header">
-          <div>
-            <span className="work-task-key">{task.key}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span className="work-task-key">{task.key}</span>
+              {elapsed && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--accent-bg)', color: 'var(--accent)', border: '1px solid var(--accent-border)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600 }}>
+                  ⏱ {elapsed}
+                </span>
+              )}
+            </div>
             <h2>{task.title}</h2>
           </div>
           <button type="button" className="org-slideover__close" onClick={closeTaskDetail} aria-label="Close">
@@ -184,6 +253,26 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                     <option key={p} value={p}>{p}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+            <div className="settings-form-grid">
+              <div className="org-form-field">
+                <label htmlFor="wid-start">Start date</label>
+                <input
+                  id="wid-start"
+                  type="date"
+                  value={task.startDate ?? ''}
+                  onChange={e => patch({ startDate: e.target.value || null })}
+                />
+              </div>
+              <div className="org-form-field">
+                <label htmlFor="wid-end">End date</label>
+                <input
+                  id="wid-end"
+                  type="date"
+                  value={task.endDate ?? ''}
+                  onChange={e => patch({ endDate: e.target.value || null })}
+                />
               </div>
             </div>
             <div className="settings-form-grid">

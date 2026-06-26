@@ -50,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   currentView,
 
-  onToggle,
+  onToggle: _onToggle,
 
   notificationsOpen,
 

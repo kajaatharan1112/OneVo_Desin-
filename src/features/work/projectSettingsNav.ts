@@ -1,11 +1,14 @@
 export type ProjectSettingsSectionId =
   | 'general'
+  | 'schedule'
   | 'members'
   | 'worklogs'
   | 'cycle'
   | 'planner'
   | 'work-items'
   | 'labels'
+  | 'custom-fields'
+  | 'advanced'
   | 'participating-workspaces'
   | 'related-projects';
 
@@ -19,29 +22,23 @@ export const PROJECT_SETTINGS_NAV: ProjectSettingsNavGroup[] = [
     title: 'General',
     items: [
       { id: 'general', label: 'General' },
+      { id: 'schedule', label: 'Schedule' },
       { id: 'members', label: 'Members' },
-      { id: 'worklogs', label: 'Worklogs' },
     ],
   },
   {
-    title: 'Features',
-    items: [
-      { id: 'cycle', label: 'Cycle' },
-      { id: 'planner', label: 'Planner' },
-      { id: 'work-items', label: 'Work item' },
-    ],
-  },
-  {
-    title: 'Work structure',
+    title: 'Work Structure',
     items: [
       { id: 'labels', label: 'Labels' },
+      { id: 'custom-fields', label: 'Custom fields' },
     ],
   },
   {
-    title: 'Access',
+    title: 'Access & Advanced',
     items: [
       { id: 'participating-workspaces', label: 'Participating workspaces' },
       { id: 'related-projects', label: 'Related projects' },
+      { id: 'advanced', label: 'Advanced Settings' },
     ],
   },
 ];
