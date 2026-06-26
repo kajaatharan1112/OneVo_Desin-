@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, MapPin, Users as UsersIcon, Trash2, Pencil } from 'lucide-react';
 import type { CalendarEvent, CalendarEventType } from '../../types/employee-calendar.types';
+import { getAttendeeTimeRows } from './timezone.utils';
+import { useEmployeeContext } from '../../context/employee-context';
 
 export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
@@ -30,6 +32,11 @@ interface EventDetailsModalProps {
 export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onClose, onDelete, onSave }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(event);
+
+  const { selectedEmployee } = useEmployeeContext();
+  const attendeeTimeRows = event.attendees && event.start && event.end && !event.allDay
+    ? getAttendeeTimeRows(event.attendees, event.date, event.start, event.end, selectedEmployee.timezone)
+    : [];
 
   const startEdit = () => { setForm(event); setEditing(true); };
   const handleSave = () => { onSave(form); setEditing(false); };
@@ -68,6 +75,16 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
                 <UsersIcon size={13} className="emc-modal__row-icon" />
                 <span className="emc-modal__row-value">{event.attendees.join(', ')}</span>
               </div>
+            )}
+
+            {attendeeTimeRows.length > 0 && (
+              <ul className="emc-modal__attendee-times">
+                {attendeeTimeRows.map(row => (
+                  <li key={row.name}>
+                    {row.name}: {formatTime(row.start)} – {formatTime(row.end)} ({row.country})
+                  </li>
+                ))}
+              </ul>
             )}
 
             {event.leaveType && (
