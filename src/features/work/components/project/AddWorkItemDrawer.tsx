@@ -30,6 +30,7 @@ interface Props {
   defaultStatus: TaskStatus;
   defaultAssigneeId: string;
   defaultDueDate?: string | null;
+  defaultMilestoneId?: string | null;
 }
 
 export const AddWorkItemDrawer: React.FC<Props> = ({
@@ -39,8 +40,9 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
   defaultStatus,
   defaultAssigneeId,
   defaultDueDate,
+  defaultMilestoneId,
 }) => {
-  const { addTask, workspaces, projects } = useWork();
+  const { addTask, workspaces, projects, milestones, updateMilestone } = useWork();
   const [activeTab, setActiveTab] = useState<'task'>('task');
   const [showTagsInput, setShowTagsInput] = useState(false);
   const [showFields, setShowFields] = useState(false);
@@ -199,7 +201,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
 
   const handleSubmit = () => {
     if (!form.title.trim()) return;
-    addTask({
+    const newTask = addTask({
       projectId: currentProject.id,
       title: form.title.trim(),
       description: form.description,
@@ -212,6 +214,14 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       linkedWorkspaceId: currentProject.workspaceIds.length > 1 ? form.linkedWorkspaceId : null,
       labels: form.labels.split(',').map(l => l.trim()).filter(Boolean),
     });
+    if (defaultMilestoneId && newTask) {
+      const ms = milestones.find(m => m.id === defaultMilestoneId);
+      if (ms) {
+        updateMilestone(defaultMilestoneId, {
+          linkedWorkItemIds: [...ms.linkedWorkItemIds, newTask.id],
+        });
+      }
+    }
     onClose();
   };
 
@@ -666,7 +676,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     onClick={() => {
                       if (!form.title.trim()) return;
-                      addTask({
+                      const newTask = addTask({
                         projectId: currentProject.id,
                         title: form.title.trim(),
                         description: form.description,
@@ -679,6 +689,14 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
                         linkedWorkspaceId: currentProject.workspaceIds.length > 1 ? form.linkedWorkspaceId : null,
                         labels: form.labels.split(',').map(l => l.trim()).filter(Boolean),
                       });
+                      if (defaultMilestoneId && newTask) {
+                        const ms = milestones.find(m => m.id === defaultMilestoneId);
+                        if (ms) {
+                          updateMilestone(defaultMilestoneId, {
+                            linkedWorkItemIds: [...ms.linkedWorkItemIds, newTask.id],
+                          });
+                        }
+                      }
                       setForm(f => ({ ...f, title: '', description: '', labels: '' }));
                       setAttachments([]);
                       setCustomFields([]);

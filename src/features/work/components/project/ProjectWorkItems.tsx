@@ -578,6 +578,19 @@ const TaskCard: React.FC<{
 }> = ({ task, isDragging, onOpen, onMove, onDragStart, onDragEnd }) => {
   const elapsed = useTaskElapsedTime(task);
 
+  const delayInfo = useMemo(() => {
+    if (!task.dueDate || task.status === 'done') return null;
+    const due = new Date(task.dueDate + 'T23:59:59');
+    const now = new Date();
+    if (now > due) {
+      const diffMs = now.getTime() - due.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+      return { days: diffDays, hours: diffHours };
+    }
+    return null;
+  }, [task.dueDate, task.status]);
+
   return (
     <article
       className={`work-task-card${task.blocked ? ' work-task-card--blocked' : ''}${isDragging ? ' work-task-card--ghost' : ''}`}
@@ -627,6 +640,13 @@ const TaskCard: React.FC<{
           {task.labels.map(l => <span key={l} className="work-label-tag">{l}</span>)}
         </div>
       )}
+
+      {delayInfo && (
+        <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+          ⚠️ Overdue ({delayInfo.days}d / {delayInfo.hours}h)
+        </div>
+      )}
+
       <div className="work-task-card__footer">
         <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
           {employeeName(task.assigneeId).slice(0, 2)}

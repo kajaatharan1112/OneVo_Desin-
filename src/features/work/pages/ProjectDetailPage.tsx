@@ -36,6 +36,7 @@ export const ProjectDetailPage: React.FC = () => {
     workspaces,
     requestAddWorkItem,
     requestAddCycle,
+    requestAddMilestone,
     returnToProjectList,
     openProjectSettings,
     projectSettingsOpen,
@@ -118,6 +119,17 @@ export const ProjectDetailPage: React.FC = () => {
               <Plus size={14} /> Add roadmap item
             </button>
             <button type="button" className="cfg-action-btn"><Filter size={14} /> Filter</button>
+            <button type="button" className="cfg-action-btn" onClick={() => openProjectSettings()}>
+              <Settings size={14} /> Project settings
+            </button>
+          </>
+        );
+      case 'milestones':
+        return (
+          <>
+            <button type="button" className="org-btn org-btn--primary org-btn--sm" onClick={requestAddMilestone}>
+              <Plus size={14} /> Add milestone
+            </button>
             <button type="button" className="cfg-action-btn" onClick={() => openProjectSettings()}>
               <Settings size={14} /> Project settings
             </button>

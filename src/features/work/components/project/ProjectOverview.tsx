@@ -86,6 +86,7 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
   const doneCount = projectTaskList.filter(t => t.status === 'done').length;
   const totalCount = projectTaskList.length;
   const progressPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const totalBurnedHours = projectTaskList.reduce((acc, t) => acc + (t.totalWorkedHours ?? 0), 0);
   const projectRelated = relatedProjects
     .filter(l => l.projectId === project.id)
     .map(l => resolveRelatedProjectDisplay(l));
@@ -428,13 +429,13 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                   <span style={{ color: 'var(--clr-text-secondary)' }}>Burned Hours</span>
                   <strong style={{ color: 'var(--text-h)' }}>
-                    {Math.round(project.allocatedHours * (progressPct / 100))} hrs ({progressPct}%)
+                    {totalBurnedHours.toFixed(1)} hrs ({project.allocatedHours ? Math.round((totalBurnedHours / project.allocatedHours) * 100) : 0}%)
                   </strong>
                 </div>
                 <div className="work-overview-doc__progress-track" style={{ height: 4 }}>
                   <div
                     className="work-overview-doc__progress-fill"
-                    style={{ width: `${progressPct}%`, background: 'var(--accent)' }}
+                    style={{ width: `${project.allocatedHours ? Math.min(100, Math.round((totalBurnedHours / project.allocatedHours) * 100)) : 0}%`, background: 'var(--accent)' }}
                   />
                 </div>
               </div>
