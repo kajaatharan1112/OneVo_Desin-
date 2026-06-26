@@ -1293,6 +1293,17 @@
   color: var(--text-h);
 }
 
+.emc-modal__attendee-times {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .emc-modal__actions {
   display: flex;
   justify-content: flex-end;
@@ -1577,6 +1588,11 @@
   color: var(--text-muted, #6b7280);
 }
 
+.emc-attendee-search__option-tz {
+  font-size: 0.65rem;
+  color: var(--text-muted, #6b7280);
+}
+
 .emc-attendee-search__avatar {
   display: inline-flex;
   align-items: center;
@@ -1621,6 +1637,22 @@
   color: var(--text-muted, #6b7280);
   cursor: pointer;
   padding: 0;
+}
+
+.emc-attendee-chip__tz {
+  font-size: 0.65rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.emc-wizard__attendee-times {
+  margin: 0.375rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.72rem;
+  color: var(--text-muted, #6b7280);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .emc-wizard__error-list {
