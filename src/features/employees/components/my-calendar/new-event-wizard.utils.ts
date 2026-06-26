@@ -95,21 +95,23 @@ export interface DirectoryPerson {
   name: string;
   role: string;
   avatar: string;
+  country: string;
+  timezone: string;
 }
 
 export const CALENDAR_DIRECTORY: DirectoryPerson[] = [
-  { id: 'd-1', name: 'Priya Nair', role: 'Product Manager', avatar: 'PN' },
-  { id: 'd-2', name: 'Arun Kumar', role: 'Backend Developer', avatar: 'AK' },
-  { id: 'd-3', name: 'Sara Lee', role: 'UX Designer', avatar: 'SL' },
-  { id: 'd-4', name: 'Marcus Chen', role: 'Chief Executive Officer', avatar: 'MC' },
-  { id: 'd-5', name: 'Dana Brooks', role: 'Manager', avatar: 'DB' },
-  { id: 'd-6', name: 'Alexander Pierce', role: 'Back End Developer', avatar: 'AP' },
-  { id: 'd-7', name: 'Riya Sharma', role: 'QA Engineer', avatar: 'RS' },
-  { id: 'd-8', name: 'James Wilson', role: 'DevOps Engineer', avatar: 'JW' },
-  { id: 'd-9', name: 'Meera Iyer', role: 'HR Business Partner', avatar: 'MI' },
-  { id: 'd-10', name: 'Tom Becker', role: 'Sales Lead', avatar: 'TB' },
-  { id: 'd-11', name: 'Lakshmi Rao', role: 'Finance Analyst', avatar: 'LR' },
-  { id: 'd-12', name: 'Carlos Diaz', role: 'Frontend Developer', avatar: 'CD' },
+  { id: 'd-1', name: 'Priya Nair', role: 'Product Manager', avatar: 'PN', country: 'India', timezone: 'Asia/Kolkata' },
+  { id: 'd-2', name: 'Arun Kumar', role: 'Backend Developer', avatar: 'AK', country: 'Singapore', timezone: 'Asia/Singapore' },
+  { id: 'd-3', name: 'Sara Lee', role: 'UX Designer', avatar: 'SL', country: 'South Korea', timezone: 'Asia/Seoul' },
+  { id: 'd-4', name: 'Marcus Chen', role: 'Chief Executive Officer', avatar: 'MC', country: 'USA', timezone: 'America/New_York' },
+  { id: 'd-5', name: 'Dana Brooks', role: 'Manager', avatar: 'DB', country: 'UK', timezone: 'Europe/London' },
+  { id: 'd-6', name: 'Alexander Pierce', role: 'Back End Developer', avatar: 'AP', country: 'Sri Lanka', timezone: 'Asia/Colombo' },
+  { id: 'd-7', name: 'Riya Sharma', role: 'QA Engineer', avatar: 'RS', country: 'UAE', timezone: 'Asia/Dubai' },
+  { id: 'd-8', name: 'James Wilson', role: 'DevOps Engineer', avatar: 'JW', country: 'Australia', timezone: 'Australia/Sydney' },
+  { id: 'd-9', name: 'Meera Iyer', role: 'HR Business Partner', avatar: 'MI', country: 'India', timezone: 'Asia/Kolkata' },
+  { id: 'd-10', name: 'Tom Becker', role: 'Sales Lead', avatar: 'TB', country: 'USA', timezone: 'America/Los_Angeles' },
+  { id: 'd-11', name: 'Lakshmi Rao', role: 'Finance Analyst', avatar: 'LR', country: 'Sri Lanka', timezone: 'Asia/Colombo' },
+  { id: 'd-12', name: 'Carlos Diaz', role: 'Frontend Developer', avatar: 'CD', country: 'Philippines', timezone: 'Asia/Manila' },
 ];
 
 export type AttendeeRef =

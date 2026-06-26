@@ -6,4 +6,6 @@ export interface EmployeeProfile {
   role: string;
   avatar: string;
   avatarUrl: string;
+  country: string;
+  timezone: string;
 }
