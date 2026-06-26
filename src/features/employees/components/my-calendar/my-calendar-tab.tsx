@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, CalendarDays, ChevronDown,
   Users, RefreshCw, Filter, Plus, Check, X,
   Sun, Plane, Clock, Bell, CalendarX2, Settings,
-  GraduationCap, LogOut, Building2
+  GraduationCap, LogOut, Building2, Copy
 } from 'lucide-react';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
@@ -322,6 +322,7 @@ export const MyCalendarTab: React.FC = () => {
   };
   const handleDuplicateEvent = (event: CalendarEvent) => {
     setSelectedEvent(null);
+    setEventMenu(null);
     setDragPrefill(eventToFormOverrides(event));
     setNewEventOpen(true);
   };
@@ -340,6 +341,28 @@ export const MyCalendarTab: React.FC = () => {
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [dayPopover]);
+
+  // Right-click "Duplicate" menu on meeting event pills
+  const [eventMenu, setEventMenu] = useState<{ event: CalendarEvent; top: number; left: number } | null>(null);
+  const eventMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!eventMenu) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (eventMenuRef.current && !eventMenuRef.current.contains(e.target as Node)) {
+        setEventMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [eventMenu]);
+
+  const handleEventContextMenu = (e: React.MouseEvent, ev: CalendarEvent) => {
+    if (ev.type !== 'meeting') return;
+    e.preventDefault();
+    e.stopPropagation();
+    setEventMenu({ event: ev, top: e.clientY, left: e.clientX });
+  };
 
   const navigate = (dir: -1 | 0 | 1) => {
     if (dir === 0) { setAnchor(parseLocalDate(TODAY_KEY)); return; }
@@ -424,6 +447,7 @@ export const MyCalendarTab: React.FC = () => {
                       key={ev.id}
                       className={`emc-month__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}
                       onClick={e => openEvent(e, ev)}
+                      onContextMenu={e => handleEventContextMenu(e, ev)}
                     >
                       {ev.title}
                     </div>
@@ -487,7 +511,7 @@ export const MyCalendarTab: React.FC = () => {
             {days.map((d, i) => (
               <div key={toDateKey(d)} className="emc-week__alldaycell">
                 {allDayRows[i].map(ev => (
-                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
+                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.title}</div>
                 ))}
               </div>
             ))}
@@ -521,6 +545,7 @@ export const MyCalendarTab: React.FC = () => {
                         key={ev.id}
                         className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-week__ev--dragging' : ''}`}
                         onClick={e => openEvent(e, ev)}
+                        onContextMenu={e => handleEventContextMenu(e, ev)}
                         draggable
                         onDragStart={e => handleEventDragStart(e, ev)}
                         onDragEnd={handleEventDragEnd}
@@ -552,7 +577,7 @@ export const MyCalendarTab: React.FC = () => {
           <div className="emc-day__allday">
             <span className="emc-day__allday-label">All day</span>
             {allDay.map(ev => (
-              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>{ev.title}</div>
+              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.title}</div>
             ))}
           </div>
         )}
@@ -580,6 +605,7 @@ export const MyCalendarTab: React.FC = () => {
                       key={ev.id}
                       className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-day__ev--dragging' : ''}`}
                       onClick={e => openEvent(e, ev)}
+                      onContextMenu={e => handleEventContextMenu(e, ev)}
                       draggable
                       onDragStart={e => handleEventDragStart(e, ev)}
                       onDragEnd={handleEventDragEnd}
@@ -636,7 +662,7 @@ export const MyCalendarTab: React.FC = () => {
                 {dayEvts.map(ev => {
                   const Icon = AGENDA_TYPE_ICON[ev.type];
                   return (
-                    <div key={ev.id} className="emc-agenda__ev" onClick={e => openEvent(e, ev)}>
+                    <div key={ev.id} className="emc-agenda__ev" onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>
                       <div className={`emc-agenda__icon emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}>
                         <Icon size={13} />
                       </div>
@@ -867,6 +893,24 @@ export const MyCalendarTab: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Right-click "Duplicate" menu on a meeting event */}
+      {eventMenu && (
+        <div
+          ref={eventMenuRef}
+          className="emc-eventmenu"
+          style={{ top: eventMenu.top, left: eventMenu.left }}
+        >
+          <button
+            type="button"
+            className="emc-eventmenu__item"
+            onClick={() => handleDuplicateEvent(eventMenu.event)}
+          >
+            <Copy size={13} />
+            Duplicate
+          </button>
         </div>
       )}
 
