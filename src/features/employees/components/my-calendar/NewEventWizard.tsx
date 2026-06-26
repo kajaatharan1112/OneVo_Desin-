@@ -12,6 +12,15 @@ import {
   type NewEventType,
 } from './new-event-wizard.utils';
 import { AttendeeSearchField } from './AttendeeSearchField';
+import { getAttendeeTimeRows } from './timezone.utils';
+import { useEmployeeContext } from '../../context/employee-context';
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
 const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
   { value: 'leave', label: 'Leave' },
@@ -60,6 +69,12 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   const update = (patch: Partial<NewEventFormState>) => setForm(f => ({ ...f, ...patch }));
 
   const fieldConfig = TYPE_FIELD_CONFIG[form.type];
+
+  const { selectedEmployee } = useEmployeeContext();
+  const attendeeUserNames = form.attendees.filter(a => a.kind === 'user').map(a => a.name);
+  const attendeeTimeRows = !form.allDay
+    ? getAttendeeTimeRows(attendeeUserNames, form.date, form.start, form.end, selectedEmployee.timezone)
+    : [];
 
   // A drag-selected time range (initialOverrides.allDay === false) implies a specific
   // start/end time was chosen — types that force all-day (Holiday, Leave) would silently
@@ -236,6 +251,15 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
         <div className="emc-wizard__field">
           <span>Attendees</span>
           <AttendeeSearchField selected={form.attendees} onChange={attendees => update({ attendees })} />
+          {attendeeTimeRows.length > 0 && (
+            <ul className="emc-wizard__attendee-times">
+              {attendeeTimeRows.map(row => (
+                <li key={row.name}>
+                  {row.name}: {formatTime(row.start)} – {formatTime(row.end)} ({row.country})
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
