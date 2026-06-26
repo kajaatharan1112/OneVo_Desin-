@@ -3,6 +3,7 @@ import { X, MapPin, Users as UsersIcon, Trash2, Pencil } from 'lucide-react';
 import type { CalendarEvent, CalendarEventType } from '../../types/employee-calendar.types';
 import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
+import { findEventConflicts } from './new-event-wizard.utils';
 
 export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
@@ -27,11 +28,13 @@ interface EventDetailsModalProps {
   onClose: () => void;
   onDelete: (id: string) => void;
   onSave: (updated: CalendarEvent) => void;
+  existingMyEvents?: CalendarEvent[];
 }
 
-export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onClose, onDelete, onSave }) => {
+export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onClose, onDelete, onSave, existingMyEvents = [] }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(event);
+  const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
 
   const { selectedEmployee } = useEmployeeContext();
   const attendeeTimeRows = event.attendees && event.start && event.end && !event.allDay
@@ -39,7 +42,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
     : [];
 
   const startEdit = () => { setForm(event); setEditing(true); };
-  const handleSave = () => { onSave(form); setEditing(false); };
+  const finalizeSave = () => { onSave(form); setEditing(false); setConflicts(null); };
+  const handleSave = () => {
+    const clashes = findEventConflicts(form, existingMyEvents);
+    if (clashes.length > 0) {
+      setConflicts(clashes);
+      return;
+    }
+    finalizeSave();
+  };
 
   return (
     <div className="emc-modal-overlay" onClick={onClose}>
@@ -168,13 +179,41 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
               <input value={form.location ?? ''} onChange={e => setForm({ ...form, location: e.target.value })} />
             </label>
 
+            {conflicts && conflicts.length > 0 && (
+              <div className="emc-wizard__section">
+                <p className="emc-wizard__conflict-intro">This clashes with:</p>
+                <ul className="emc-wizard__conflict-list">
+                  {conflicts.map(ev => (
+                    <li key={ev.id} className="emc-wizard__conflict-item">
+                      <span className={`emc-filterpanel__swatch emc-evpill--${ev.type}`} />
+                      {ev.title}
+                      {ev.allDay ? ' · All day' : ev.start ? ` · ${formatTime(ev.start)}${ev.end ? `–${formatTime(ev.end)}` : ''}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="emc-modal__actions">
-              <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => setEditing(false)}>
-                Cancel
-              </button>
-              <button type="button" className="era-btn emc-modal__action" onClick={handleSave}>
-                Save
-              </button>
+              {conflicts && conflicts.length > 0 ? (
+                <>
+                  <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => setConflicts(null)}>
+                    Reschedule
+                  </button>
+                  <button type="button" className="era-btn emc-modal__action" onClick={finalizeSave}>
+                    Save anyway
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => setEditing(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="era-btn emc-modal__action" onClick={handleSave}>
+                    Save
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

@@ -10,7 +10,7 @@ import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeF
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
-import { addMinutesToTime, type NewEventFormState } from './new-event-wizard.utils';
+import { addMinutesToTime, findEventConflicts, type NewEventFormState } from './new-event-wizard.utils';
 
 const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
@@ -238,6 +238,69 @@ export const MyCalendarTab: React.FC = () => {
     };
   }, [dragDayKey]);
 
+  // Drag-and-drop reschedule of an existing timed event (Week/Day views)
+  const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
+  const [dropTargetCell, setDropTargetCell] = useState<string | null>(null);
+  const [dropNotice, setDropNotice] = useState<string | null>(null);
+  const dropNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showDropNotice = (message: string) => {
+    setDropNotice(message);
+    if (dropNoticeTimer.current) clearTimeout(dropNoticeTimer.current);
+    dropNoticeTimer.current = setTimeout(() => setDropNotice(null), 3500);
+  };
+
+  const handleEventDragStart = (e: React.DragEvent, ev: CalendarEvent) => {
+    e.dataTransfer.setData('text/plain', ev.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedEventId(ev.id);
+  };
+
+  const handleEventDragEnd = () => {
+    setDraggedEventId(null);
+    setDropTargetCell(null);
+  };
+
+  const handleCellDragOver = (e: React.DragEvent, cellKey: string) => {
+    if (!draggedEventId) return;
+    e.preventDefault();
+    setDropTargetCell(cellKey);
+  };
+
+  const handleCellDrop = (e: React.DragEvent, dayKey: string, hour: number) => {
+    e.preventDefault();
+    setDropTargetCell(null);
+    const id = draggedEventId ?? e.dataTransfer.getData('text/plain');
+    setDraggedEventId(null);
+    if (!id) return;
+
+    const original = localEvents.find(ev => ev.id === id);
+    if (!original || original.allDay || !original.start) return;
+
+    const [oh, om] = original.start.split(':').map(Number);
+    const durationMinutes = original.end
+      ? (() => {
+          const [eh, em] = original.end!.split(':').map(Number);
+          return eh * 60 + em - (oh * 60 + om);
+        })()
+      : 30;
+
+    const newStart = `${String(hour).padStart(2, '0')}:00`;
+    const newEnd = addMinutesToTime(newStart, durationMinutes);
+
+    if (original.date === dayKey && original.start === newStart) return;
+
+    const candidate: CalendarEvent = { ...original, date: dayKey, start: newStart, end: newEnd };
+    const clashes = findEventConflicts(candidate, localEvents.filter(ev => ev.scope === 'my'));
+    if (clashes.length > 0) {
+      showDropNotice(`Can't move "${original.title}" — clashes with ${clashes.map(c => c.title).join(', ')}.`);
+      return;
+    }
+
+    setLocalEvents(prev => prev.map(ev => (ev.id === candidate.id ? candidate : ev)));
+    showDropNotice(`Moved "${original.title}" to ${dayKey} · ${formatTime(newStart)}`);
+  };
+
   // Event details modal
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const openEvent = (e: React.MouseEvent, ev: CalendarEvent) => {
@@ -251,6 +314,11 @@ export const MyCalendarTab: React.FC = () => {
   const handleSaveEvent = (updated: CalendarEvent) => {
     setLocalEvents(prev => prev.map(e => (e.id === updated.id ? updated : e)));
     setSelectedEvent(updated);
+  };
+  const handleRsvp = (id: string, accepted: boolean) => {
+    setLocalEvents(prev => prev.map(e => (
+      e.id === id ? { ...e, needsResponse: false, status: accepted ? 'confirmed' : 'rejected' } : e
+    )));
   };
 
   // "+N more" day popover (Month view)
@@ -431,16 +499,27 @@ export const MyCalendarTab: React.FC = () => {
                 const hourEvts = (eventsByDate[key] ?? []).filter(ev => !ev.allDay && ev.start?.startsWith(hStr));
                 const isToday = isSameDay(d, today);
                 const inDrag = isHourInDragRange(key, h);
+                const cellKey = `${key}-${h}`;
+                const isDropTarget = dropTargetCell === cellKey;
                 return (
                   <div
                     key={key}
-                    className={`emc-week__cell${isToday ? ' emc-week__cell--today' : ''}${inDrag ? ' emc-week__cell--dragselect' : ''}`}
+                    className={`emc-week__cell${isToday ? ' emc-week__cell--today' : ''}${inDrag ? ' emc-week__cell--dragselect' : ''}${isDropTarget ? ' emc-week__cell--droptarget' : ''}`}
                     data-drag-day={key}
                     data-drag-hour={h}
                     onMouseDown={e => handleCellMouseDown(e, key, h)}
+                    onDragOver={e => handleCellDragOver(e, cellKey)}
+                    onDrop={e => handleCellDrop(e, key, h)}
                   >
                     {hourEvts.map(ev => (
-                      <div key={ev.id} className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>
+                      <div
+                        key={ev.id}
+                        className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-week__ev--dragging' : ''}`}
+                        onClick={e => openEvent(e, ev)}
+                        draggable
+                        onDragStart={e => handleEventDragStart(e, ev)}
+                        onDragEnd={handleEventDragEnd}
+                      >
                         <span className="emc-week__ev-time">{formatTime(ev.start!)}</span>
                         <span className="emc-week__ev-title">{ev.title}</span>
                       </div>
@@ -477,18 +556,29 @@ export const MyCalendarTab: React.FC = () => {
             const hStr = String(h).padStart(2, '0');
             const hourEvts = timed.filter(ev => ev.start?.startsWith(hStr));
             const inDrag = isHourInDragRange(key, h);
+            const cellKey = `${key}-${h}`;
+            const isDropTarget = dropTargetCell === cellKey;
             return (
               <div
                 key={h}
-                className={`emc-day__row${inDrag ? ' emc-day__row--dragselect' : ''}`}
+                className={`emc-day__row${inDrag ? ' emc-day__row--dragselect' : ''}${isDropTarget ? ' emc-day__row--droptarget' : ''}`}
                 data-drag-day={key}
                 data-drag-hour={h}
                 onMouseDown={e => handleCellMouseDown(e, key, h)}
+                onDragOver={e => handleCellDragOver(e, cellKey)}
+                onDrop={e => handleCellDrop(e, key, h)}
               >
                 <div className="emc-day__time">{formatHour(h)}</div>
                 <div className="emc-day__slot">
                   {hourEvts.map(ev => (
-                    <div key={ev.id} className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)}>
+                    <div
+                      key={ev.id}
+                      className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-day__ev--dragging' : ''}`}
+                      onClick={e => openEvent(e, ev)}
+                      draggable
+                      onDragStart={e => handleEventDragStart(e, ev)}
+                      onDragEnd={handleEventDragEnd}
+                    >
                       <div className="emc-day__ev-title">{ev.title}</div>
                       <div className="emc-day__ev-time">
                         {formatTime(ev.start!)}{ev.end ? ` – ${formatTime(ev.end)}` : ''}
@@ -581,8 +671,8 @@ export const MyCalendarTab: React.FC = () => {
         </div>
         {ev.needsResponse && (
           <div className="emc-rail__ev-actions">
-            <button type="button" className="emc-iconbtn emc-iconbtn--accept" aria-label="Accept"><Check size={10} /></button>
-            <button type="button" className="emc-iconbtn emc-iconbtn--decline" aria-label="Decline"><X size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--accept" aria-label="Accept" onClick={() => handleRsvp(ev.id, true)}><Check size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--decline" aria-label="Decline" onClick={() => handleRsvp(ev.id, false)}><X size={10} /></button>
           </div>
         )}
       </div>
@@ -592,6 +682,8 @@ export const MyCalendarTab: React.FC = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="emc-root">
+
+      {dropNotice && <div className="emc-dropnotice">{dropNotice}</div>}
 
       {/* Header */}
       <div className="emc-header">
@@ -780,6 +872,7 @@ export const MyCalendarTab: React.FC = () => {
           onClose={() => setSelectedEvent(null)}
           onDelete={handleDeleteEvent}
           onSave={handleSaveEvent}
+          existingMyEvents={localEvents.filter(ev => ev.scope === 'my')}
         />
       )}
 

@@ -5,6 +5,7 @@ import type {
   CalendarEventSource,
   CalendarEventCategory,
   CalendarEventPriority,
+  CalendarScope,
 } from '../../types/employee-calendar.types';
 
 export type NewEventType = 'leave' | 'meeting' | 'company-event' | 'training' | 'holiday';
@@ -53,6 +54,7 @@ export const TYPE_FIELD_CONFIG: Record<NewEventType, TypeFieldConfig> = {
 export interface NewEventFormState {
   title: string;
   type: NewEventType;
+  audience: CalendarScope;
   category: CalendarEventCategory | '';
   priority: CalendarEventPriority;
   leaveType: LeaveTypeKey;
@@ -72,7 +74,8 @@ export interface NewEventFormState {
 
 export const EMPTY_NEW_EVENT_FORM: NewEventFormState = {
   title: '',
-  type: 'leave',
+  type: 'meeting',
+  audience: 'my',
   category: '',
   priority: 'medium',
   leaveType: 'Annual',
@@ -210,6 +213,24 @@ export function findConflicts(form: NewEventFormState, existingMyEvents: Calenda
   });
 }
 
+export function findEventConflicts(candidate: CalendarEvent, existingMyEvents: CalendarEvent[]): CalendarEvent[] {
+  const sameDay = existingMyEvents.filter(
+    ev => ev.id !== candidate.id && ev.date === candidate.date && CONFLICT_TYPES.includes(ev.type)
+  );
+
+  if (candidate.allDay || !candidate.start) return sameDay;
+
+  const newStart = timeToMinutes(candidate.start);
+  const newEnd = candidate.end ? timeToMinutes(candidate.end) : newStart + 1;
+
+  return sameDay.filter(ev => {
+    if (ev.allDay || !ev.start) return true;
+    const evStart = timeToMinutes(ev.start);
+    const evEnd = ev.end ? timeToMinutes(ev.end) : evStart + 1;
+    return newStart < evEnd && evStart < newEnd;
+  });
+}
+
 const TYPE_META: Record<NewEventType, { calendarType: CalendarEventType; source: CalendarEventSource }> = {
   leave: { calendarType: 'leave', source: 'leave' },
   meeting: { calendarType: 'meeting', source: 'personal' },
@@ -233,7 +254,7 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
       type: calendarType,
       status,
       source,
-      scope: 'my',
+      scope: form.audience,
       allDay: form.allDay,
       priority: form.priority,
     };
