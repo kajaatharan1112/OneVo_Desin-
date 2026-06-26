@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 import { useInbox } from '../../../core/notifications/inbox-context';
 import {
   ALL_WORKSPACES_ID,
@@ -21,6 +21,7 @@ import {
   resolveProjectByKey,
   workspaceOwnerId,
   type PlannerMilestone,
+  type MilestoneStatus,
   type ProjectAccessLevel,
   type ProjectCycle,
   type ProjectMember,
@@ -116,7 +117,7 @@ interface WorkContextValue {
   updateProject: (id: string, patch: Partial<WorkProject>) => void;
   restoreProject: (id: string) => void;
   duplicateProject: (projectId: string, cloneTasks: boolean) => string;
-  addTask: (input: AddTaskInput) => void;
+  addTask: (input: AddTaskInput) => WorkTask | undefined;
   updateTask: (id: string, patch: Partial<WorkTask>) => void;
   openTaskDetail: (taskId: string) => void;
   closeTaskDetail: () => void;
@@ -165,6 +166,8 @@ interface WorkContextValue {
   requestAddWorkItem: () => void;
   addCycleSignal: number;
   requestAddCycle: () => void;
+  addMilestoneSignal: number;
+  requestAddMilestone: () => void;
   projectSettingsOpen: boolean;
   settingsSectionId: ProjectSettingsSectionId;
   openProjectSettings: (section?: ProjectSettingsSectionId) => void;
@@ -197,6 +200,7 @@ export const WorkProvider: React.FC<{
   const [activeModal, setActiveModal] = useState<WorkModal>(null);
   const [addWorkItemSignal, setAddWorkItemSignal] = useState(0);
   const [addCycleSignal, setAddCycleSignal] = useState(0);
+  const [addMilestoneSignal, setAddMilestoneSignal] = useState(0);
   const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
   const [settingsSectionId, setSettingsSectionId] = useState<ProjectSettingsSectionId>('general');
   const [settingsReturnNavId, setSettingsReturnNavId] = useState<ProjectNavId>('work-items');
@@ -262,6 +266,11 @@ export const WorkProvider: React.FC<{
   const requestAddCycle = useCallback(() => {
     setProjectNavId('cycle');
     setAddCycleSignal(n => n + 1);
+  }, []);
+
+  const requestAddMilestone = useCallback(() => {
+    setProjectNavId('milestones');
+    setAddMilestoneSignal(n => n + 1);
   }, []);
 
   const createProject = useCallback((input: CreateProjectInput): string => {
@@ -473,7 +482,7 @@ export const WorkProvider: React.FC<{
 
   const addTask = useCallback((input: AddTaskInput) => {
     const project = projects.find(p => p.id === input.projectId);
-    if (!project) return;
+    if (!project) return undefined;
     const projectTasks = tasks.filter(t => t.projectId === input.projectId);
     const key = nextTaskKey(project.key, projectTasks);
     const task: WorkTask = {
@@ -504,6 +513,7 @@ export const WorkProvider: React.FC<{
       }));
       return next;
     });
+    return task;
   }, [projects, tasks]);
 
   const updateTask = useCallback((id: string, patch: Partial<WorkTask>) => {
@@ -821,6 +831,28 @@ export const WorkProvider: React.FC<{
     setRisks(prev => prev.filter(r => r.id !== id));
   }, []);
 
+  // Automatically calculate milestone achievements based on linked task completion
+  useEffect(() => {
+    setMilestones(prevMilestones => {
+      let changed = false;
+      const nextMilestones = prevMilestones.map(ms => {
+        if (ms.linkedWorkItemIds && ms.linkedWorkItemIds.length > 0) {
+          const msTasks = tasks.filter(t => ms.linkedWorkItemIds.includes(t.id));
+          if (msTasks.length > 0) {
+            const allCompleted = msTasks.every(t => t.status === 'done');
+            const expectedStatus: MilestoneStatus = allCompleted ? 'Achieved' : (ms.status === 'Achieved' ? 'reached' : ms.status);
+            if (ms.status !== expectedStatus) {
+              changed = true;
+              return { ...ms, status: expectedStatus };
+            }
+          }
+        }
+        return ms;
+      });
+      return changed ? nextMilestones : prevMilestones;
+    });
+  }, [tasks]);
+
   const value = useMemo<WorkContextValue>(() => ({
     workspaceFilterId,
     setWorkspaceFilterId,
@@ -882,6 +914,8 @@ export const WorkProvider: React.FC<{
     requestAddWorkItem,
     addCycleSignal,
     requestAddCycle,
+    addMilestoneSignal,
+    requestAddMilestone,
     projectSettingsOpen,
     settingsSectionId,
     openProjectSettings,
@@ -899,7 +933,7 @@ export const WorkProvider: React.FC<{
     addRelatedProject, requestRelatedProjectLink, removeRelatedProject,
     addBudgetExpense, deleteBudgetExpense, addRisk, updateRisk, deleteRisk,
     activeModal, workspaceFilterLabel, getProject, addWorkItemSignal, requestAddWorkItem,
-    addCycleSignal, requestAddCycle,
+    addCycleSignal, requestAddCycle, addMilestoneSignal, requestAddMilestone,
     projectSettingsOpen, settingsSectionId, openProjectSettings, closeProjectSettings, setSettingsSectionId, switchSettingsProject,
   ]);
 

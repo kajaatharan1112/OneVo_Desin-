@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { projectTasks, type PlannerMilestone, type WorkProject } from '../../workMockData';
+import { projectTasks, MOCK_EMPLOYEES, CURRENT_USER_ID, type PlannerMilestone, type WorkProject, type MilestoneStatus } from '../../workMockData';
 
 export interface AddMilestoneInput {
   name: string;
   description: string;
+  startDate: string;
   dueDate: string;
+  ownerId: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: MilestoneStatus;
   linkedWorkItemIds: string[];
 }
 
@@ -23,7 +27,11 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
   const [form, setForm] = useState({
     name: '',
     description: '',
+    startDate: '',
     dueDate: '',
+    ownerId: CURRENT_USER_ID,
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical',
+    status: 'upcoming' as MilestoneStatus,
     linkedWorkItemIds: [] as string[],
   });
 
@@ -33,11 +41,24 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
       setForm({
         name: editTarget.name,
         description: editTarget.description,
+        startDate: editTarget.startDate ?? '',
         dueDate: editTarget.dueDate,
+        ownerId: editTarget.ownerId ?? CURRENT_USER_ID,
+        priority: editTarget.priority ?? 'Medium',
+        status: editTarget.status,
         linkedWorkItemIds: [...editTarget.linkedWorkItemIds],
       });
     } else {
-      setForm({ name: '', description: '', dueDate: '', linkedWorkItemIds: [] });
+      setForm({
+        name: '',
+        description: '',
+        startDate: '',
+        dueDate: '',
+        ownerId: CURRENT_USER_ID,
+        priority: 'Medium',
+        status: 'upcoming',
+        linkedWorkItemIds: [],
+      });
     }
   }, [editTarget, open]);
 
@@ -59,10 +80,23 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
     onSubmit({
       name: form.name.trim(),
       description: form.description.trim(),
+      startDate: form.startDate,
       dueDate: form.dueDate,
+      ownerId: form.ownerId,
+      priority: form.priority,
+      status: form.status,
       linkedWorkItemIds: form.linkedWorkItemIds,
     });
-    setForm({ name: '', description: '', dueDate: '', linkedWorkItemIds: [] });
+    setForm({
+      name: '',
+      description: '',
+      startDate: '',
+      dueDate: '',
+      ownerId: CURRENT_USER_ID,
+      priority: 'Medium',
+      status: 'upcoming',
+      linkedWorkItemIds: [],
+    });
     onClose();
   };
 
@@ -102,6 +136,15 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
             />
           </div>
           <div className="org-form-field">
+            <label htmlFor="ms-start">Start date</label>
+            <input
+              id="ms-start"
+              type="date"
+              value={form.startDate}
+              onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+            />
+          </div>
+          <div className="org-form-field">
             <label htmlFor="ms-due">Due date</label>
             <input
               id="ms-due"
@@ -109,6 +152,46 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
               value={form.dueDate}
               onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
             />
+          </div>
+          <div className="settings-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="org-form-field">
+              <label htmlFor="ms-owner">Owner</label>
+              <select
+                id="ms-owner"
+                value={form.ownerId}
+                onChange={e => setForm(f => ({ ...f, ownerId: e.target.value }))}
+              >
+                {MOCK_EMPLOYEES.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="org-form-field">
+              <label htmlFor="ms-priority">Priority</label>
+              <select
+                id="ms-priority"
+                value={form.priority}
+                onChange={e => setForm(f => ({ ...f, priority: e.target.value as any }))}
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+          </div>
+          <div className="org-form-field">
+            <label htmlFor="ms-status">Status</label>
+            <select
+              id="ms-status"
+              value={form.status}
+              onChange={e => setForm(f => ({ ...f, status: e.target.value as MilestoneStatus }))}
+            >
+              <option value="upcoming">Not Started</option>
+              <option value="reached">In Progress</option>
+              <option value="missed">Missed</option>
+              <option value="Achieved">Achieved</option>
+            </select>
           </div>
           <div className="org-form-field">
             <label>Linked work items</label>

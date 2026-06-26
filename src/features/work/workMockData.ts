@@ -5,7 +5,7 @@ export type ProjectStatus = 'active' | 'on_hold' | 'completed' | 'archived';
 export type ProjectVisibility = 'private' | 'public_workspace';
 export type ProjectHealth = 'on_track' | 'at_risk' | 'delayed';
 export type DocumentStatus = 'draft' | 'in_review' | 'approved' | 'published' | 'archived';
-export type MilestoneStatus = 'upcoming' | 'reached' | 'missed';
+export type MilestoneStatus = 'upcoming' | 'reached' | 'missed' | 'Achieved';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export type WorkspaceRole = 'admin' | 'member' | 'viewer';
 export type ProjectAccessLevel = 'admin' | 'member' | 'viewer';
@@ -211,6 +211,17 @@ export interface WorkTask {
   watchers?: string[];
   activity?: WorkTaskActivity[];
   customFieldValues?: Record<string, string | number>;
+  isClockedIn?: boolean;
+  clockInStartTime?: string | null;
+  totalWorkedHours?: number;
+  timeSessions?: Array<{
+    id: string;
+    assigneeId: string;
+    assigneeName: string;
+    startTime: string;
+    endTime: string | null;
+    hours: number;
+  }>;
 }
 
 export interface PlannerItem {
@@ -230,6 +241,8 @@ export interface PlannerMilestone {
   description: string;
   projectId: string;
   dueDate: string;
+  startDate?: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   status: MilestoneStatus;
   ownerId: string;
   linkedWorkItemIds: string[];

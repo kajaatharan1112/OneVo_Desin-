@@ -61,6 +61,29 @@ function useTaskElapsedTime(task?: { startDate?: string | null; endDate?: string
 
   return elapsed;
 }
+
+function useSessionTimer(clockInTime?: string | null, isActive?: boolean) {
+  const [secs, setSecs] = useState(0);
+
+  useEffect(() => {
+    if (!isActive || !clockInTime) {
+      setSecs(0);
+      return;
+    }
+
+    const start = new Date(clockInTime);
+    const update = () => {
+      const diffMs = Date.now() - start.getTime();
+      setSecs(Math.max(0, Math.floor(diffMs / 1000)));
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [clockInTime, isActive]);
+
+  return secs;
+}
 import { useWork } from '../../context/work-context';
 import {
   MOCK_EMPLOYEES,
@@ -91,12 +114,88 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
     [selectedTaskId, tasks],
   );
   const elapsed = useTaskElapsedTime(task);
+  const activeSessionSecs = useSessionTimer(task?.clockInStartTime, task?.isClockedIn);
+
+  const formatSecsToHms = (sNum: number) => {
+    const h = Math.floor(sNum / 3600);
+    const m = Math.floor((sNum % 3600) / 60);
+    const s = sNum % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const formatHoursToMinutesAndSeconds = (hours: number) => {
+    const totalSecs = Math.round(hours * 3600);
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    if (m === 0) return `${s} seconds`;
+    return `${m} minutes ${s} seconds`;
+  };
+
+  const activeSessionTime = formatSecsToHms(activeSessionSecs);
+  const currentSessionHours = task?.isClockedIn ? (activeSessionSecs / 3600) : 0;
+  const totalWorkedHoursWithActive = (task?.totalWorkedHours ?? 0) + currentSessionHours;
+
   const project = projectProp ?? (task ? getProject(task.projectId) : undefined);
   const projectTaskList = useMemo(
     () => (project ? projectTasks(project.id, tasks) : []),
     [project, tasks],
   );
   const assignees = useMemo(() => (project ? projectAssignees(project) : []), [project]);
+
+  const handleClockIn = () => {
+    if (!task) return;
+    const nowStr = new Date().toISOString();
+    const currentAssignee = MOCK_EMPLOYEES.find(e => e.id === task.assigneeId);
+    const assigneeName = currentAssignee ? currentAssignee.name : 'Unknown';
+    
+    const newSession = {
+      id: `sess-${Date.now()}`,
+      assigneeId: task.assigneeId,
+      assigneeName,
+      startTime: nowStr,
+      endTime: null,
+      hours: 0,
+    };
+    
+    const sessions = task.timeSessions ? [...task.timeSessions] : [];
+    
+    patch({
+      isClockedIn: true,
+      clockInStartTime: nowStr,
+      status: 'in_progress',
+      timeSessions: [...sessions, newSession],
+    });
+  };
+
+  const handleClockOut = () => {
+    if (!task || !task.clockInStartTime) return;
+    
+    const endTime = new Date();
+    const startTime = new Date(task.clockInStartTime);
+    const diffMs = endTime.getTime() - startTime.getTime();
+    const sessionHours = Number((diffMs / (1000 * 60 * 60)).toFixed(4));
+    
+    const sessions = task.timeSessions ? [...task.timeSessions] : [];
+    const updatedSessions = sessions.map(sess => {
+      if (sess.endTime === null) {
+        return {
+          ...sess,
+          endTime: endTime.toISOString(),
+          hours: sessionHours,
+        };
+      }
+      return sess;
+    });
+    
+    const newTotalHours = Number(((task.totalWorkedHours ?? 0) + sessionHours).toFixed(4));
+    
+    patch({
+      isClockedIn: false,
+      clockInStartTime: null,
+      totalWorkedHours: newTotalHours,
+      timeSessions: updatedSessions,
+    });
+  };
 
   if (!task || !project) return null;
 
@@ -209,6 +308,83 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
               <span>Priya Sharma is on leave Jun 12–16 — assignment may conflict with availability.</span>
             </div>
           )}
+
+          {/* Time Tracking Section */}
+          <section className="work-settings-section" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '20px', marginBottom: '20px' }}>
+            <h3 className="work-settings-section__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ⏱ Time Tracking & Clock
+            </h3>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Worked Time</div>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
+                  {formatHoursToMinutesAndSeconds(totalWorkedHoursWithActive)}
+                </div>
+                {task.isClockedIn && (
+                  <div style={{ fontSize: '12.5px', color: '#b91c1c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+                    Active Session: {activeSessionTime}
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                {task.isClockedIn ? (
+                  <button
+                    type="button"
+                    onClick={handleClockOut}
+                    className="org-btn"
+                    style={{ background: '#dc2626', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    ⏹ Clock Out
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleClockIn}
+                    className="org-btn"
+                    style={{ background: '#16a34a', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    ▶ Clock In
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Session Logs History */}
+            {task.timeSessions && task.timeSessions.length > 0 && (
+              <div style={{ marginTop: '16px' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 600, color: '#475569' }}>Time Log Sessions</h4>
+                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+                  <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', background: '#ffffff' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                        <th style={{ padding: '6px 12px', fontWeight: 600, color: '#475569' }}>User</th>
+                        <th style={{ padding: '6px 12px', fontWeight: 600, color: '#475569' }}>Start</th>
+                        <th style={{ padding: '6px 12px', fontWeight: 600, color: '#475569' }}>End</th>
+                        <th style={{ padding: '6px 12px', fontWeight: 600, color: '#475569', textAlign: 'right' }}>Hours</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {task.timeSessions.map(sess => (
+                        <tr key={sess.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '6px 12px', color: '#0f172a', fontWeight: 500 }}>{sess.assigneeName}</td>
+                          <td style={{ padding: '6px 12px', color: '#64748b' }}>{new Date(sess.startTime).toLocaleString()}</td>
+                          <td style={{ padding: '6px 12px', color: '#64748b' }}>
+                            {sess.endTime ? new Date(sess.endTime).toLocaleString() : <span style={{ color: '#16a34a', fontWeight: 600 }}>Active Now</span>}
+                          </td>
+                          <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
+                            {sess.endTime ? formatHoursToMinutesAndSeconds(sess.hours) : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
 
           <section className="work-settings-section">
             <h3 className="work-settings-section__title">Basic info</h3>
