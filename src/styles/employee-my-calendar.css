@@ -9,6 +9,21 @@
   color: var(--text);
 }
 
+.emc-dropnotice {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  box-shadow: 0 12px 32px color-mix(in srgb, #000 20%, transparent);
+  max-width: 320px;
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
 .emc-header {
@@ -490,6 +505,16 @@
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
+.emc-week__cell--droptarget {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 1px dashed var(--accent);
+}
+
+.emc-week__ev--dragging,
+.emc-day__ev--dragging {
+  opacity: 0.4;
+}
+
 .emc-week__ev {
   display: flex;
   flex-direction: column;
@@ -569,6 +594,11 @@
 
 .emc-day__row--dragselect {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.emc-day__row--droptarget {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 1px dashed var(--accent);
 }
 
 .emc-day__time {
@@ -1504,23 +1534,28 @@
   flex: 1;
 }
 
-.emc-wizard__radio-group,
+.emc-wizard__type-pills,
 .emc-wizard__attendees {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.emc-wizard__radio {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
+.emc-wizard__type-pill {
   font-size: 0.78rem;
+  font-weight: 500;
   color: var(--text-h);
-  padding: 0.3125rem 0.625rem;
+  background: transparent;
+  padding: 0.3125rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   cursor: pointer;
+}
+
+.emc-wizard__type-pill--active {
+  color: #fff;
+  background: var(--ev-color);
+  border-color: var(--ev-color);
 }
 
 .emc-attendee-search {
