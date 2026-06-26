@@ -18,10 +18,7 @@ export const PROJECT_NAV_TOOLS: { id: ProjectNavId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'work-items', label: 'Work items' },
   { id: 'members', label: 'Members' },
-  { id: 'progress', label: 'Progress' },
-  { id: 'activity', label: 'Activity log' },
-  { id: 'cycle', label: 'Cycles' },
-  { id: 'planner', label: 'Planner' },
+  { id: 'progress', label: 'Analytics' },
   { id: 'milestones', label: 'Milestones' },
   { id: 'files', label: 'Files' },
 ];
