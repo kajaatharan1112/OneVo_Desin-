@@ -449,11 +449,11 @@
   justify-content: space-between;
   width: 100%;
   padding: 7px 14px 3px;
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--subnav-section-label);
+  letter-spacing: 0.05em;
+  color: var(--text-h);
   background: transparent;
   border: none;
   cursor: default;
