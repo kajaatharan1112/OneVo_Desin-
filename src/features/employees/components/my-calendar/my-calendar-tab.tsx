@@ -178,12 +178,24 @@ export const MyCalendarTab: React.FC = () => {
   // New event wizard
   const [newEventOpen, setNewEventOpen] = useState(false);
   const [dragPrefill, setDragPrefill] = useState<Partial<NewEventFormState> | null>(null);
+
+  const connectedProviders = (['google', 'outlook'] as const).filter(p => syncStatus[p] === 'connected');
+
   const handleCreateEvents = (events: CalendarEvent[]) => {
-    setLocalEvents(prev => [...prev, ...events]);
+    const provider: SyncProvider | null =
+      connectedProviders.length === 1 ? connectedProviders[0]
+      : connectedProviders.length > 1 ? lastConnectedProvider
+      : null;
+
+    const tagged = provider
+      ? events.map(ev => ({ ...ev, syncProvider: provider, syncOrigin: 'pushed' as const }))
+      : events;
+
+    setLocalEvents(prev => [...prev, ...tagged]);
     setScope('my');
     setEnabledTypes(prev => {
       const next = new Set(prev);
-      events.forEach(ev => next.add(ev.type));
+      tagged.forEach(ev => next.add(ev.type));
       return next;
     });
   };
