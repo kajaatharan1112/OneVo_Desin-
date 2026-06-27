@@ -66,6 +66,11 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
         {!editing ? (
           <div className="emc-modal__body">
             <span className={`emc-modal__type emc-evpill--${event.type}`}>{EVENT_TYPE_LABEL[event.type]}</span>
+            {event.syncProvider && (
+              <span className="emc-modal__synced-label">
+                Synced from {event.syncProvider === 'google' ? 'Google' : 'Outlook'}
+              </span>
+            )}
 
             <div className="emc-modal__row">
               <span className="emc-modal__row-label">Date &amp; time</span>

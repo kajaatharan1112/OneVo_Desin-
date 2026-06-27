@@ -72,6 +72,12 @@ function formatTime(t: string): string {
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+const SyncBadge: React.FC<{ provider: SyncProvider }> = ({ provider }) => (
+  <span className={`emc-syncbadge emc-syncbadge--${provider}`} title={provider === 'google' ? 'Synced from Google' : 'Synced from Outlook'}>
+    {provider === 'google' ? 'G' : 'O'}
+  </span>
+);
+
 interface DragPointInfo {
   dayKey: string;
   minutes: number;
@@ -536,6 +542,7 @@ export const MyCalendarTab: React.FC = () => {
                       onClick={e => openEvent(e, ev)}
                       onContextMenu={e => handleEventContextMenu(e, ev)}
                     >
+                      {ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}
                       {ev.title}
                     </div>
                   ))}
@@ -598,7 +605,7 @@ export const MyCalendarTab: React.FC = () => {
             {days.map((d, i) => (
               <div key={toDateKey(d)} className="emc-week__alldaycell">
                 {allDayRows[i].map(ev => (
-                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.title}</div>
+                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
                 ))}
               </div>
             ))}
@@ -638,7 +645,7 @@ export const MyCalendarTab: React.FC = () => {
                         onDragEnd={handleEventDragEnd}
                       >
                         <span className="emc-week__ev-time">{formatTime(ev.start!)}</span>
-                        <span className="emc-week__ev-title">{ev.title}</span>
+                        <span className="emc-week__ev-title">{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</span>
                       </div>
                     ))}
                   </div>
@@ -664,7 +671,7 @@ export const MyCalendarTab: React.FC = () => {
           <div className="emc-day__allday">
             <span className="emc-day__allday-label">All day</span>
             {allDay.map(ev => (
-              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.title}</div>
+              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
             ))}
           </div>
         )}
@@ -697,7 +704,7 @@ export const MyCalendarTab: React.FC = () => {
                       onDragStart={e => handleEventDragStart(e, ev)}
                       onDragEnd={handleEventDragEnd}
                     >
-                      <div className="emc-day__ev-title">{ev.title}</div>
+                      <div className="emc-day__ev-title">{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
                       <div className="emc-day__ev-time">
                         {formatTime(ev.start!)}{ev.end ? ` – ${formatTime(ev.end)}` : ''}
                         {ev.note ? ` · ${ev.note}` : ''}
@@ -756,7 +763,7 @@ export const MyCalendarTab: React.FC = () => {
                       <span className="emc-agenda__ev-time">
                         {ev.allDay ? 'All day' : ev.start ? `${formatTime(ev.start)}${ev.end ? ` – ${formatTime(ev.end)}` : ''}` : ''}
                       </span>
-                      <span className="emc-agenda__ev-title">{ev.title}</span>
+                      <span className="emc-agenda__ev-title">{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</span>
                       {ev.ownerName && <span className="emc-agenda__ev-owner">{ev.ownerName}</span>}
                     </div>
                   );

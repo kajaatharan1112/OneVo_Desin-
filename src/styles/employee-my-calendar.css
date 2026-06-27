@@ -964,6 +964,29 @@
   color: var(--nexus-text-muted);
 }
 
+.emc-syncbadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: #fff;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
+.emc-syncbadge--google  { background: #4285f4; }
+.emc-syncbadge--outlook { background: #0078d4; }
+
+.emc-modal__synced-label {
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+  margin-left: 0.5rem;
+}
+
 .emc-sync__btn {
   margin-left: auto;
   font-size: 0.6875rem;
