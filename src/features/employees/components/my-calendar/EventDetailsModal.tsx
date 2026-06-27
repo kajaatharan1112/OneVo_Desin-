@@ -148,20 +148,24 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
             )}
 
             <div className="emc-modal__actions">
-              <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>
-                <Pencil size={13} />
-                Edit
-              </button>
-              {event.type === 'meeting' && (
+              {event.syncOrigin !== 'pulled' && (
+                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>
+                  <Pencil size={13} />
+                  Edit
+                </button>
+              )}
+              {event.syncOrigin !== 'pulled' && event.type === 'meeting' && (
                 <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => onDuplicate(event)}>
                   <Copy size={13} />
                   Duplicate
                 </button>
               )}
-              <button type="button" className="era-btn emc-modal__action emc-modal__action--danger" onClick={() => onDelete(event.id)}>
-                <Trash2 size={13} />
-                Delete
-              </button>
+              {event.syncOrigin !== 'pulled' && (
+                <button type="button" className="era-btn emc-modal__action emc-modal__action--danger" onClick={() => onDelete(event.id)}>
+                  <Trash2 size={13} />
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ) : (
