@@ -86,3 +86,5 @@ Audit log             → AuditLogPage (existing)
 - Auto-opening the Bulk Onboarding modal from the Settings menu item — it deep-links to the People → Employees page where the existing button already opens it.
 - Any change to who sees which menu (`shellMode`/`getProfileCapabilities` logic) — Org continues to be visible only because CEO/Manager profiles get the entire `TENANT_MAIN_ITEMS` array; no new per-item visibility flag is introduced.
 - A distinct "manager-specific" Reports page — both menus point at the same `EmployeeReports` component for now.
+- **"Overtime Rules"** (`OvertimeRulesPage`, currently under tenant Time & Attendance → Configuration) is deliberately left unreachable from any menu after this change — explicit decision, not an oversight. Its `App.tsx` switch case (`'overtime-rules'`) becomes dead code; not removed, just no longer reachable.
+- **"Branding"** (`BrandingSettingsPage`) is left exactly as it is today — it already has switch-cases in `App.tsx` (both Settings blocks) but was never in the visible `SETTINGS_SUB_ITEMS` array, so it's already unreachable from any menu. Pre-existing, untouched by this change.
