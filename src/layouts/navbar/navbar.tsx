@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Calendar, LogOut, Settings, Shield, User } from 'lucide-react';
 import { MySecurityDrawer } from '../../shared/components/my-security/my-security-drawer';
@@ -70,6 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
 }) => {
 
+  const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [mySecurityOpen, setMySecurityOpen] = useState(false);
 
@@ -201,7 +203,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 role="menuitem"
 
-                onClick={() => setProfileOpen(false)}
+                onClick={() => {
+                  setProfileOpen(false);
+                  navigate('/profile');
+                }}
 
               >
 
@@ -263,7 +268,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 role="menuitem"
 
-                onClick={() => { setProfileOpen(false); alert('Signing out…'); }}
+                onClick={() => { setProfileOpen(false); alert('Signing out...'); }}
 
               >
 
@@ -290,4 +295,3 @@ export const Navbar: React.FC<NavbarProps> = ({
   );
 
 };
-

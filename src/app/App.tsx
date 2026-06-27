@@ -22,6 +22,7 @@ import { EmployeeLeave } from '../features/employees/pages/employee-leave/employ
 import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/employee-calendar';
 import { EmployeeChat } from '../features/employees/pages/employee-chat/employee-chat';
 import { EmployeeReports } from '../features/employees/pages/employee-reports/employee-reports';
+import { EmployeeSelfProfile } from '../features/employees/pages/employee-profile/employee-profile';
 
 import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/tenant-attendance';
 import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
@@ -147,6 +148,10 @@ function App() {
   const isAutomationRoute = location.pathname.startsWith('/automations');
 
   const renderActivePageContent = () => {
+    if (location.pathname.startsWith('/profile')) {
+      return <EmployeeSelfProfile />;
+    }
+
     if (isAutomationRoute || (activeTab === 'Settings' && activeSubItemId === 'automations')) {
       return <AutomationRoutes />;
     }

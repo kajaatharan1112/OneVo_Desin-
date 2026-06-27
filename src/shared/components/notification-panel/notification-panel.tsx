@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { getNotificationsForView } from '../../../core/notifications/notification-data';
 import {
-  INBOX_CURRENT_USER,
   useInbox,
 } from '../../../core/notifications/inbox-context';
 import type { NotificationFilter } from '../../types/notification.types';
@@ -51,8 +50,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
   const inboxNotifications = useMemo(() => {
     if (currentView !== 'employee') return [];
-    return getInboxForUser(INBOX_CURRENT_USER);
-  }, [currentView, getInboxForUser]);
+    return getInboxForUser(selectedEmployeeId);
+  }, [currentView, getInboxForUser, selectedEmployeeId]);
 
   const allNotifications = useMemo(() => {
     const base = [...accessNotifications, ...inboxNotifications, ...staticNotifications];

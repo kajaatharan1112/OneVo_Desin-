@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PanelLeftOpen } from 'lucide-react';
 import { countNewNotifications } from '../../core/notifications/notification-data';
-import { INBOX_CURRENT_USER, useInboxOptional } from '../../core/notifications/inbox-context';
+import { useInboxOptional } from '../../core/notifications/inbox-context';
+import { useEmployeeContext } from '../../features/employees/context/employee-context';
 import { NotificationPanelProvider } from '../../core/notifications/notification-panel-context';
 import { type TenantCompany } from '../../shared/components/app-brand/app-brand';
 import {
@@ -110,13 +111,14 @@ export const Shell: React.FC<ShellProps> = ({
   );
 
   const inbox = useInboxOptional();
+  const { selectedEmployeeId } = useEmployeeContext();
   const { projectSettingsOpen, selectedProjectId } = useWork();
 
   const notificationUnreadCount = useMemo(() => {
     const staticCount = countNewNotifications(currentView);
     if (currentView !== 'employee' || !inbox) return staticCount;
-    return staticCount + inbox.countNewForUser(INBOX_CURRENT_USER);
-  }, [currentView, inbox]);
+    return staticCount + inbox.countNewForUser(selectedEmployeeId);
+  }, [currentView, inbox, selectedEmployeeId]);
 
   const openNotificationPanel = useCallback(() => {
     setNotificationsOpen(true);
