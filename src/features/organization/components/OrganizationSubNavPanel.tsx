@@ -135,6 +135,15 @@ export const OrganizationSubNavPanel: React.FC<OrganizationSubNavPanelProps> = (
             <span className="sub-nav-panel__item-icon"><Briefcase size={13} /></span>
             <span className="sub-nav-panel__item-label">Positions</span>
           </button>
+          <button
+            type="button"
+            className={`sub-nav-panel__item${activeId === 'roles-permissions' ? ' sub-nav-panel__item--active' : ''}`}
+            onClick={() => onSelect('roles-permissions')}
+            aria-current={activeId === 'roles-permissions' ? 'page' : undefined}
+          >
+            <span className="sub-nav-panel__item-icon"><ShieldCheck size={13} /></span>
+            <span className="sub-nav-panel__item-label">Roles and Permission</span>
+          </button>
 
           <div className="org-sub-nav__roles-section">
             <div className={`sub-nav-panel__item org-sub-nav__roles-row${rolesOpen ? ' org-sub-nav__roles-row--open' : ''}`}>
