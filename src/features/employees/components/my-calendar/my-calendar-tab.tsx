@@ -8,7 +8,7 @@ import {
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
 import type { SyncProvider } from '../../types/employee-calendar.types';
-import { pullEvents } from './calendar-sync.utils';
+import { pullEvents, detectConflict, type SyncConflict } from './calendar-sync.utils';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
@@ -103,7 +103,6 @@ export const MyCalendarTab: React.FC = () => {
   const [lastConnectedProvider, setLastConnectedProvider] = useState<SyncProvider | null>(
     employeeCalendarData.syncStatus.google === 'connected' ? 'google' : null
   );
-  void lastConnectedProvider; // read by push-tagging logic added in a later task
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
 
   // Local mutable copy of the one events table — Edit/Delete write back here.
@@ -197,6 +196,65 @@ export const MyCalendarTab: React.FC = () => {
       setLocalEvents(prev => [...prev, ...pullEvents(provider)]);
       setConnectingProvider(null);
     }, 800);
+  };
+
+  const [activeConflict, setActiveConflict] = useState<{ provider: SyncProvider; conflict: SyncConflict } | null>(null);
+
+  const finishSync = (_provider: SyncProvider) => {
+    setSyncStatus(prev => ({ ...prev, lastSynced: 'just now' }));
+    setConnectingProvider(null);
+  };
+
+  const handleSyncNow = (provider: SyncProvider) => {
+    setConnectingProvider(provider);
+    setTimeout(() => {
+      setLocalEvents(prev => {
+        const existingTitles = new Set(
+          prev.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pulled').map(ev => ev.title)
+        );
+        const fresh = pullEvents(provider).filter(ev => !existingTitles.has(ev.title));
+        const next = [...prev, ...fresh];
+
+        const conflict = detectConflict(
+          next.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pushed'),
+          provider
+        );
+        if (conflict) {
+          setActiveConflict({ provider, conflict });
+        } else {
+          finishSync(provider);
+        }
+        return next;
+      });
+    }, 800);
+  };
+
+  const handleDisconnect = (provider: SyncProvider) => {
+    setLocalEvents(prev => prev
+      .filter(ev => !(ev.syncProvider === provider && ev.syncOrigin === 'pulled'))
+      .map(ev => (ev.syncProvider === provider && ev.syncOrigin === 'pushed')
+        ? { ...ev, syncProvider: undefined, syncOrigin: undefined }
+        : ev
+      )
+    );
+    setSyncStatus(prev => ({ ...prev, [provider]: 'disconnected' }));
+    if (lastConnectedProvider === provider) setLastConnectedProvider(null);
+  };
+
+  const handleConflictKeepMine = () => {
+    if (!activeConflict) return;
+    finishSync(activeConflict.provider);
+    setActiveConflict(null);
+  };
+
+  const handleConflictKeepTheirs = () => {
+    if (!activeConflict) return;
+    const { provider, conflict } = activeConflict;
+    setLocalEvents(prev => prev.map(ev => (
+      ev.id === conflict.eventId ? { ...ev, start: conflict.theirsStart, end: conflict.theirsEnd } : ev
+    )));
+    finishSync(provider);
+    setActiveConflict(null);
   };
 
   // Drag-to-create-event (Week/Day views)
@@ -1001,13 +1059,64 @@ export const MyCalendarTab: React.FC = () => {
                             <RefreshCw size={12} className={connectingProvider === s.key ? 'emc-sync__spin' : ''} />
                             {connectingProvider === s.key ? 'Connecting…' : 'Connect'}
                           </button>
-                        ) : null}
+                        ) : (
+                          <div className="emc-sync__actions">
+                            <button
+                              type="button"
+                              className="era-btn era-btn--ghost emc-sync__btn"
+                              disabled={connectingProvider === s.key}
+                              onClick={() => handleSyncNow(s.key)}
+                            >
+                              <RefreshCw size={12} className={connectingProvider === s.key ? 'emc-sync__spin' : ''} />
+                              {connectingProvider === s.key ? 'Syncing…' : 'Sync Now'}
+                            </button>
+                            <button
+                              type="button"
+                              className="era-btn era-btn--ghost emc-sync__btn"
+                              onClick={() => handleDisconnect(s.key)}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                   <div className="emc-sync__meta">Synced {syncStatus.lastSynced}</div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeConflict && (
+        <div className="emc-modal-overlay" onClick={handleConflictKeepMine}>
+          <div className="emc-modal emc-modal--conflict" role="dialog" aria-modal="true" aria-label="Sync conflict" onClick={e => e.stopPropagation()}>
+            <header className="emc-modal__header">
+              <h3 className="emc-modal__title">Sync conflict</h3>
+            </header>
+            <div className="emc-modal__body">
+              <p>
+                This event's time was also changed in {activeConflict.provider === 'google' ? 'Google' : 'Outlook'}.
+              </p>
+              <p className="emc-conflict__title">{activeConflict.conflict.eventTitle}</p>
+              <div className="emc-conflict__row">
+                <span className="emc-conflict__label">Mine:</span>
+                <span>{formatTime(activeConflict.conflict.mineStart)} – {formatTime(activeConflict.conflict.mineEnd)}</span>
+              </div>
+              <div className="emc-conflict__row">
+                <span className="emc-conflict__label">Theirs:</span>
+                <span>{formatTime(activeConflict.conflict.theirsStart)} – {formatTime(activeConflict.conflict.theirsEnd)}</span>
+              </div>
+              <div className="emc-modal__actions">
+                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={handleConflictKeepMine}>
+                  Keep mine
+                </button>
+                <button type="button" className="era-btn emc-modal__action" onClick={handleConflictKeepTheirs}>
+                  Keep theirs
+                </button>
+              </div>
             </div>
           </div>
         </div>
