@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
+import type { SyncProvider } from '../../types/employee-calendar.types';
+import { pullEvents } from './calendar-sync.utils';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
@@ -97,7 +99,12 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
-  const { syncStatus } = employeeCalendarData;
+  const [syncStatus, setSyncStatus] = useState(employeeCalendarData.syncStatus);
+  const [lastConnectedProvider, setLastConnectedProvider] = useState<SyncProvider | null>(
+    employeeCalendarData.syncStatus.google === 'connected' ? 'google' : null
+  );
+  void lastConnectedProvider; // read by push-tagging logic added in a later task
+  const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
 
   // Local mutable copy of the one events table — Edit/Delete write back here.
   const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(employeeCalendarData.events);
@@ -180,6 +187,16 @@ export const MyCalendarTab: React.FC = () => {
       events.forEach(ev => next.add(ev.type));
       return next;
     });
+  };
+
+  const handleConnect = (provider: SyncProvider) => {
+    setConnectingProvider(provider);
+    setTimeout(() => {
+      setSyncStatus(prev => ({ ...prev, [provider]: 'connected', lastSynced: 'just now' }));
+      setLastConnectedProvider(provider);
+      setLocalEvents(prev => [...prev, ...pullEvents(provider)]);
+      setConnectingProvider(null);
+    }, 800);
   };
 
   // Drag-to-create-event (Week/Day views)
@@ -974,6 +991,17 @@ export const MyCalendarTab: React.FC = () => {
                         <span className={`emc-sync__badge emc-sync__badge--${s.status}`}>
                           {s.status === 'connected' ? 'Connected' : 'Not connected'}
                         </span>
+                        {s.status === 'disconnected' ? (
+                          <button
+                            type="button"
+                            className="era-btn era-btn--ghost emc-sync__btn"
+                            disabled={connectingProvider === s.key}
+                            onClick={() => handleConnect(s.key)}
+                          >
+                            <RefreshCw size={12} className={connectingProvider === s.key ? 'emc-sync__spin' : ''} />
+                            {connectingProvider === s.key ? 'Connecting…' : 'Connect'}
+                          </button>
+                        ) : null}
                       </div>
                     ))}
                   </div>

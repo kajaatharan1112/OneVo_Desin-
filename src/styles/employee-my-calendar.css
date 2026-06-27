@@ -964,6 +964,21 @@
   color: var(--nexus-text-muted);
 }
 
+.emc-sync__btn {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  padding: 3px 9px;
+  gap: 0.25rem;
+}
+
+.emc-sync__spin {
+  animation: emc-sync-spin 1s linear infinite;
+}
+
+@keyframes emc-sync-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Clickable event pills ──────────────────────────────────────────────── */
 
 .emc-month__evpill:not(.emc-evpill--more),
