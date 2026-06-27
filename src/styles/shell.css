@@ -210,7 +210,7 @@
   width: 52px;
   min-width: 52px;
   max-width: 52px;
-  height: 46px;
+  height: auto;
   min-height: 46px;
   border-radius: 10px;
   border: none;
@@ -269,18 +269,20 @@
 }
 
 .rail-item__label {
-  display: block;
+  display: -webkit-box;
   width: 52px;
   max-width: 52px;
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: clip;
-  line-height: 12px;
+  text-overflow: ellipsis;
+  line-height: 11px;
   text-align: center;
   flex-shrink: 0;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 /* ─────────────────────────────────────────────
