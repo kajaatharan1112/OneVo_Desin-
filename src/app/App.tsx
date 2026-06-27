@@ -23,7 +23,6 @@ import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/
 import { EmployeeChat } from '../features/employees/pages/employee-chat/employee-chat';
 import { EmployeeReports } from '../features/employees/pages/employee-reports/employee-reports';
 
-import { TenantCalendar } from '../features/tenant/pages/tenant-calendar/tenant-calendar';
 import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/tenant-attendance';
 import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
 import { TenantSectionPage } from '../features/tenant/pages/tenant-section-page/tenant-section-page';
@@ -295,7 +294,7 @@ function App() {
       case 'Dashboard':
         return <EmployeeDashboard onNavigateTab={setActiveTab} />;
       case 'Calendar':
-        return <TenantCalendar />;
+        return <EmployeeCalendar />;
       case 'Reports':
         return <EmployeeReports />;
       case 'Attendance':
