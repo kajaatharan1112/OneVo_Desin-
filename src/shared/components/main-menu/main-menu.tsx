@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderKanban, Users, UsersRound, Clock,
-  PieChart, Briefcase, Building2, Building, CalendarMinus, Activity,
+  PieChart, Briefcase, Building2, Building, CalendarMinus,
   ChartNoAxesCombined, ShieldCheck, Settings, FileText, Hash,
   ListChecks, Shield, Eye, List, Bell,
   CreditCard, Monitor, CalendarClock, ClipboardList, ListTodo, CalendarDays,
@@ -27,24 +27,41 @@ export interface NavItem {
 }
 
 const SETTINGS_SUB_ITEMS = [
-  { id: 'general',           label: 'General',             icon: <Settings size={13} />      },
-  { id: 'users',             label: 'Users',               icon: <Users size={13} />         },
-  { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} />   },
-  { id: 'notifications',     label: 'Notifications',       icon: <Bell size={13} />          },
-  { id: 'billing',           label: 'Billing',             icon: <CreditCard size={13} />    },
-  { id: 'devices',           label: 'Devices',             icon: <Monitor size={13} />       },
-  { id: 'audit-log',         label: 'Audit Log',           icon: <ClipboardList size={13} /> },
+  { id: 'general',       label: 'General',      icon: <Settings size={13} />  },
+  { id: 'users',         label: 'User',          icon: <Users size={13} />     },
+  { id: 'billing',       label: 'Billing',       icon: <CreditCard size={13} /> },
+  { id: 'notifications', label: 'Notification', icon: <Bell size={13} />      },
+] as const;
+
+const SETTINGS_POLICY_ITEMS = [
+  { id: 'clock-in-policy',           label: 'Clock-in Policy',            icon: <Clock size={13} />        },
+  { id: 'monitoring-policy',         label: 'Monitoring Policy',          icon: <Shield size={13} />       },
+  { id: 'monitoring-privacy-setting', label: 'Monitoring Privacy Setting', icon: <Eye size={13} />          },
+  { id: 'app-allowlist',             label: 'App Allowlist',              icon: <List size={13} />         },
+  { id: 'time-off-type',             label: 'Time off Type',              icon: <Hash size={13} />         },
+  { id: 'time-off-policy',           label: 'Time off Policy',            icon: <FileText size={13} />     },
+  { id: 'entitlement',               label: 'Entitlement',                icon: <ClipboardList size={13} /> },
+] as const;
+
+const SETTINGS_OTHER_ITEMS = [
+  { id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} />         },
+  { id: 'devices',         label: 'Device',          icon: <Monitor size={13} />       },
+  { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
 ] as const;
 
 export function buildSettingsNavItem(): NavItem {
-  const items = SETTINGS_SUB_ITEMS.filter(
+  const otherItems = SETTINGS_OTHER_ITEMS.filter(
     item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
   );
   return {
     id: 'settings',
     label: 'Settings',
     icon: railIcon(Settings),
-    subSections: [{ id: 'main', items: [...items] }],
+    subSections: [
+      { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
+      { id: 'policy', label: 'Policy', collapsible: true, defaultOpen: true, items: [...SETTINGS_POLICY_ITEMS] },
+      { id: 'other', items: otherItems },
+    ],
   };
 }
 
@@ -67,46 +84,29 @@ export const WORK_NAV_ITEM: NavItem = {
 };
 
 export const TENANT_MAIN_ITEMS: NavItem[] = [
-  { id: 'dashboard',   label: 'Dashboard',   railLabel: 'Home', icon: railIcon(LayoutDashboard), subSections: [] },
-  { id: 'organization', label: 'Organization', railLabel: 'Org', icon: railIcon(Building2), subSections: [
+  { id: 'dashboard', label: 'Dashboard', railLabel: 'Home', icon: railIcon(LayoutDashboard), subSections: [] },
+  WORK_NAV_ITEM,
+  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Time & Attendance', icon: railIcon(CalendarClock), subSections: [
     { id: 'main', items: [
-      { id: 'departments', label: 'Departments', icon: <Building size={13} /> },
-      { id: 'positions',   label: 'Positions',   icon: <Briefcase size={13} /> },
+      { id: 'time-tracking', label: 'Time Tracking', icon: <Clock size={13} />              },
+      { id: 'schedules',     label: 'Schedules',      icon: <CalendarClock size={13} />      },
+      { id: 'monitoring',    label: 'Monitoring',     icon: <ChartNoAxesCombined size={13} /> },
+      { id: 'time-off',      label: 'Time off',       icon: <CalendarMinus size={13} />       },
     ]},
   ]},
-  { id: 'people',      label: 'People',      icon: railIcon(UsersRound),      subSections: [
+  { id: 'calendar', label: 'Calendar', icon: railIcon(CalendarDays), subSections: [] },
+  { id: 'people', label: 'People', icon: railIcon(UsersRound), subSections: [
     { id: 'main', items: [
       { id: 'employees', label: 'Employees', icon: <Users size={13} /> },
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
     ]},
   ]},
-  { id: 'leave', label: 'Leave', icon: railIcon(CalendarMinus), subSections: [
-    { id: 'self', label: 'Self-Service', items: [
-      { id: 'my-leave', label: 'My Leave', icon: <CalendarMinus size={13} /> },
-    ]},
-    { id: 'main', label: 'Configuration', items: [
-      { id: 'leave-types', label: 'Leave Types', icon: <Hash size={13} /> },
-      { id: 'leave-policies', label: 'Leave Policies', icon: <FileText size={13} /> },
-      { id: 'leave-entitlements', label: 'Entitlements', icon: <ClipboardList size={13} /> },
-    ]},
-  ]},
-  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock), subSections: [
-    { id: 'self', label: 'Self-Service', items: [
-      { id: 'my-attendance', label: 'My Attendance', icon: <Clock size={13} /> },
-      { id: 'my-calendar',   label: 'My Calendar',   icon: <CalendarDays size={13} /> },
-    ]},
-    { id: 'main', label: 'Configuration', items: [
-      { id: 'schedules',       label: 'Schedules',       icon: <CalendarClock size={13} /> },
-      { id: 'clock-in-policy', label: 'Clock-in Policy', icon: <Clock size={13} />        },
-      { id: 'overtime-rules',  label: 'Overtime Rules',  icon: <Activity size={13} />     },
-    ]},
-  ]},
-  WORK_NAV_ITEM,
-  { id: 'monitoring',  label: 'Monitoring',  railLabel: 'Monitor', icon: railIcon(ChartNoAxesCombined), subSections: [
-    { id: 'settings', label: 'Settings', collapsible: true, defaultOpen: true, items: [
-      { id: 'policy-settings',  label: 'Policy Settings',  icon: <Shield size={13} /> },
-      { id: 'privacy-settings', label: 'Privacy Settings', icon: <Eye size={13} />    },
-      { id: 'app-allowlist',    label: 'App Allowlist',    icon: <List size={13} />   },
+  { id: 'reports', label: 'Reports', icon: railIcon(PieChart), subSections: [] },
+  { id: 'organization', label: 'Organization', railLabel: 'Org', icon: railIcon(Building2), subSections: [
+    { id: 'main', items: [
+      { id: 'departments',       label: 'Departments',         icon: <Building size={13} />    },
+      { id: 'positions',         label: 'Positions',            icon: <Briefcase size={13} />   },
+      { id: 'roles-permissions', label: 'Roles and Permission', icon: <ShieldCheck size={13} /> },
     ]},
   ]},
   SETTINGS_NAV_ITEM,
@@ -119,18 +119,19 @@ export const SHARED_BOTTOM_ITEMS: NavItem[] = [];
 export const TENANT_BOTTOM_ITEMS = SHARED_BOTTOM_ITEMS;
 
 export const EMPLOYEE_ITEMS: NavItem[] = [
-  { id: 'dashboard',       label: 'Dashboard',         railLabel: 'Home',     icon: railIcon(LayoutDashboard), subSections: [] },
+  { id: 'dashboard',       label: 'Dashboard',         railLabel: 'Home',             icon: railIcon(LayoutDashboard), subSections: [] },
   WORK_NAV_ITEM,
-  { id: 'leave',           label: 'Leave',                                    icon: railIcon(CalendarMinus),   subSections: [] },
-  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Schedule', icon: railIcon(CalendarClock),   subSections: [{
-    id: 'main',
-    items: [
-      { id: 'attendance', label: 'Attendance', icon: <Clock size={13} />        },
-      { id: 'calendar',   label: 'Calendar',   icon: <CalendarDays size={13} /> },
-    ],
-  }]},
-  { id: 'people',          label: 'People',                                   icon: railIcon(UsersRound),      subSections: [] },
-  { id: 'reports',         label: 'Reports',                                  icon: railIcon(PieChart),        subSections: [] },
+  { id: 'time-attendance', label: 'Time & Attendance', railLabel: 'Time & Attendance', icon: railIcon(CalendarClock), subSections: [
+    { id: 'main', items: [
+      { id: 'time-tracking', label: 'Time Tracking', icon: <Clock size={13} />              },
+      { id: 'schedules',     label: 'Schedules',      icon: <CalendarClock size={13} />      },
+      { id: 'monitoring',    label: 'Monitoring',     icon: <ChartNoAxesCombined size={13} /> },
+      { id: 'time-off',      label: 'Time off',       icon: <CalendarMinus size={13} />       },
+    ]},
+  ]},
+  { id: 'calendar',        label: 'Calendar',                                         icon: railIcon(CalendarDays),    subSections: [] },
+  { id: 'people',          label: 'People',                                           icon: railIcon(UsersRound),      subSections: [] },
+  { id: 'reports',         label: 'Reports',                                          icon: railIcon(PieChart),        subSections: [] },
   SETTINGS_NAV_ITEM,
 ];
 

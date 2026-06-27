@@ -23,7 +23,6 @@ import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/
 import { EmployeeChat } from '../features/employees/pages/employee-chat/employee-chat';
 import { EmployeeReports } from '../features/employees/pages/employee-reports/employee-reports';
 
-import { TenantCalendar } from '../features/tenant/pages/tenant-calendar/tenant-calendar';
 import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/tenant-attendance';
 import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
 import { TenantSectionPage } from '../features/tenant/pages/tenant-section-page/tenant-section-page';
@@ -44,7 +43,6 @@ import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
 import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
 import { SchedulesPage } from '../features/time-attendance/configuration/SchedulesPage';
 import { ClockInPolicyPage } from '../features/time-attendance/clock-in-policy/ClockInPolicyPage';
-import { OvertimeRulesPage } from '../features/time-attendance/overtime-rules/OvertimeRulesPage';
 import { PeopleEmployeesRoutes } from '../features/people/employees/PeopleEmployeesRoutes';
 import { WorkProvider } from '../features/work/context/work-context';
 import { InboxProvider } from '../core/notifications/inbox-context';
@@ -98,12 +96,16 @@ function App() {
       navigate('/people/checklist-templates');
       return;
     }
-    if (activeTab === 'Organization') {
+    if (activeTab === 'Organization' && (id === 'positions' || id === 'departments')) {
       navigate(id === 'positions' ? '/organization/positions' : '/organization/departments');
       return;
     }
     if (activeTab === 'Settings' && id === 'automations') {
       navigate('/automations');
+      return;
+    }
+    if (activeTab === 'Settings' && id === 'bulk-onboarding') {
+      navigate('/people/employees');
     }
   };
 
@@ -158,13 +160,21 @@ function App() {
           case 'general': return <GeneralSettingsPage />;
           case 'branding': return <BrandingSettingsPage />;
           case 'users': return <AdminUsersPage />;
-          case 'roles-permissions': return <RolesPermissionsPage />;
           case 'notifications': return <NotificationsSettingsPage />;
           case 'billing': return <BillingSettingsPage />;
           case 'devices':
             return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
           case 'audit-log': return <AuditLogPage />;
           case 'automations': return <AutomationRoutes />;
+          case 'clock-in-policy': return <ClockInPolicyPage />;
+          case 'time-off-type': return <LeaveTypesPage />;
+          case 'time-off-policy': return <LeavePoliciesPage />;
+          case 'entitlement': return <LeaveEntitlementsPage />;
+          case 'monitoring-policy':
+          case 'monitoring-privacy-setting':
+          case 'app-allowlist':
+            return renderSectionPage('Settings', allEmployeeItems, resolvedSubId);
+          case 'bulk-onboarding': return <GeneralSettingsPage />;
           default: return <GeneralSettingsPage />;
         }
       }
@@ -176,19 +186,21 @@ function App() {
       }
 
       if (activeTab === 'Time & Attendance') {
-        const taNav = findNavItem(allEmployeeItems, 'Time & Attendance');
+        const taNav = findNavItem(allEmployeeItems, activeTab);
         const resolvedSubId = resolveSubItemId(taNav, activeSubItemId);
-        if (resolvedSubId === 'calendar') return <EmployeeCalendar />;
-        return <EmployeeAttendance />;
+        switch (resolvedSubId) {
+          case 'schedules': return <SchedulesPage />;
+          case 'time-off': return <EmployeeLeave />;
+          case 'time-tracking': return <EmployeeAttendance />;
+          default: return renderSectionPage(activeTab, allEmployeeItems, resolvedSubId);
+        }
       }
 
       switch (activeTab) {
         case 'Dashboard':
           return <EmployeeDashboard onNavigateTab={setActiveTab} />;
-        case 'Leave':
-          return <EmployeeLeave />;
-        case 'Time & Attendance':
-          return <EmployeeAttendance />;
+        case 'Calendar':
+          return <EmployeeCalendar />;
         case 'People':
           return <PeopleEmployeesRoutes canAddEmployee />;
         case 'Chat':
@@ -221,20 +233,10 @@ function App() {
         if (resolvedSubId === 'positions') {
           return <PositionsPage />;
         }
-        return <DepartmentsPage />;
-      }
-      if (activeTab === 'Leave') {
-        switch (resolvedSubId) {
-          case 'my-leave':
-            return <EmployeeLeave />;
-          case 'leave-policies':
-            return <LeavePoliciesPage />;
-          case 'leave-entitlements':
-            return <LeaveEntitlementsPage />;
-          case 'leave-types':
-          default:
-            return <LeaveTypesPage />;
+        if (resolvedSubId === 'roles-permissions') {
+          return <RolesPermissionsPage />;
         }
+        return <DepartmentsPage />;
       }
       if (activeTab === 'Settings') {
         switch (resolvedSubId) {
@@ -244,8 +246,6 @@ function App() {
             return <BrandingSettingsPage />;
           case 'users':
             return <AdminUsersPage />;
-          case 'roles-permissions':
-            return <RolesPermissionsPage />;
           case 'notifications':
             return <NotificationsSettingsPage />;
           case 'billing':
@@ -256,6 +256,18 @@ function App() {
             return <AuditLogPage />;
           case 'automations':
             return <AutomationRoutes />;
+          case 'clock-in-policy':
+            return <ClockInPolicyPage />;
+          case 'time-off-type':
+            return <LeaveTypesPage />;
+          case 'time-off-policy':
+            return <LeavePoliciesPage />;
+          case 'entitlement':
+            return <LeaveEntitlementsPage />;
+          case 'monitoring-policy':
+          case 'monitoring-privacy-setting':
+          case 'app-allowlist':
+            return renderSectionPage('Settings', allTenantItems, resolvedSubId);
           default:
             return <GeneralSettingsPage />;
         }
@@ -265,16 +277,12 @@ function App() {
       }
       if (activeTab === 'Time & Attendance') {
         switch (resolvedSubId) {
-          case 'my-attendance':
+          case 'time-tracking':
             return <EmployeeAttendance />;
-          case 'my-calendar':
-            return <EmployeeCalendar />;
           case 'schedules':
             return <SchedulesPage />;
-          case 'clock-in-policy':
-            return <ClockInPolicyPage />;
-          case 'overtime-rules':
-            return <OvertimeRulesPage />;
+          case 'time-off':
+            return <EmployeeLeave />;
           default:
             return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
         }
@@ -286,7 +294,9 @@ function App() {
       case 'Dashboard':
         return <EmployeeDashboard onNavigateTab={setActiveTab} />;
       case 'Calendar':
-        return <TenantCalendar />;
+        return <EmployeeCalendar />;
+      case 'Reports':
+        return <EmployeeReports />;
       case 'Attendance':
         return <TenantAttendance />;
       default:
