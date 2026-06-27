@@ -448,12 +448,11 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 7px 14px 3px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-h);
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--subnav-fg);
   background: transparent;
   border: none;
   cursor: default;
