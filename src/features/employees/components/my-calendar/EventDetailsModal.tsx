@@ -5,7 +5,7 @@ import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
 import { findEventConflicts } from './new-event-wizard.utils';
 import { useCalendarStore } from '../../../../store/calendarStore';
-import { recordHistory } from '../../../../store/historyStore';
+import { recordHistory, useHistoryStore } from '../../../../store/historyStore';
 
 export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
@@ -43,6 +43,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
   const updateSeries = useCalendarStore(s => s.updateSeries);
   const deleteSeries = useCalendarStore(s => s.deleteSeries);
   const archiveEvent = useCalendarStore(s => s.archiveEvent);
+  const historyEntries = useHistoryStore(s => s.entries).filter(
+    e => e.category === 'Calendar' && e.target === event.title
+  );
 
   const { selectedEmployee } = useEmployeeContext();
   const attendeeTimeRows = event.attendees && event.start && event.end && !event.allDay
@@ -187,6 +190,17 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
 
             {event.status === 'tentative' && (
               <p className="emc-modal__tentative-note">Tentative response.</p>
+            )}
+
+            {historyEntries.length > 0 && (
+              <div className="emc-modal__history">
+                <p className="emc-modal__history-label">History</p>
+                <ul className="emc-modal__history-list">
+                  {historyEntries.map(entry => (
+                    <li key={entry.id}>{entry.title} — {new Date(entry.createdAt).toLocaleString()}</li>
+                  ))}
+                </ul>
+              </div>
             )}
 
             {seriesAction ? (

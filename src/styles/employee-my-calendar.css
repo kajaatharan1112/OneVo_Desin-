@@ -1955,6 +1955,26 @@
   color: #d97706;
 }
 
+.emc-modal__history-label {
+  margin: 0.5rem 0 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.emc-modal__history-list {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+}
+
 /* Pending / rejected event pills */
 .emc-month__evpill.emc-evpill--pending-status,
 .emc-week__evpill.emc-evpill--pending-status,
