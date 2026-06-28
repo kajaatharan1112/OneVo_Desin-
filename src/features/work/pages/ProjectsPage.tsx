@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useWork } from '../context/work-context';
+import { type ProjectNavId } from '../projectNav';
 import {
   accessibleProjects,
   healthBadgeClass,

@@ -81,8 +81,11 @@ function buildSlashBlock(cmd: SlashCommand): string {
 }
 
 export const ProjectOverview: React.FC<Props> = ({ project }) => {
-  const { tasks, updateProject, workspaces, relatedProjects } = useWork();
+  const { tasks, updateProject, workspaces, relatedProjects, goals, milestones, openProjectSettings } = useWork();
   const projectTaskList = projectTasks(project.id, tasks);
+  const projectGoals = goals.filter(g => g.projectId === project.id);
+  const projectMilestones = milestones.filter(m => m.projectId === project.id);
+  const visibleWsIds = new Set(visibleWorkspaceIds());
   const doneCount = projectTaskList.filter(t => t.status === 'done').length;
   const totalCount = projectTaskList.length;
   const progressPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
@@ -90,7 +93,6 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
   const projectRelated = relatedProjects
     .filter(l => l.projectId === project.id)
     .map(l => resolveRelatedProjectDisplay(l));
-  const visibleWsIds = new Set(visibleWorkspaceIds());
 
   const [projectName, setProjectName] = useState(project.name);
   const [slashOpen, setSlashOpen] = useState(false);
@@ -459,6 +461,50 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
                 {doneCount} of {totalCount} work items done
               </p>
             </div>
+          </div>
+
+          <div className="work-overview-doc__state-panel">
+            <h3 className="work-overview-doc__state-title">Goals & Milestones</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span style={{ color: 'var(--clr-text-secondary)' }}>Goals Objective</span>
+                <strong style={{ color: 'var(--text-h)' }}>{projectGoals.length} Active</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span style={{ color: 'var(--clr-text-secondary)' }}>Milestones Count</span>
+                <strong style={{ color: 'var(--text-h)' }}>{projectMilestones.length} Phases</strong>
+              </div>
+              {projectGoals.length > 0 && (
+                <div style={{ marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--clr-text-secondary)', textTransform: 'uppercase' }}>Objectives List:</span>
+                  <ul className="work-mini-list" style={{ marginTop: '6px', paddingLeft: 0, listStyle: 'none' }}>
+                    {projectGoals.map(g => (
+                      <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-m)', padding: '2px 0' }}>
+                        <span>🎯 {g.name}</span>
+                        <span style={{ fontSize: '10px', color: 'var(--clr-text-secondary)' }}>({g.durationMonths}m)</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="work-overview-doc__state-panel" style={{ border: '1px dashed var(--border)', background: 'transparent' }}>
+            <h3 className="work-overview-doc__state-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ⚙️ Project Settings
+            </h3>
+            <p style={{ fontSize: '11.5px', color: 'var(--clr-text-secondary)', margin: '4px 0 10px', lineHeight: 1.4 }}>
+              Configure visibility settings, members, primary workspace sources, or budget controls.
+            </p>
+            <button 
+              type="button" 
+              className="org-btn org-btn--secondary org-btn--sm"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => openProjectSettings()}
+            >
+              Configure Project
+            </button>
           </div>
         </aside>
       </div>

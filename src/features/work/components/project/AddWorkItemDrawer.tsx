@@ -13,6 +13,7 @@ import {
   FileCode,
   Layers,
   CheckSquare,
+  Clock,
 } from 'lucide-react';
 import { useWork } from '../../context/work-context';
 import {
@@ -71,7 +72,12 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
     endDate: '',
     linkedWorkspaceId: currentProject.workspaceIds[0] ?? '',
     labels: '',
+    allocatedHours: '',
+    milestoneId: defaultMilestoneId ?? '',
   });
+
+  const [checklistItems, setChecklistItems] = useState<string[]>([]);
+  const [newChecklistItem, setNewChecklistItem] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -86,7 +92,11 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
         endDate: '',
         linkedWorkspaceId: project.workspaceIds[0] ?? '',
         labels: '',
+        allocatedHours: '',
+        milestoneId: defaultMilestoneId ?? '',
       });
+      setChecklistItems([]);
+      setNewChecklistItem('');
       setCurrentProjectId(project.id);
       setAttachments([]);
       setCustomFields([]);
@@ -95,7 +105,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       setNewFieldName('');
       setShowMoreSubmitOptions(false);
     }
-  }, [open, project, defaultStatus, defaultAssigneeId, defaultDueDate]);
+  }, [open, project, defaultStatus, defaultAssigneeId, defaultDueDate, defaultMilestoneId]);
 
   const handleProjectChange = (projId: string) => {
     setCurrentProjectId(projId);
@@ -212,11 +222,14 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       endDate: form.endDate || null,
       linkedWorkspaceId: currentProject.workspaceIds.length > 1 ? form.linkedWorkspaceId : null,
       labels: form.labels.split(',').map(l => l.trim()).filter(Boolean),
+      allocatedHours: form.allocatedHours ? Number(form.allocatedHours) : undefined,
+      checklist: checklistItems.length > 0 ? [{ id: 'cl-1', name: 'Checklist', items: checklistItems.map((text, i) => ({ id: `cli-${Date.now()}-${i}`, text, done: false })) }] : [],
     });
-    if (defaultMilestoneId && newTask) {
-      const ms = milestones.find(m => m.id === defaultMilestoneId);
+    const targetMsId = form.milestoneId || defaultMilestoneId;
+    if (targetMsId && newTask) {
+      const ms = milestones.find(m => m.id === targetMsId);
       if (ms) {
-        updateMilestone(defaultMilestoneId, {
+        updateMilestone(targetMsId, {
           linkedWorkItemIds: [...ms.linkedWorkItemIds, newTask.id],
         });
       }
@@ -467,6 +480,44 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
                 <ChevronDown size={10} />
               </div>
             )}
+
+            {/* Allocated Hours Pill */}
+            <div className="wi-attribute-pill">
+              <Clock size={12} />
+              <input
+                type="number"
+                min={0}
+                placeholder="Hours"
+                value={form.allocatedHours}
+                onChange={e => setForm(f => ({ ...f, allocatedHours: e.target.value }))}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'inherit',
+                  width: '60px',
+                  fontSize: 'inherit',
+                }}
+              />
+            </div>
+
+            {/* Milestone Pill Select */}
+            <div className="wi-attribute-pill">
+              <Flag size={12} />
+              <select
+                value={form.milestoneId}
+                onChange={e => setForm(f => ({ ...f, milestoneId: e.target.value }))}
+                aria-label="Milestone select"
+              >
+                <option value="">No Milestone</option>
+                {milestones.filter(m => m.projectId === currentProject.id).map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={10} />
+            </div>
           </div>
 
           {/* Tags/Labels Comma-separated TextInput (Toggled via pill click or if filled) */}
@@ -499,6 +550,58 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
               ))}
             </div>
           )}
+
+          {/* Checklist Creation Section */}
+          <div className="wi-dark-modal__custom-fields" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '12px', marginBottom: '12px' }}>
+            <h4 className="wi-dark-modal__custom-fields-title" style={{ cursor: 'default' }}>
+              Checklist ({checklistItems.length})
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+              {checklistItems.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', color: '#0f172a' }}>
+                  <span>{item}</span>
+                  <button
+                    type="button"
+                    onClick={() => setChecklistItems(prev => prev.filter((_, i) => i !== idx))}
+                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="Add checklist item..."
+                  value={newChecklistItem}
+                  onChange={e => setNewChecklistItem(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newChecklistItem.trim()) {
+                        setChecklistItems(prev => [...prev, newChecklistItem.trim()]);
+                        setNewChecklistItem('');
+                      }
+                    }
+                  }}
+                  style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newChecklistItem.trim()) {
+                      setChecklistItems(prev => [...prev, newChecklistItem.trim()]);
+                      setNewChecklistItem('');
+                    }
+                  }}
+                  className="org-btn org-btn--secondary org-btn--sm"
+                  style={{ padding: '6px 12px' }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Custom Fields Section */}
           <div className="wi-dark-modal__custom-fields">

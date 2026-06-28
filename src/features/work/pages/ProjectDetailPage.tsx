@@ -26,6 +26,7 @@ import { ProjectStatusPage } from '../components/project/ProjectStatusPage';
 import { ProjectCompletionPage } from '../components/project/ProjectCompletionPage';
 import { ProjectBudgetPage } from '../components/project/ProjectBudgetPage';
 import { ProjectRisksPage } from '../components/project/ProjectRisksPage';
+import { ProjectGoalsPage } from '../components/project/ProjectGoalsPage';
 
 export const ProjectDetailPage: React.FC = () => {
   const {
@@ -72,6 +73,7 @@ export const ProjectDetailPage: React.FC = () => {
       case 'reports': return <ProjectReportsPage project={project} />;
       case 'status': return <ProjectStatusPage project={project} />;
       case 'completion': return <ProjectCompletionPage project={project} />;
+      case 'goal': return <ProjectGoalsPage project={project} />;
       default: return null;
     }
   };
