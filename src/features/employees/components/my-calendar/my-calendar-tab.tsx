@@ -9,6 +9,7 @@ import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeF
 import type { SyncProvider } from '../../types/employee-calendar.types';
 import { pullEvents, detectConflict, type SyncConflict } from './calendar-sync.utils';
 import { useCalendarStore } from '../../../../store/calendarStore';
+import { recordHistory } from '../../../../store/historyStore';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
@@ -197,6 +198,15 @@ export const MyCalendarTab: React.FC = () => {
       : events;
 
     addEvents(tagged);
+    const titleSample = tagged[0]?.title ?? 'event';
+    recordHistory({
+      category: 'Calendar',
+      title: 'Event created',
+      description: tagged.length > 1
+        ? `Created ${tagged.length} occurrences of "${titleSample}".`
+        : `Created "${titleSample}".`,
+      target: titleSample
+    });
     setScope('my');
     setEnabledTypes(prev => {
       const next = new Set(prev);
@@ -414,7 +424,16 @@ export const MyCalendarTab: React.FC = () => {
     setSelectedEvent(ev);
   };
   const handleDeleteEvent = (id: string) => {
+    const target = localEvents.find(e => e.id === id);
     deleteEventInStore(id);
+    if (target) {
+      recordHistory({
+        category: 'Calendar',
+        title: 'Event deleted',
+        description: `"${target.title}" was deleted.`,
+        target: target.title
+      });
+    }
     setSelectedEvent(null);
   };
   const handleSaveEvent = (updated: CalendarEvent) => {

@@ -5,6 +5,7 @@ import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
 import { findEventConflicts } from './new-event-wizard.utils';
 import { useCalendarStore } from '../../../../store/calendarStore';
+import { recordHistory } from '../../../../store/historyStore';
 
 export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
@@ -51,8 +52,20 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
   const finalizeSave = () => {
     if (editingSeriesWide && event.seriesId) {
       updateSeries(event.seriesId, { title: form.title, location: form.location, note: form.note });
+      recordHistory({
+        category: 'Calendar',
+        title: 'Series updated',
+        description: `All occurrences of "${event.title}" were updated.`,
+        target: event.title
+      });
     } else {
       onSave(form);
+      recordHistory({
+        category: 'Calendar',
+        title: 'Event updated',
+        description: `"${event.title}" was updated.`,
+        target: event.title
+      });
     }
     setEditing(false);
     setConflicts(null);
@@ -194,6 +207,12 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
                       setForm(event);
                       setEditing(true);
                     } else if (event.seriesId) {
+                      recordHistory({
+                        category: 'Calendar',
+                        title: 'Series deleted',
+                        description: `All occurrences of "${event.title}" were deleted.`,
+                        target: event.title
+                      });
                       deleteSeries(event.seriesId);
                       onClose();
                     }
