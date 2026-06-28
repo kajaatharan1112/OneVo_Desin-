@@ -18,6 +18,8 @@ interface CalendarState {
   restoreEvent: (id: string) => void;
   setSyncStatus: (syncStatus: CalendarSyncStatus) => void;
   setLastConnectedProvider: (provider: SyncProvider | null) => void;
+  zoomConnected: boolean;
+  setZoomConnected: (connected: boolean) => void;
 }
 
 export const useCalendarStore = create<CalendarState>()(
@@ -26,6 +28,7 @@ export const useCalendarStore = create<CalendarState>()(
       events: employeeCalendarData.events,
       syncStatus: employeeCalendarData.syncStatus,
       lastConnectedProvider: employeeCalendarData.syncStatus.google === 'connected' ? 'google' : null,
+      zoomConnected: false,
 
       addEvents: events => set(state => ({ events: [...state.events, ...events] })),
       updateEvent: (id, updated) => set(state => ({
@@ -46,7 +49,8 @@ export const useCalendarStore = create<CalendarState>()(
         events: state.events.map(e => (e.id === id ? { ...e, archived: false } : e))
       })),
       setSyncStatus: syncStatus => set({ syncStatus }),
-      setLastConnectedProvider: provider => set({ lastConnectedProvider: provider })
+      setLastConnectedProvider: provider => set({ lastConnectedProvider: provider }),
+      setZoomConnected: connected => set({ zoomConnected: connected })
     }),
     { name: 'onevo-calendar-store', version: 1 }
   )
