@@ -3,8 +3,7 @@ import type {
   ClockInExemption,
   ManualCorrectionPolicy,
   OutageFallbackDraft,
-  WorkTypeRule,
-  LateAttendancePolicy
+  WorkTypeRule
 } from './clockInPolicyTypes';
 
 export const SEED_WORK_TYPE_RULES: WorkTypeRule[] = [
@@ -110,13 +109,3 @@ export const DEFAULT_OUTAGE_DRAFT = (): OutageFallbackDraft => ({
   startsAt: '',
   endsAt: ''
 });
-
-export const SEED_LATE_ATTENDANCE_POLICY: LateAttendancePolicy = {
-  id: 'lap-default',
-  active: true,
-  gracePeriod: 30,
-  gracePeriodUnit: 'minutes',
-  deductFromLeaveTypeId: 'lt-annual', // matches the annual leave type ID in leaveConfigStore (usually 'leave-annual' or similar)
-  deductionCalculationMethod: 'actual_minutes'
-};
-

@@ -48,7 +48,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
   const [goalForm, setGoalForm] = useState({
     name: '',
     description: '',
-    durationMonths: 3,
+    durationHours: 120,
     ownerId: CURRENT_USER_ID,
     status: 'active' as 'active' | 'completed' | 'on_hold',
   });
@@ -93,7 +93,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
       name: goalForm.name.trim(),
       description: goalForm.description.trim(),
       projectId: project.id,
-      durationMonths: Number(goalForm.durationMonths),
+      durationHours: Number(goalForm.durationHours),
       ownerId: goalForm.ownerId,
       status: goalForm.status,
       checklist: [],
@@ -103,7 +103,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     setGoalForm({
       name: '',
       description: '',
-      durationMonths: 3,
+      durationHours: 120,
       ownerId: CURRENT_USER_ID,
       status: 'active',
     });
@@ -489,7 +489,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
                     <div className="goal-card-meta">
                       <div className="goal-card-meta-item">
                         <Clock size={12} />
-                        <span>{goal.durationMonths} Months</span>
+                        <span>{goal.durationHours} Hours</span>
                       </div>
                       <div className="goal-card-meta-item">
                         <User size={12} />
@@ -729,7 +729,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
                     <div style={{ marginTop: '20px', background: '#eff6ff', padding: '16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
                       <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#1e40af' }}>Goal Parameters</h4>
                       <div style={{ fontSize: '12px', color: '#1e3a8a', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div>Duration: <strong>{selectedGoal.durationMonths} Months</strong></div>
+                        <div>Duration: <strong>{selectedGoal.durationHours} Hours</strong></div>
                         <div>Owner: <strong>{employeeName(selectedGoal.ownerId)}</strong></div>
                       </div>
                     </div>
@@ -782,15 +782,15 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="org-form-field">
-                      <label htmlFor="settings-duration">Duration (Months)</label>
+                      <label htmlFor="settings-duration">Duration (Hours)</label>
                       <input
                         id="settings-duration"
                         type="number"
                         min={1}
-                        value={selectedGoal.durationMonths}
+                        value={selectedGoal.durationHours}
                         onChange={e => {
                           const val = Number(e.target.value);
-                          updateGoal(selectedGoal.id, { durationMonths: val });
+                          updateGoal(selectedGoal.id, { durationHours: val });
                         }}
                         required
                       />
@@ -882,13 +882,13 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
               </div>
 
               <div className="org-form-field">
-                <label htmlFor="goal-duration">Duration (Months)</label>
+                <label htmlFor="goal-duration">Duration (Hours)</label>
                 <input
                   id="goal-duration"
                   type="number"
                   min={1}
-                  value={goalForm.durationMonths}
-                  onChange={e => setGoalForm(f => ({ ...f, durationMonths: Number(e.target.value) }))}
+                  value={goalForm.durationHours}
+                  onChange={e => setGoalForm(f => ({ ...f, durationHours: Number(e.target.value) }))}
                   required
                 />
               </div>

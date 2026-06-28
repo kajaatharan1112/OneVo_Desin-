@@ -857,19 +857,26 @@ export function workspaceName(id: string, workspaces = MOCK_WORKSPACES): string 
 
 export function formatWorkDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 export function formatWorkDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
 }
 
 export function formatWorkDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
-  const sameYear = s.getFullYear() === e.getFullYear();
-  const startStr = s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
-  const endStr = e.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return `${start} - ${end}`;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const startStr = `${months[s.getMonth()]} ${s.getDate()}${s.getFullYear() !== e.getFullYear() ? `, ${s.getFullYear()}` : ''}`;
+  const endStr = `${months[e.getMonth()]} ${e.getDate()}, ${e.getFullYear()}`;
   return `${startStr} - ${endStr}`;
 }
 
@@ -922,7 +929,7 @@ export interface ProjectGoal {
   name: string;
   description: string;
   projectId: string;
-  durationMonths: number;
+  durationHours: number;
   ownerId: string;
   status: 'active' | 'completed' | 'on_hold';
   checklist: Array<{ id: string; text: string; done: boolean }>;
@@ -934,7 +941,7 @@ export const MOCK_GOALS: ProjectGoal[] = [
     name: 'Design System Implementation',
     description: 'Build and standardize high-fidelity UI components for HRMS navigation.',
     projectId: 'proj-1',
-    durationMonths: 3,
+    durationHours: 120,
     ownerId: 'current-user',
     status: 'active',
     checklist: [
@@ -948,7 +955,7 @@ export const MOCK_GOALS: ProjectGoal[] = [
     name: 'Gateway Security Standard',
     description: 'Establish secure JWT auth guidelines across all gateway ingress endpoints.',
     projectId: 'proj-2',
-    durationMonths: 2,
+    durationHours: 80,
     ownerId: 'user-3',
     status: 'active',
     checklist: [

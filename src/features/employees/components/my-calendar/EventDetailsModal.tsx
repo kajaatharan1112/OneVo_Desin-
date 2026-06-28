@@ -66,11 +66,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
         {!editing ? (
           <div className="emc-modal__body">
             <span className={`emc-modal__type emc-evpill--${event.type}`}>{EVENT_TYPE_LABEL[event.type]}</span>
-            {event.syncProvider && (
-              <span className="emc-modal__synced-label">
-                Synced from {event.syncProvider === 'google' ? 'Google' : 'Outlook'}
-              </span>
-            )}
 
             <div className="emc-modal__row">
               <span className="emc-modal__row-label">Date &amp; time</span>
@@ -148,24 +143,20 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
             )}
 
             <div className="emc-modal__actions">
-              {event.syncOrigin !== 'pulled' && (
-                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>
-                  <Pencil size={13} />
-                  Edit
-                </button>
-              )}
-              {event.syncOrigin !== 'pulled' && event.type === 'meeting' && (
+              <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>
+                <Pencil size={13} />
+                Edit
+              </button>
+              {event.type === 'meeting' && (
                 <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => onDuplicate(event)}>
                   <Copy size={13} />
                   Duplicate
                 </button>
               )}
-              {event.syncOrigin !== 'pulled' && (
-                <button type="button" className="era-btn emc-modal__action emc-modal__action--danger" onClick={() => onDelete(event.id)}>
-                  <Trash2 size={13} />
-                  Delete
-                </button>
-              )}
+              <button type="button" className="era-btn emc-modal__action emc-modal__action--danger" onClick={() => onDelete(event.id)}>
+                <Trash2 size={13} />
+                Delete
+              </button>
             </div>
           </div>
         ) : (

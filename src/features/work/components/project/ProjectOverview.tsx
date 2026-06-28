@@ -481,7 +481,7 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
                     {projectGoals.map(g => (
                       <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-m)', padding: '2px 0' }}>
                         <span>🎯 {g.name}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--clr-text-secondary)' }}>({g.durationMonths}m)</span>
+                        <span style={{ fontSize: '10px', color: 'var(--clr-text-secondary)' }}>({g.durationHours}h)</span>
                       </li>
                     ))}
                   </ul>
