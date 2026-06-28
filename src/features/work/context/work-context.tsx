@@ -545,6 +545,7 @@ export const WorkProvider: React.FC<{
   }, [projects, tasks]);
 
   const updateTask = useCallback((id: string, patch: Partial<WorkTask>) => {
+    const prevTask = tasks.find(t => t.id === id);
     setTasks(prev => {
       const next = prev.map(t => (t.id === id ? { ...t, ...patch } : t));
       const projectId = prev.find(t => t.id === id)?.projectId;
@@ -556,7 +557,23 @@ export const WorkProvider: React.FC<{
       }
       return next;
     });
-  }, []);
+    if (patch.status === 'done' && prevTask && prevTask.status !== 'done') {
+      const today = new Date();
+      const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      useCalendarStore.getState().addEvents([{
+        id: `task-done-${id}-${Date.now()}`,
+        title: `${prevTask.title} completed`,
+        date: dateKey,
+        type: 'reminder',
+        status: 'confirmed',
+        source: 'personal',
+        scope: prevTask.assigneeId === CURRENT_USER_ID ? 'my' : 'team',
+        ownerName: prevTask.assigneeId === CURRENT_USER_ID ? undefined : prevTask.assigneeId,
+        allDay: true,
+        note: prevTask.totalWorkedHours ? `Logged ${prevTask.totalWorkedHours}h` : undefined
+      }]);
+    }
+  }, [tasks]);
 
   const addProjectMember = useCallback((projectId: string, employeeId: string, accessLevel: ProjectAccessLevel, workspaceSourceId: string | null) => {
     const project = projects.find(p => p.id === projectId);
