@@ -48,6 +48,7 @@ import { notifyVisibilityChange, useWorkInboxHandler } from '../useWorkInboxHand
 import { resolveProjectIconType } from '../components/project/projectMedia';
 import type { ProjectNavId } from '../projectNav';
 import type { ProjectSettingsSectionId } from '../projectSettingsNav';
+import { useCalendarStore } from '../../../store/calendarStore';
 
 export type { ProjectNavId };
 export type { ProjectSettingsSectionId };
@@ -392,6 +393,20 @@ export const WorkProvider: React.FC<{
       setMilestones(prev => [...prev, ...defaultMilestones]);
     }
 
+    if (newProject.dueDate) {
+      useCalendarStore.getState().addEvents([{
+        id: `project-due-${newProject.id}`,
+        title: `${newProject.name} due`,
+        date: newProject.dueDate,
+        type: 'reminder',
+        status: 'confirmed',
+        source: 'personal',
+        scope: newProject.leadId === CURRENT_USER_ID ? 'my' : 'team',
+        ownerName: newProject.leadId === CURRENT_USER_ID ? undefined : newProject.leadId,
+        allDay: true
+      }]);
+    }
+
     if (input.visibility === 'private' && invitedMembers.length > 0) {
       addInboxItems(
         invitedMembers.map(m =>
@@ -513,6 +528,19 @@ export const WorkProvider: React.FC<{
       }));
       return next;
     });
+    if (task.dueDate) {
+      useCalendarStore.getState().addEvents([{
+        id: `task-due-${task.id}`,
+        title: `${task.title} due`,
+        date: task.dueDate,
+        type: 'reminder',
+        status: 'confirmed',
+        source: 'personal',
+        scope: task.assigneeId === CURRENT_USER_ID ? 'my' : 'team',
+        ownerName: task.assigneeId === CURRENT_USER_ID ? undefined : task.assigneeId,
+        allDay: true
+      }]);
+    }
     return task;
   }, [projects, tasks]);
 
