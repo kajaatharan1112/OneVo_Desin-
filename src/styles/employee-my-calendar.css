@@ -1463,6 +1463,12 @@
   background: color-mix(in srgb, #dc2626 18%, transparent);
 }
 
+.emc-modal__series-prompt {
+  font-size: 0.78rem;
+  color: var(--nexus-text-muted);
+  margin-right: auto;
+}
+
 .emc-modal__field {
   display: flex;
   flex-direction: column;

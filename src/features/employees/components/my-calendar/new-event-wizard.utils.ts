@@ -245,6 +245,7 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
   const { calendarType, source } = TYPE_META[form.type];
   const status: CalendarEventStatus = form.type === 'company-event' ? 'pending' : 'confirmed';
   const needsAttendees = form.type === 'meeting' || form.type === 'training';
+  const seriesId = form.recurring && dates.length > 1 ? `series-${ts}` : undefined;
 
   return dates.map((date, i) => {
     const event: CalendarEvent = {
@@ -259,6 +260,7 @@ export function buildEventsFromForm(form: NewEventFormState): CalendarEvent[] {
       priority: form.priority,
     };
 
+    if (seriesId) event.seriesId = seriesId;
     if (form.category) event.category = form.category;
     if (form.location.trim()) event.location = form.location.trim();
     if (form.notes.trim()) event.note = form.notes.trim();
