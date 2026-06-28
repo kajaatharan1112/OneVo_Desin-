@@ -14,6 +14,8 @@ interface CalendarState {
   setEvents: (events: CalendarEvent[]) => void;
   updateSeries: (seriesId: string, changes: Partial<CalendarEvent>) => void;
   deleteSeries: (seriesId: string) => void;
+  archiveEvent: (id: string) => void;
+  restoreEvent: (id: string) => void;
   setSyncStatus: (syncStatus: CalendarSyncStatus) => void;
   setLastConnectedProvider: (provider: SyncProvider | null) => void;
 }
@@ -36,6 +38,12 @@ export const useCalendarStore = create<CalendarState>()(
       })),
       deleteSeries: seriesId => set(state => ({
         events: state.events.filter(e => e.seriesId !== seriesId)
+      })),
+      archiveEvent: id => set(state => ({
+        events: state.events.map(e => (e.id === id ? { ...e, archived: true } : e))
+      })),
+      restoreEvent: id => set(state => ({
+        events: state.events.map(e => (e.id === id ? { ...e, archived: false } : e))
       })),
       setSyncStatus: syncStatus => set({ syncStatus }),
       setLastConnectedProvider: provider => set({ lastConnectedProvider: provider })
