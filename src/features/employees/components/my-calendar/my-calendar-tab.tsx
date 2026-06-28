@@ -10,6 +10,7 @@ import type { SyncProvider } from '../../types/employee-calendar.types';
 import { pullEvents, detectConflict, type SyncConflict } from './calendar-sync.utils';
 import { useCalendarStore } from '../../../../store/calendarStore';
 import { recordHistory } from '../../../../store/historyStore';
+import { useInbox } from '../../../../core/notifications/inbox-context';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
@@ -114,6 +115,7 @@ export const MyCalendarTab: React.FC = () => {
   const updateEvent = useCalendarStore(s => s.updateEvent);
   const deleteEventInStore = useCalendarStore(s => s.deleteEvent);
   const restoreEventInStore = useCalendarStore(s => s.restoreEvent);
+  const { addInboxItem } = useInbox();
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
@@ -211,6 +213,29 @@ export const MyCalendarTab: React.FC = () => {
         : `Created "${titleSample}".`,
       target: titleSample
     });
+    addInboxItem({
+      id: `notif-${Date.now()}-created`,
+      category: 'meeting',
+      title: 'Event created',
+      message: tagged.length > 1
+        ? `Created ${tagged.length} occurrences of "${titleSample}".`
+        : `Created "${titleSample}".`,
+      timeLabel: 'Just now',
+      filter: 'new',
+      actions: []
+    });
+    const withAttendees = tagged.find(ev => ev.attendees && ev.attendees.length > 0);
+    if (withAttendees) {
+      addInboxItem({
+        id: `notif-${Date.now()}-invite`,
+        category: 'meeting',
+        title: 'Meeting invitation sent',
+        message: `Invited ${withAttendees.attendees!.length} attendees to "${withAttendees.title}".`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
+      });
+    }
     setScope('my');
     setEnabledTypes(prev => {
       const next = new Set(prev);
@@ -436,6 +461,15 @@ export const MyCalendarTab: React.FC = () => {
         title: 'Event deleted',
         description: `"${target.title}" was deleted.`,
         target: target.title
+      });
+      addInboxItem({
+        id: `notif-${Date.now()}-cancelled`,
+        category: 'meeting',
+        title: 'Event cancelled',
+        message: `"${target.title}" was cancelled.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
       });
     }
     setSelectedEvent(null);
