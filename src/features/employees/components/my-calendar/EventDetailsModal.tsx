@@ -6,6 +6,7 @@ import { useEmployeeContext } from '../../context/employee-context';
 import { findEventConflicts } from './new-event-wizard.utils';
 import { useCalendarStore } from '../../../../store/calendarStore';
 import { recordHistory, useHistoryStore } from '../../../../store/historyStore';
+import { useInbox } from '../../../../core/notifications/inbox-context';
 
 export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
@@ -43,6 +44,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
   const updateSeries = useCalendarStore(s => s.updateSeries);
   const deleteSeries = useCalendarStore(s => s.deleteSeries);
   const archiveEvent = useCalendarStore(s => s.archiveEvent);
+  const { addInboxItem } = useInbox();
   const historyEntries = useHistoryStore(s => s.entries).filter(
     e => e.category === 'Calendar' && e.target === event.title
   );
@@ -62,6 +64,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
         description: `All occurrences of "${event.title}" were updated.`,
         target: event.title
       });
+      addInboxItem({
+        id: `notif-${Date.now()}-updated`,
+        category: 'meeting',
+        title: 'Event updated',
+        message: `All occurrences of "${event.title}" were updated.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
+      });
     } else {
       onSave(form);
       recordHistory({
@@ -69,6 +80,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
         title: 'Event updated',
         description: `"${event.title}" was updated.`,
         target: event.title
+      });
+      addInboxItem({
+        id: `notif-${Date.now()}-updated`,
+        category: 'meeting',
+        title: 'Event updated',
+        message: `"${event.title}" was updated.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
       });
     }
     setEditing(false);
@@ -237,6 +257,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
                         title: 'Series deleted',
                         description: `All occurrences of "${event.title}" were deleted.`,
                         target: event.title
+                      });
+                      addInboxItem({
+                        id: `notif-${Date.now()}-cancelled`,
+                        category: 'meeting',
+                        title: 'Event cancelled',
+                        message: `All occurrences of "${event.title}" were cancelled.`,
+                        timeLabel: 'Just now',
+                        filter: 'new',
+                        actions: []
                       });
                       deleteSeries(event.seriesId);
                       onClose();
