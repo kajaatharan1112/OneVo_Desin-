@@ -186,7 +186,7 @@ function App() {
           case 'notifications': return <NotificationsSettingsPage />;
           case 'billing': return <BillingSettingsPage />;
           case 'devices':
-            return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
+            return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage biometricEnabled={false} /> : <GeneralSettingsPage />;
           case 'audit-log': return <AuditLogPage />;
           case 'automations': return <AutomationRoutes />;
           case 'clock-in-policy': return <ClockInPolicyPage />;

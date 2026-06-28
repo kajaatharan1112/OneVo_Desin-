@@ -107,8 +107,6 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
-kaviz/offboarding
-  const { syncStatus } = employeeCalendarData;
   const { selectedEmployeeId } = useEmployeeContext();
   const onboardingTasks = useChecklistTaskStore(state => state.tasks);
 
@@ -141,8 +139,6 @@ kaviz/offboarding
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
 
   // Local mutable copy of the one events table — Edit/Delete write back here.
-  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(employeeCalendarData.events);
-main
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 

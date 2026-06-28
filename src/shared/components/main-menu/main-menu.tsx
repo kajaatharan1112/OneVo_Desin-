@@ -45,23 +45,19 @@ const SETTINGS_POLICY_ITEMS = [
 ] as const;
 
 const SETTINGS_OTHER_ITEMS = [
-  { id: 'devices',         label: 'Device',          icon: <Monitor size={13} />       },
+  { id: 'devices',         label: 'Devices',         icon: <Monitor size={13} />       },
   { id: 'audit-log',       label: 'History',         icon: <ClipboardList size={13} /> },
 ] as const;
 
-kaviz/offboarding
-export function buildSettingsNavItem(includeBulkOnboarding = false): NavItem {
-  const otherItems = [
-    ...(includeBulkOnboarding ? [{ id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} /> }] : []),
-    ...SETTINGS_OTHER_ITEMS.filter(item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY)
-  ];
 export function buildSettingsNavItem(isEmployee = false): NavItem {
   const otherItems = SETTINGS_OTHER_ITEMS.filter(
     item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
   );
+
   const subSections: SubNavSection[] = [
     { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
   ];
+
   if (!isEmployee) {
     subSections.push({
       id: 'policy',
@@ -71,9 +67,9 @@ export function buildSettingsNavItem(isEmployee = false): NavItem {
       items: [...SETTINGS_POLICY_ITEMS],
     });
   }
+
   subSections.push({ id: 'other', items: otherItems });
 
-main
   return {
     id: 'settings',
     label: 'Settings',
@@ -83,13 +79,9 @@ main
 }
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
-kaviz/offboarding
-export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
-export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true)
-
 export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
+export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
 export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
-main
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
 export const WORK_NAV_ITEM: NavItem = {
