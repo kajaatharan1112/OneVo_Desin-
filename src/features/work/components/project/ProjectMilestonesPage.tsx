@@ -138,6 +138,7 @@ export const ProjectMilestonesPage: React.FC<Props> = ({ project }) => {
         priority: input.priority,
         status: input.status,
         linkedWorkItemIds: input.linkedWorkItemIds,
+        goalId: input.goalId,
       });
       setEditTarget(null);
     } else {
@@ -152,6 +153,7 @@ export const ProjectMilestonesPage: React.FC<Props> = ({ project }) => {
         ownerId: input.ownerId,
         priority: input.priority,
         linkedWorkItemIds: input.linkedWorkItemIds,
+        goalId: input.goalId,
       };
       addMilestone(milestone);
     }

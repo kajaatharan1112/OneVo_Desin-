@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { projectTasks, MOCK_EMPLOYEES, CURRENT_USER_ID, type PlannerMilestone, type WorkProject, type MilestoneStatus } from '../../workMockData';
+import { useWork } from '../../context/work-context';
 
 export interface AddMilestoneInput {
   name: string;
@@ -11,6 +12,7 @@ export interface AddMilestoneInput {
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   status: MilestoneStatus;
   linkedWorkItemIds: string[];
+  goalId: string | undefined;
 }
 
 interface Props {
@@ -23,7 +25,10 @@ interface Props {
 }
 
 export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, onSubmit, editTarget }) => {
+  const { goals } = useWork();
+  const projectGoals = goals.filter(g => g.projectId === project.id);
   const projectTaskList = projectTasks(project.id);
+  
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -33,6 +38,7 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
     priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Critical',
     status: 'upcoming' as MilestoneStatus,
     linkedWorkItemIds: [] as string[],
+    goalId: '',
   });
 
   // Sync form when editTarget changes
@@ -47,6 +53,7 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
         priority: editTarget.priority ?? 'Medium',
         status: editTarget.status,
         linkedWorkItemIds: [...editTarget.linkedWorkItemIds],
+        goalId: editTarget.goalId ?? '',
       });
     } else {
       setForm({
@@ -58,6 +65,7 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
         priority: 'Medium',
         status: 'upcoming',
         linkedWorkItemIds: [],
+        goalId: '',
       });
     }
   }, [editTarget, open]);
@@ -86,6 +94,7 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
       priority: form.priority,
       status: form.status,
       linkedWorkItemIds: form.linkedWorkItemIds,
+      goalId: form.goalId || undefined,
     });
     setForm({
       name: '',
@@ -96,6 +105,7 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
       priority: 'Medium',
       status: 'upcoming',
       linkedWorkItemIds: [],
+      goalId: '',
     });
     onClose();
   };
@@ -116,6 +126,20 @@ export const AddMilestoneDrawer: React.FC<Props> = ({ open, onClose, project, on
           </button>
         </header>
         <div className="org-slideover__body">
+          <div className="org-form-field">
+            <label htmlFor="ms-goal-select">Parent Goal</label>
+            <select
+              id="ms-goal-select"
+              value={form.goalId}
+              onChange={e => setForm(f => ({ ...f, goalId: e.target.value }))}
+            >
+              <option value="">None / No Goal</option>
+              {projectGoals.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="org-form-field">
             <label htmlFor="ms-name">Milestone name</label>
             <input

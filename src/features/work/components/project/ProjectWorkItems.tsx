@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Ban, Calendar, GripVertical, LayoutGrid, List, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWork } from '../../context/work-context';
 import {
@@ -50,12 +50,15 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [dragOverUnscheduled, setDragOverUnscheduled] = useState(false);
 
+  const initialSignalRef = useRef(addWorkItemSignal);
+
   useEffect(() => {
-    if (addWorkItemSignal > 0) {
+    if (addWorkItemSignal > initialSignalRef.current) {
       setDrawerStatus('todo');
       setDrawerDueDate(null);
       setDrawerOpen(true);
     }
+    initialSignalRef.current = addWorkItemSignal;
   }, [addWorkItemSignal]);
 
   const projectTaskList = useMemo(() => {

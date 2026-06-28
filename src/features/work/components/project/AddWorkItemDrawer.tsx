@@ -5,12 +5,9 @@ import {
   Calendar,
   User,
   Flag,
-  Tag,
   Paperclip,
   Bell,
-  Sparkles,
   ChevronDown,
-  FileCode,
   Layers,
   CheckSquare,
   Clock,
@@ -42,9 +39,8 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
   defaultDueDate,
   defaultMilestoneId,
 }) => {
-  const { addTask, workspaces, projects, milestones, updateMilestone } = useWork();
+  const { addTask, projects, milestones, updateMilestone } = useWork();
   const [activeTab, setActiveTab] = useState<'task'>('task');
-  const [showTagsInput, setShowTagsInput] = useState(false);
   const [showFields, setShowFields] = useState(false);
 
   const [currentProjectId, setCurrentProjectId] = useState(project.id);
@@ -119,35 +115,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
     }
   };
 
-  const handleGenerateAI = () => {
-    if (!form.title.trim()) {
-      setForm(f => ({
-        ...f,
-        description: "Please enter a task title first so AI can draft a description.",
-      }));
-      return;
-    }
-    const templates = [
-      `Here is a draft description for "${form.title}":\n\n### Objective\nBrief summary of the goals and expected outcomes.\n\n### Requirements\n- [ ] Requirement 1\n- [ ] Requirement 2\n\n### Implementation Details\nKey tech stack, files to change, or notes.`,
-      `### Details for ${form.title}\n\n- **Goal**: Implement high-fidelity design updates.\n- **Scope**: Align components with clean code standards and verify functionality.\n- **Testing**: Run local regression test suite.`,
-      `### Task Outline: ${form.title}\n\n1. Review the initial design specs.\n2. Develop components and style according to brand guidelines.\n3. Integrate mock context state API.\n4. Complete unit test assertions.`
-    ];
-    const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
-    setForm(f => ({
-      ...f,
-      description: randomTemplate,
-    }));
-  };
-
-  const handleApplyTemplate = () => {
-    setForm(f => ({
-      ...f,
-      title: 'Feature Implementation: Add New Dashboard Analytics',
-      description: '### Objective\nAdd beautiful, dynamic graphs and user metrics tracking.\n\n### Tasks\n- [ ] Design analytics widgets\n- [ ] Fetch data from context provider\n- [ ] Handle error states and loading skeletons\n- [ ] Verify responsiveness',
-      priority: 'High',
-      labels: 'frontend, analytics',
-    }));
-  };
+  // Removed AI and templates handlers as requested
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -243,6 +211,18 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       case 'High': return '#f97316';
       case 'Medium': return '#eab308';
       default: return '#3b82f6';
+    }
+  };
+
+  const handleDatePillClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement | null;
+    if (input) {
+      try {
+        input.showPicker();
+      } catch (err) {
+        input.focus();
+        input.click();
+      }
     }
   };
 
@@ -355,10 +335,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               placeholder="Add description, or write with AI"
             />
-            <button type="button" className="wi-dark-modal__ai-chip" onClick={handleGenerateAI}>
-              <Sparkles size={11} />
-              <span>AI</span>
-            </button>
+            {/* AI button removed */}
           </div>
 
           {/* Interactive Attribute Pills Row */}
@@ -398,7 +375,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
             </div>
 
             {/* Start Date Pill */}
-            <div className="wi-attribute-pill wi-attribute-pill--date">
+            <div className="wi-attribute-pill wi-attribute-pill--date" onClick={handleDatePillClick}>
               <Calendar size={12} />
               <span>{form.startDate ? `Start: ${form.startDate}` : 'Start date'}</span>
               <input
@@ -410,21 +387,8 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
               <ChevronDown size={10} />
             </div>
 
-            {/* End Date Pill */}
-            <div className="wi-attribute-pill wi-attribute-pill--date">
-              <Calendar size={12} />
-              <span>{form.endDate ? `End: ${form.endDate}` : 'End date'}</span>
-              <input
-                type="date"
-                value={form.endDate}
-                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                title="Choose end date"
-              />
-              <ChevronDown size={10} />
-            </div>
-
             {/* Due Date Pill (Hidden Native Date Input Trick) */}
-            <div className="wi-attribute-pill wi-attribute-pill--date">
+            <div className="wi-attribute-pill wi-attribute-pill--date" onClick={handleDatePillClick}>
               <Calendar size={12} />
               <span>{form.dueDate ? `Due: ${form.dueDate}` : 'Due date'}</span>
               <input
@@ -451,35 +415,6 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
               </select>
               <ChevronDown size={10} />
             </div>
-
-            {/* Tags Pill Toggle */}
-            <button
-              type="button"
-              className={`wi-attribute-pill${showTagsInput || form.labels ? ' wi-attribute-pill--active' : ''}`}
-              onClick={() => setShowTagsInput(!showTagsInput)}
-            >
-              <Tag size={12} />
-              <span>{form.labels ? 'Tags' : 'Tags'}</span>
-              <ChevronDown size={10} />
-            </button>
-
-            {/* Workspace Pill (if multiple exist) */}
-            {currentProject.workspaceIds.length > 1 && (
-              <div className="wi-attribute-pill">
-                <select
-                  value={form.linkedWorkspaceId}
-                  onChange={e => setForm(f => ({ ...f, linkedWorkspaceId: e.target.value }))}
-                  aria-label="Workspace context select"
-                >
-                  {currentProject.workspaceIds.map(wsId => (
-                    <option key={wsId} value={wsId}>
-                      {workspaces.find(w => w.id === wsId)?.name ?? wsId}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={10} />
-              </div>
-            )}
 
             {/* Allocated Hours Pill */}
             <div className="wi-attribute-pill">
@@ -520,18 +455,7 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Tags/Labels Comma-separated TextInput (Toggled via pill click or if filled) */}
-          {(showTagsInput || form.labels) && (
-            <div className="wi-dark-modal__tags-input-wrap">
-              <input
-                type="text"
-                className="wi-dark-modal__tags-text-input"
-                placeholder="Type tags (comma-separated, e.g. frontend, design)"
-                value={form.labels}
-                onChange={e => setForm(f => ({ ...f, labels: e.target.value }))}
-              />
-            </div>
-          )}
+          {/* Tags input removed */}
 
           {/* Attachments Display */}
           {attachments.length > 0 && (
@@ -682,10 +606,6 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
         {/* Modal Actions Footer */}
         <footer className="wi-dark-modal__footer" style={{ position: 'relative' }}>
           <div className="wi-dark-modal__footer-left">
-            <button type="button" className="wi-dark-modal__templates-btn" onClick={handleApplyTemplate}>
-              <FileCode size={14} />
-              <span>Templates</span>
-            </button>
             <div className="wi-dark-modal__footer-icons">
               <input
                 type="file"
