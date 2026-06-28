@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, CalendarDays, ChevronDown,
   Users, RefreshCw, Filter, Plus, Check, X, HelpCircle,
   Sun, Plane, Clock, Bell, CalendarX2, Settings,
-  GraduationCap, LogOut, Building2, Copy
+  GraduationCap, LogOut, Building2, Copy, Archive, ArchiveRestore
 } from 'lucide-react';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
 import type { SyncProvider } from '../../types/employee-calendar.types';
@@ -17,10 +17,11 @@ import { addMinutesToTime, eventToFormOverrides, findEventConflicts, type NewEve
 
 const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
-type SettingsTabId = 'sync';
+type SettingsTabId = 'sync' | 'archived';
 
 const SETTINGS_TABS: { id: SettingsTabId; label: string }[] = [
   { id: 'sync', label: 'Calendar Sync' },
+  { id: 'archived', label: 'Archived Events' },
 ];
 
 const SCOPE_OPTIONS: { value: CalendarScopeFilter; label: string }[] = [
@@ -112,6 +113,7 @@ export const MyCalendarTab: React.FC = () => {
   const addEvents = useCalendarStore(s => s.addEvents);
   const updateEvent = useCalendarStore(s => s.updateEvent);
   const deleteEventInStore = useCalendarStore(s => s.deleteEvent);
+  const restoreEventInStore = useCalendarStore(s => s.restoreEvent);
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
@@ -141,6 +143,8 @@ export const MyCalendarTab: React.FC = () => {
     if (scope === 'combined') return localEvents;
     return localEvents.filter(ev => ev.scope === scope);
   }, [localEvents, scope]);
+
+  const archivedEvents = useMemo(() => localEvents.filter(ev => ev.archived), [localEvents]);
 
   // Type filter + title search — independent of scope and viewMode, compose together
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_EVENT_TYPES));
@@ -439,6 +443,15 @@ export const MyCalendarTab: React.FC = () => {
   const handleSaveEvent = (updated: CalendarEvent) => {
     updateEvent(updated.id, updated);
     setSelectedEvent(updated);
+  };
+  const handleRestoreEvent = (event: CalendarEvent) => {
+    restoreEventInStore(event.id);
+    recordHistory({
+      category: 'Calendar',
+      title: 'Event restored',
+      description: `"${event.title}" was restored.`,
+      target: event.title
+    });
   };
   const handleRsvp = (id: string, response: 'accepted' | 'declined' | 'tentative') => {
     const target = localEvents.find(e => e.id === id);
@@ -1155,6 +1168,34 @@ export const MyCalendarTab: React.FC = () => {
                     ))}
                   </div>
                   <div className="emc-sync__meta">Synced {syncStatus.lastSynced}</div>
+                </div>
+              )}
+              {settingsTab === 'archived' && (
+                <div className="emc-settings__panel">
+                  <div className="emc-rail__head">
+                    <Archive size={13} />
+                    <span className="emc-rail__title">Archived Events</span>
+                  </div>
+                  {archivedEvents.length === 0 ? (
+                    <p className="emc-rail__empty">No archived events</p>
+                  ) : (
+                    <div className="emc-archived__list">
+                      {archivedEvents.map(ev => (
+                        <div key={ev.id} className="emc-archived__row">
+                          <span className="emc-archived__title">{ev.title}</span>
+                          <span className="emc-archived__date">{ev.date}</span>
+                          <button
+                            type="button"
+                            className="era-btn era-btn--ghost emc-sync__btn"
+                            onClick={() => handleRestoreEvent(ev)}
+                          >
+                            <ArchiveRestore size={12} />
+                            Restore
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
