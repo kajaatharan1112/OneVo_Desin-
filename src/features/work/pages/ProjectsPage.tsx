@@ -11,8 +11,6 @@ import {
   Settings,
   Timer,
   TrendingUp,
-  Users,
-  Zap,
 } from 'lucide-react';
 import { useWork } from '../context/work-context';
 import {
@@ -81,13 +79,12 @@ interface ProjectCardProps {
   p: ReturnType<typeof accessibleProjects>[0];
   workspaces: ReturnType<typeof useWork>['workspaces'];
   visibleWs: Set<string>;
-  openProject: (id: string, nav?: string) => void;
-  openProjectSettings: () => void;
+  openProject: ReturnType<typeof useWork>['openProject'];
+  openProjectSettings: ReturnType<typeof useWork>['openProjectSettings'];
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ p, workspaces, visibleWs, openProject, openProjectSettings }) => {
   const pct = progressPct(p.id);
-  const activeMembers = p.members.filter(m => m.status === 'active').length;
   const priorityColor = PRIORITY_COLOR[p.priority ?? 'Medium'] ?? '#f59e0b';
   const isAdmin = isProjectAdmin(p);
   const isActiveProject = p.status === 'active';

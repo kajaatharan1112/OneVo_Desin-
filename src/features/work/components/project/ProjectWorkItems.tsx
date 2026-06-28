@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ban, Calendar, GripVertical, LayoutGrid, List, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWork } from '../../context/work-context';
 import {
