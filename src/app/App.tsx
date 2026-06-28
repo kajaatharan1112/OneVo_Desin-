@@ -13,8 +13,7 @@ import {
   EMPLOYEE_ITEMS
 } from '../shared/components/main-menu/main-menu';
 import { findNavItem, getSubItemLabel, resolveSubItemId } from '../shared/utils/nav-utils';
-import { getProfileCapabilities, isManagementOnlyPath } from '../shared/utils/profile-capabilities';
-import { getEmployeeById } from '../features/employees/data/employees.data';
+import { isManagementOnlyPath } from '../shared/utils/profile-capabilities';
 
 import { EmployeeDashboard } from '../features/employees/pages/employee-dashboard/employee-dashboard';
 import { EmployeeAttendance } from '../features/employees/pages/employee-attendance/employee-attendance';
@@ -65,7 +64,7 @@ function App() {
   const [selectedCompany, setSelectedCompany] = useState<TenantCompany>(DEFAULT_TENANT_COMPANY);
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
 
-  const shellMode = getProfileCapabilities(getEmployeeById(selectedEmployeeId)).shellMode;
+  const shellMode = selectedEmployeeId === 'marcus' || selectedEmployeeId === 'manager' ? 'tenant' : 'employee';
 
   useEffect(() => {
     if (location.pathname.startsWith('/people/employees')) {

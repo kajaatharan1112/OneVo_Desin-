@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Edit, Eye, FileText, Trash2, Upload, X } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { CheckCircle2, Circle, Clock3, Edit, Eye, FileText, Trash2, Upload, X } from 'lucide-react';
 import type { Employee, EmploymentType, WorkMode } from '../../../types/organization';
 import type { EmployeeDocument } from './employeeProfileTypes';
+import { useInbox } from '../../../core/notifications/inbox-context';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import { useClockInPolicyStore } from '../../time-attendance/clock-in-policy/clockInPolicyStore';
@@ -19,6 +20,14 @@ import { workModeBadgeClass, workModeLabel } from './workModeUtils';
 import { WORK_MODE_OPTIONS } from './workModeUtils';
 import { getEmployeeActiveAssignment } from '../../../utils/organizationUtils';
 import { defaultActivityForEmployee } from './employeeProfileMockData';
+
+const CEO_PROFILE_ID = 'marcus';
+
+const checklistStatusLabel = {
+  todo: 'Todo',
+  pending: 'Pending',
+  completed: 'Completed'
+} as const;
 
 const Dash: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
   <span className="emp-record-value">{children ?? '--'}</span>
@@ -58,6 +67,7 @@ export const AboutTab: React.FC<{
   onEditProfile: () => void;
   onEditEmployment: () => void;
 }> = ({ employee, onEditProfile, onEditEmployment }) => {
+  const { addInboxItem } = useInbox();
   const { positions, departments, assignments, employees } = useOrganizationStore();
   const { getTasksForEmployee, setTaskStatus } = useChecklistTaskStore();
   const employment = useMemo(
@@ -65,6 +75,35 @@ export const AboutTab: React.FC<{
     [employee.id, positions, departments, assignments, employees]
   );
   const tasks = getTasksForEmployee(employee.id);
+  const checklistStats = useMemo(() => {
+    const total = tasks.length;
+    const completed = tasks.filter(task => task.status === 'completed').length;
+    const pending = tasks.filter(task => task.status === 'pending').length;
+    const todo = tasks.filter(task => task.status === 'todo').length;
+    return {
+      total,
+      completed,
+      pending,
+      todo,
+      percent: total > 0 ? Math.round((completed / total) * 100) : 0
+    };
+  }, [tasks]);
+
+  const handleTaskStatusChange = (taskId: string, status: typeof tasks[number]['status']) => {
+    const task = tasks.find(item => item.id === taskId);
+    setTaskStatus(taskId, status);
+    if (!task || task.status === status) return;
+    addInboxItem({
+      id: `checklist-status-${taskId}-${status}`,
+      recipientId: CEO_PROFILE_ID,
+      category: status === 'completed' ? 'approval' : 'warning',
+      title: 'Document checklist updated',
+      message: `${task.assigneeLabel} marked ${task.requiredDocument || task.title} as ${checklistStatusLabel[status]} for ${employeeFullName(employee)}.`,
+      timeLabel: 'Just now',
+      filter: 'new',
+      actions: []
+    });
+  };
 
   return (
     <div className="emp-record-tab">
@@ -93,7 +132,6 @@ export const AboutTab: React.FC<{
       <RecordCard title="Employment status" onEdit={onEditEmployment}>
         <FieldGrid>
           <Field label="Position"><Dash>{employment.positionName}</Dash></Field>
-          <Field label="Department"><Dash>{employment.departmentName}</Dash></Field>
           <Field label="Reporting manager"><Dash>{employment.reportingManager}</Dash></Field>
           <Field label="Employment type"><Dash>{employmentTypeLabel(employee.employmentType)}</Dash></Field>
           <Field label="Start date"><Dash>{formatProfileDate(employee.startDate)}</Dash></Field>
@@ -109,29 +147,45 @@ export const AboutTab: React.FC<{
       </RecordCard>
 
       {tasks.length > 0 && (
-        <RecordCard title={tasks[0].templateType === 'onboarding' ? 'Onboarding Checklist' : 'Offboarding Checklist'}>
-          <ul className="emp-checklist-list">
-            {tasks.map(task => (
-              <li key={task.id} className="emp-checklist-item">
-                <div className="cip-toggle-row">
-                  <span className={task.status === 'completed' ? 'emp-checklist-item__title--done' : ''}>{task.title}</span>
+        <RecordCard title={tasks[0].templateType === 'onboarding' ? 'Onboarding Document Progress' : 'Offboarding Task Progress'}>
+          <div className="emp-checklist-summary">
+            <div className="emp-checklist-stat emp-checklist-stat--total"><span>Total documents</span><strong>{checklistStats.total}</strong></div>
+            <div className="emp-checklist-stat emp-checklist-stat--done"><span>Completed</span><strong>{checklistStats.completed}</strong></div>
+            <div className="emp-checklist-stat emp-checklist-stat--todo"><span>Todo</span><strong>{checklistStats.todo}</strong></div>
+            <div className="emp-checklist-stat emp-checklist-stat--pending"><span>Pending</span><strong>{checklistStats.pending}</strong></div>
+          </div>
+          <div className="emp-checklist-progress" aria-label={`Checklist ${checklistStats.percent}% completed`}>
+            <span style={{ width: `${checklistStats.percent}%` }} />
+          </div>
+          <ul className="emp-checklist-list emp-checklist-list--detailed">
+            {tasks.map(task => {
+              const StatusIcon = task.status === 'completed' ? CheckCircle2 : task.status === 'pending' ? Clock3 : Circle;
+              return (
+                <li key={task.id} className={`emp-checklist-item emp-checklist-item--${task.status}`}>
+                  <div className="emp-checklist-item__main">
+                    <StatusIcon size={18} className="emp-checklist-item__icon" />
+                    <div>
+                      <span className={task.status === 'completed' ? 'emp-checklist-item__title--done' : ''}>
+                        {task.requiredDocument || task.title}
+                      </span>
+                      <span className="emp-checklist-item__meta">
+                        Assigned to {task.assigneeLabel} - Due {formatProfileDate(task.dueDate)}{task.dueTime ? ` at ${task.dueTime}` : ''}
+                      </span>
+                    </div>
+                  </div>
                   <select
                     className={`emp-checklist-status emp-checklist-status--${task.status}`}
                     value={task.status}
                     aria-label={`Status for ${task.title}`}
-                    onChange={event => setTaskStatus(task.id, event.target.value as typeof task.status)}
+                    onChange={event => handleTaskStatusChange(task.id, event.target.value as typeof task.status)}
                   >
                     <option value="todo">Todo</option>
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
                   </select>
-                </div>
-                <span className="emp-checklist-item__meta">
-                  {task.assigneeLabel} - Due {formatProfileDate(task.dueDate)}
-                  {task.requiredDocument && ` - Requires: ${task.requiredDocument}`}
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </RecordCard>
       )}
@@ -141,10 +195,7 @@ export const AboutTab: React.FC<{
 
 export const EmploymentTab: React.FC<{
   employee: Employee;
-  onPromote: () => void;
-  onTransfer: () => void;
-  onOffboarding: () => void;
-}> = ({ employee, onPromote, onTransfer, onOffboarding }) => {
+}> = ({ employee }) => {
   const { positions, departments, assignments, employees, updateEmployeeEmployment } =
     useOrganizationStore();
   const employment = useMemo(
@@ -161,15 +212,6 @@ export const EmploymentTab: React.FC<{
   });
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setValues({
-      positionId: getEmployeeActiveAssignment(employee.id, assignments)?.positionId ?? '',
-      employmentType: employee.employmentType,
-      startDate: employee.startDate,
-      status: employee.status,
-      workMode: employee.workMode ?? ''
-    });
-  }, [employee, assignments]);
 
   const handleSave = () => {
     const result = updateEmployeeEmployment(employee.id, values);
@@ -191,19 +233,10 @@ export const EmploymentTab: React.FC<{
               onChange={e => setValues(v => ({ ...v, positionId: e.target.value }))}
             >
               <option value="">Select position...</option>
-              {activePositions.map(p => {
-                const dept = departments.find(d => d.id === p.departmentId);
-                return (
-                  <option key={p.id} value={p.id}>
-{p.name}{dept ? ` - ${dept.name}` : ''}
-                  </option>
-                );
-              })}
+              {activePositions.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
             </select>
-          </div>
-          <div className="org-form-field">
-            <label>Department</label>
-            <input readOnly className="settings-readonly" value={employment.departmentName} tabIndex={-1} />
           </div>
           <div className="org-form-field">
             <label>Reporting manager</label>
@@ -262,15 +295,6 @@ export const EmploymentTab: React.FC<{
         <div className="emp-record-actions">
           <button type="button" className="org-btn org-btn--primary" onClick={handleSave}>
             Save Changes
-          </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={onPromote}>
-            Promote Employee
-          </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={onTransfer}>
-            Transfer Employee
-          </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={onOffboarding}>
-            Start Offboarding
           </button>
         </div>
       </RecordCard>

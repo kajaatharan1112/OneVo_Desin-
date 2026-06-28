@@ -12,22 +12,91 @@ import type { EmployeeOnboardingValues, EmploymentType } from '../../../types/or
 const STEPS = ['Employee Details', 'Review & Create'] as const;
 const HAS_MULTIPLE_ENTITIES = false;
 
-function findMatchingOnboardingTemplate(
-  positionId: string,
-  departmentId: string,
+type OnboardingChecklistCategory = 'hr' | 'manager' | 'intern' | 'employee';
+
+const onboardingCategoryForPosition = (positionName = ''): OnboardingChecklistCategory => {
+  const normalized = positionName.toLowerCase();
+  if (normalized.includes('intern') || normalized.includes('trainee')) return 'intern';
+  if (normalized.includes('hr') || normalized.includes('human resources')) return 'hr';
+  if (normalized.includes('manager') || normalized.includes('head') || normalized.includes('lead')) return 'manager';
+  return 'employee';
+};
+
+const templateMatchesOnboardingCategory = (
+  template: ChecklistTemplate,
+  category: OnboardingChecklistCategory
+): boolean => {
+  const normalized = template.name.toLowerCase();
+  if (category === 'hr') return normalized.includes('hr') || normalized.includes('human resources');
+  if (category === 'manager') return normalized.includes('manager');
+  if (category === 'intern') return normalized.includes('intern') || normalized.includes('trainee');
+  return normalized.includes('employee');
+};
+
+const ONBOARDING_POSITION_TYPES: { category: OnboardingChecklistCategory; label: string }[] = [
+  { category: 'hr', label: 'HR' },
+  { category: 'manager', label: 'Manager' },
+  { category: 'employee', label: 'Employee' },
+  { category: 'intern', label: 'Intern' }
+];
+
+const findPositionForOnboardingCategory = <T extends { name: string; status: string }>(
+  category: OnboardingChecklistCategory,
+  positions: T[]
+): T | null => {
+  const active = positions.filter(position => position.status === 'active');
+  const matches = (pattern: RegExp) => active.find(position => pattern.test(position.name));
+
+  if (category === 'hr') return matches(/\bhr\b|human resources/i) ?? null;
+  if (category === 'intern') return matches(/intern|trainee/i) ?? null;
+  if (category === 'manager') return active.find(position => {
+    const name = position.name.toLowerCase();
+    return /(manager|head|lead)/i.test(position.name) && !name.includes('hr') && !name.includes('human resources');
+  }) ?? null;
+
+  return active.find(position => {
+    const name = position.name.toLowerCase();
+    return !/(ceo|cto|cfo|chief|manager|head|lead|hr|human resources|intern|trainee)/i.test(name);
+  }) ?? null;
+};
+
+const uniqueTemplates = (templates: ChecklistTemplate[]) => templates.filter((template, index, list) =>
+  list.findIndex(item => item.id === template.id) === index
+);
+
+function getPositionBasedOnboardingTemplates(
+  position: { id: string; name: string; departmentId: string } | null,
   templates: ChecklistTemplate[]
-): ChecklistTemplate | null {
-  const active = templates.filter(t => t.type === 'onboarding' && t.status === 'active');
-  return (
-    active.find(t => t.appliesTo === 'position' && t.positionIds.includes(positionId)) ??
-    active.find(t => t.appliesTo === 'department' && t.departmentIds.includes(departmentId)) ??
-    active.find(t => t.appliesTo === 'company') ??
-    null
+): ChecklistTemplate[] {
+  const active = templates.filter(template => template.type === 'onboarding' && template.status === 'active');
+  if (!position) return active;
+
+  const exactMatches = active.filter(template =>
+    (template.appliesTo === 'position' && template.positionIds.includes(position.id)) ||
+    (template.appliesTo === 'department' && template.departmentIds.includes(position.departmentId))
+  );
+  const category = onboardingCategoryForPosition(position.name);
+  const categoryMatches = active.filter(template =>
+    template.appliesTo === 'company' && templateMatchesOnboardingCategory(template, category)
+  );
+  const matchedTemplates = uniqueTemplates([...exactMatches, ...categoryMatches]);
+  if (matchedTemplates.length > 0) return matchedTemplates;
+
+  return active.filter(template =>
+    template.appliesTo === 'company' && templateMatchesOnboardingCategory(template, 'employee')
   );
 }
 
-const nextEmployeeNumber = () => `EMP-${String(Date.now()).slice(-6)}`;
+function findMatchingOnboardingTemplate(
+  positionId: string,
+  departmentId: string,
+  positionName: string,
+  templates: ChecklistTemplate[]
+): ChecklistTemplate | null {
+  return getPositionBasedOnboardingTemplates({ id: positionId, departmentId, name: positionName }, templates)[0] ?? null;
+}
 
+const nextEmployeeNumber = () => `EMP-${String(Date.now()).slice(-6)}`;
 const EMPTY_VALUES = (): EmployeeOnboardingValues => ({
   firstName: '',
   lastName: '',
@@ -49,14 +118,13 @@ interface AddEmployeeWizardProps {
 }
 
 export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose }) => {
-  const { positions, departments, assignments, employees, completeEmployeeOnboarding } = useOrganizationStore();
+  const { positions, assignments, employees, completeEmployeeOnboarding } = useOrganizationStore();
   const { addInboxItem } = useInbox();
   const { generateTasksForEmployee } = useChecklistTaskStore();
   const { templates } = useChecklistTemplateStore();
 
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<EmployeeOnboardingValues>(EMPTY_VALUES());
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ email: string } | null>(null);
   const [checklistTemplateId, setChecklistTemplateId] = useState('ct-onboarding-employee');
@@ -65,16 +133,14 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
   const [taskDueTime, setTaskDueTime] = useState('17:00');
   const [notificationId] = useState(() => 'onboarding-documents-' + Date.now());
 
-  const activeDepartments = useMemo(
-    () => departments.filter(d => d.status === 'active'),
-    [departments]
-  );
 
-  const departmentPositions = useMemo(
-    () => positions.filter(p => p.status === 'active' && p.departmentId === selectedDepartmentId),
-    [positions, selectedDepartmentId]
+  const onboardingPositionOptions = useMemo(
+    () => ONBOARDING_POSITION_TYPES.map(option => ({
+      ...option,
+      position: findPositionForOnboardingCategory(option.category, positions)
+    })),
+    [positions]
   );
-
   const selectedPosition = useMemo(
     () => positions.find(p => p.id === values.positionId) ?? null,
     [positions, values.positionId]
@@ -82,8 +148,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
 
   const positionPreview = useMemo(() => {
     if (!selectedPosition) return null;
-    const dept = departments.find(d => d.id === selectedPosition.departmentId);
-    const parentPosition = selectedPosition.reportsToPositionId
+        const parentPosition = selectedPosition.reportsToPositionId
       ? positions.find(p => p.id === selectedPosition.reportsToPositionId) ?? null
       : null;
     const rm = getReportingManagerPreviewForPosition(selectedPosition, positions, assignments, employees);
@@ -92,50 +157,55 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     const matchingTemplate = findMatchingOnboardingTemplate(
       selectedPosition.id,
       selectedPosition.departmentId,
+      selectedPosition.name,
       templates
     );
     return {
       positionName: selectedPosition.name,
-      departmentName: dept?.name ?? '--',
       reportsToName: parentPosition?.name ?? null,
       reportingManager: rm.label,
       rmUnresolved,
       accessRoles,
       matchingTemplate,
     };
-  }, [selectedPosition, departments, positions, assignments, employees, templates]);
+  }, [selectedPosition, positions, assignments, employees, templates]);
 
 
   const managerOptions = useMemo(() => {
-    const selectedDepartment = selectedPosition?.departmentId;
+    if (!selectedPosition) return [];
+    const selectedDepartment = selectedPosition.departmentId;
+    const parentAssignment = selectedPosition.reportsToPositionId
+      ? assignments.find(item => item.positionId === selectedPosition.reportsToPositionId && item.status === 'active')
+      : undefined;
+    const parentManagerId = parentAssignment?.employeeId;
+
     return employees.filter(employee => {
+      if (employee.id === parentManagerId) return true;
       const assignment = assignments.find(item => item.employeeId === employee.id && item.status === 'active');
       const position = positions.find(item => item.id === assignment?.positionId);
       if (!position) return false;
-      return /manager|head|chief|hr/i.test(position.name) &&
-        (position.departmentId === selectedDepartment || /hr|human resources/i.test(position.name));
+      const isPeopleOwner = /manager|head|chief|hr|human resources|lead|cto|ceo/i.test(position.name);
+      const isRelevantArea = position.departmentId === selectedDepartment || /hr|human resources/i.test(position.name);
+      return isPeopleOwner && isRelevantArea;
     });
   }, [employees, assignments, positions, selectedPosition]);
+
+  const checklistOptions = useMemo(
+    () => getPositionBasedOnboardingTemplates(selectedPosition, templates),
+    [templates, selectedPosition]
+  );
 
   const selectedManager = managerOptions.find(manager => manager.id === reportingManagerId);
   const selectedChecklist = templates.find(template => template.id === checklistTemplateId);
 
 
   const handlePositionChange = (positionId: string) => {
-    const position = positions.find(item => item.id === positionId);
-    const name = position?.name.toLowerCase() || '';
-    const preferred = name.includes('intern') ? 'ct-onboarding-intern'
-      : name.includes('manager') || name.includes('head') ? 'ct-onboarding-manager'
-      : name.includes('hr') ? 'ct-onboarding-hr'
-      : 'ct-onboarding-employee';
+    const position = positions.find(item => item.id === positionId) ?? null;
+    const preferred = getPositionBasedOnboardingTemplates(position, templates)[0]?.id ?? '';
     const roles = positionId ? getSuggestedRolesForPosition(positionId) : [];
     setValues(current => ({ ...current, positionId, confirmedRoleIds: roles.map(role => role.id) }));
     setChecklistTemplateId(preferred);
     setReportingManagerId('');
-  };
-  const handleDepartmentChange = (deptId: string) => {
-    setSelectedDepartmentId(deptId);
-    setValues(v => ({ ...v, positionId: '', confirmedRoleIds: [] }));
   };
 
   const validateStep1 = (): string | null => {
@@ -146,7 +216,6 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     if (!reportingManagerId) return 'Reporting Manager is required.';
     if (!checklistTemplateId) return 'Onboarding checklist is required.';
     if (!taskDueDate || !taskDueTime) return 'Task due date and time are required.';
-    if (!selectedDepartmentId) return 'Department is required.';
     if (!values.positionId) return 'Position is required.';
     return null;
   };
@@ -178,9 +247,23 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     const documents = selectedChecklist?.items.map(item => item.requiredDocument || item.title).join(', ') || 'Onboarding documents';
     addInboxItem({
       id: `${notificationId}-${result.employeeId}`,
-      recipientId: 'manager', category: 'warning', title: 'New employee document collection task',
-      message: `${employeeName} (${values.employeeNumber}) - ${documents}. Due ${taskDueDate} at ${taskDueTime}. An email notification was also sent.`,
-      timeLabel: 'Just now', filter: 'new', actions: []
+      recipientId: reportingManagerId,
+      category: 'warning',
+      title: 'New employee document collection task',
+      message: `${employeeName} (${values.employeeNumber}) requires: ${documents}. Due ${taskDueDate} at ${taskDueTime}. Email notification sent to ${selectedManager?.email ?? 'the reporting manager'}.`,
+      timeLabel: 'Just now',
+      filter: 'new',
+      actions: [{ id: 'view-task', label: 'View task', variant: 'primary' }]
+    });
+    addInboxItem({
+      id: `ceo-onboarding-${notificationId}-${result.employeeId}`,
+      recipientId: 'marcus',
+      category: 'approval',
+      title: 'Employee onboarding started',
+      message: `${employeeName} (${values.employeeNumber}) was onboarded as ${selectedPosition?.name ?? 'an employee'}. ${managerName} owns document collection due ${taskDueDate} at ${taskDueTime}.`,
+      timeLabel: 'Just now',
+      filter: 'new',
+      actions: []
     });
     setDone({ email: values.email });
   };
@@ -212,17 +295,34 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
 
           {done ? (
             <div className="add-employee-wizard__done">
-              <h3>Employee created</h3>
+              <h3>Employee onboarding started</h3>
               <p>
                 An invitation has been sent to <strong>{done.email}</strong>. The employee status is
-                set to <strong>Onboarding</strong> and checklist tasks have been generated.
+                set to <strong>Onboarding</strong> and document collection tasks have been assigned.
               </p>
+              <div className="add-employee-wizard__done-summary">
+                <div><span>Checklist</span><strong>{selectedChecklist?.name ?? 'Onboarding checklist'}</strong></div>
+                <div><span>Reporting Manager</span><strong>{selectedManager ? `${selectedManager.firstName} ${selectedManager.lastName}` : 'Reporting Manager'}</strong></div>
+                <div><span>Due</span><strong>{taskDueDate} at {taskDueTime}</strong></div>
+                <div><span>Notifications</span><strong>In-app + email + calendar reminder</strong></div>
+              </div>
             </div>
           ) : step === 0 ? (
             <>
-              {/* Section: Identity */}
               <div className="emp-form-section">
                 <h3 className="emp-form-section__title">About Me</h3>
+                <p className="emp-form-hint">
+                  Chief Executive Officer onboarding fields only. Employee-only profile fields are completed later from the employee profile.
+                </p>
+                <div className="org-form-field">
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    value={values.email}
+                    onChange={e => setValues(v => ({ ...v, email: e.target.value }))}
+                    required
+                  />
+                </div>
                 <div className="org-form-field">
                   <label>First Name</label>
                   <input
@@ -239,6 +339,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                     required
                   />
                 </div>
+<<<<<<< HEAD
                 <div className="org-form-field">
                   <label>Email Address</label>
                   <input
@@ -266,11 +367,56 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                 <div className="org-form-field">
                   <label>Work Email</label>
                   <input type="email" value={values.workEmail ?? ''} onChange={e => setValues(v => ({ ...v, workEmail: e.target.value }))} required />
+=======
+                <div className="org-form-field add-employee-position-field">
+                  <label>Position</label>
+                  <select value={values.positionId} onChange={event => handlePositionChange(event.target.value)}>
+                    <option value="">Select onboarding position type...</option>
+                    {onboardingPositionOptions.map(option => (
+                      <option
+                        key={option.category}
+                        value={option.position?.id ?? `missing-${option.category}`}
+                        disabled={!option.position}
+                      >
+                        {option.label}{option.position ? ` - ${option.position.name}` : ' - not configured in Org'}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="emp-form-hint">
+                    Only onboarding role types are shown here. The selected type is linked to the matching Org position.
+                  </p>
+>>>>>>> 8dd1fd6 (Updated offboarding changes)
                 </div>
                 <div className="org-form-field">
                   <label>Employee Number</label>
                   <input
-                    value={values.employeeNumber} readOnly aria-readonly="true" title="Automatically generated" />
+                    value={values.employeeNumber}
+                    readOnly
+                    aria-readonly="true"
+                    title="Automatically generated"
+                  />
+                </div>
+                <div className="org-form-field">
+                  <label>Start Date</label>
+                  <input
+                    type="date"
+                    value={values.startDate}
+                    onChange={e => setValues(v => ({ ...v, startDate: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="emp-form-section">
+                <h3 className="emp-form-section__title">Contact Details</h3>
+                <div className="org-form-field">
+                  <label>Work Email</label>
+                  <input
+                    type="email"
+                    value={values.workEmail ?? ''}
+                    onChange={e => setValues(v => ({ ...v, workEmail: e.target.value }))}
+                    required
+                  />
                 </div>
                 {HAS_MULTIPLE_ENTITIES && (
                   <div className="org-form-field">
@@ -281,15 +427,6 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                     />
                   </div>
                 )}
-                <div className="org-form-field">
-                  <label>Start Date</label>
-                  <input
-                    type="date"
-                    value={values.startDate}
-                    onChange={e => setValues(v => ({ ...v, startDate: e.target.value }))}
-                    required
-                  />
-                </div>
                 <div className="org-form-field">
                   <label>Employment Type</label>
                   <select
@@ -308,35 +445,10 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   Position controls reporting line, default access, and onboarding defaults.
                 </p>
                 <div className="org-form-field">
-                  <label>Department</label>
-                  <select value={selectedDepartmentId} onChange={e => handleDepartmentChange(e.target.value)}>
-                    <option value="">Select department...</option>
-                    {activeDepartments.map(d => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="org-form-field">
-                  <label>Position</label>
-                  <select
-                    value={values.positionId}
-                    onChange={e => handlePositionChange(e.target.value)}
-                    disabled={!selectedDepartmentId}
-                  >
-                    <option value="">
-                      {selectedDepartmentId ? 'Select position...' : 'Select a department first'}
-                    </option>
-                    {departmentPositions.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="org-form-field">
                   <label>Task</label>
                   <select value={checklistTemplateId} onChange={event => setChecklistTemplateId(event.target.value)} disabled={!values.positionId}>
                     <option value="">Select onboarding checklist</option>
-                    {templates.filter(template => template.type === 'onboarding' && template.status === 'active').map(template => (
+                    {checklistOptions.map(template => (
                       <option key={template.id} value={template.id}>{template.name}</option>
                     ))}
                   </select>
@@ -357,7 +469,6 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   <div className="add-emp-position-preview">
                     <div className="add-emp-position-preview__header">
                       <strong>{positionPreview.positionName}</strong>
-                      <span className="add-emp-position-preview__dept">{positionPreview.departmentName}</span>
                     </div>
                     <div className="add-emp-position-preview__rows">
                       <div className="add-emp-position-preview__row">
@@ -436,10 +547,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
               <div className="emp-form-section">
                 <h3 className="emp-form-section__title">Position</h3>
                 <div className="emp-record-grid">
-                  <div className="emp-record-field">
-                    <span className="emp-record-field__label">Department</span>
-                    <div className="emp-record-field__value">{positionPreview?.departmentName ?? '--'}</div>
-                  </div>
+
                   <div className="emp-record-field">
                     <span className="emp-record-field__label">Position</span>
                     <div className="emp-record-field__value">{positionPreview?.positionName ?? '--'}</div>

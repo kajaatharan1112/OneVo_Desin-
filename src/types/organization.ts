@@ -1,6 +1,6 @@
 export type EntityStatus = 'active' | 'inactive';
 export type PositionType = 'unique' | 'pooled';
-export type EmployeeStatus = 'active' | 'onboarding' | 'inactive';
+export type EmployeeStatus = 'active' | 'onboarding' | 'offboarding' | 'inactive';
 export type EmploymentType = 'full-time' | 'part-time' | 'contract';
 export type WorkMode = 'onsite' | 'remote' | 'hybrid' | 'field';
 export type AssignmentStatus = 'active' | 'ended';
@@ -35,6 +35,8 @@ export interface Employee {
   firstName: string;
   lastName: string;
   email: string;
+  workEmail?: string;
+  employeeNumber?: string;
   phone?: string;
   status: EmployeeStatus;
   employmentType: EmploymentType;

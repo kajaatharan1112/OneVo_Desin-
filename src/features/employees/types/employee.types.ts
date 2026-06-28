@@ -1,4 +1,4 @@
-export type EmployeeId = 'alex' | 'marcus' | 'manager';
+export type EmployeeId = string;
 
 export type EmployeeProfileEmploymentType = 'full-time' | 'part-time';
 export type EmployeeProfileWorkMode = 'remote' | 'onsite' | 'hybrid';

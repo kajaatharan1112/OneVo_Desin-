@@ -9,6 +9,7 @@ interface EmployeeSwitcherProps {
 
 export const EmployeeSwitcher: React.FC<EmployeeSwitcherProps> = ({ collapsed = false, onAfterSelect }) => {
   const { employees, selectedEmployeeId, setSelectedEmployeeId } = useEmployeeContext();
+  const visibleProfiles = employees.filter(employee => employee.id === 'marcus' || employee.id === 'alex');
 
   const handleSelect = (id: EmployeeId) => {
     if (id !== selectedEmployeeId) {
@@ -26,7 +27,7 @@ export const EmployeeSwitcher: React.FC<EmployeeSwitcherProps> = ({ collapsed = 
       {!collapsed && <span className="employee-switcher__label">Switch profile</span>}
 
       <div className="employee-switcher__options">
-        {employees.map((employee) => {
+        {visibleProfiles.map((employee) => {
           const isActive = employee.id === selectedEmployeeId;
 
           return (

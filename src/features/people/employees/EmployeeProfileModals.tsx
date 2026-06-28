@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { MOCK_ROLES } from '../../admin/adminMockData';
 import { POSITION_VISIBILITY_OPTIONS } from '../../access/visibilityModel';
-import { SEED_CHECKLIST_TEMPLATES } from '../checklist-templates/checklistTemplateMockData';
+import { useChecklistTemplateStore } from '../../../store/checklistTemplateStore';
 import { SEED_WORK_SCHEDULES } from '../../time-attendance/configuration/schedulesConfigMockData';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import { useOrganizationStore } from '../../../store/organizationStore';
@@ -299,7 +299,8 @@ const TransferModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ 
 
 const OffboardingModal: React.FC<{ employee: Employee; onClose: () => void }> = ({ employee, onClose }) => {
   const { startOffboarding } = useEmployeeProfileStore();
-  const templates = SEED_CHECKLIST_TEMPLATES.filter(t => t.type === 'offboarding' && t.status === 'active');
+  const templates = useChecklistTemplateStore(state => state.templates)
+    .filter(template => template.type === 'offboarding' && template.status === 'active');
   const [values, setValues] = useState<OffboardingFormValues>({
     lastWorkingDay: '',
     templateId: templates[0]?.id ?? '',

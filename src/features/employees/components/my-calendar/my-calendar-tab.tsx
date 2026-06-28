@@ -113,10 +113,9 @@ kaviz/offboarding
   const onboardingTasks = useChecklistTaskStore(state => state.tasks);
 
   const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(() => {
-    if (selectedEmployeeId !== 'manager') return employeeCalendarData.events;
     const seen = new Set<string>();
     const reminders: CalendarEvent[] = onboardingTasks
-      .filter(task => task.templateType === 'onboarding' && task.assigneeEmployeeId)
+      .filter(task => task.templateType === 'onboarding' && (task.assigneeEmployeeId === selectedEmployeeId || (selectedEmployeeId === 'manager' && task.assigneeEmployeeId)))
       .filter(task => {
         const key = `${task.employeeId}-${task.templateId}`;
         if (seen.has(key)) return false;

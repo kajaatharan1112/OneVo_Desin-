@@ -1911,3 +1911,8 @@
 .onboarding-review-documents > span { color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .onboarding-review-documents ul { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
 .onboarding-review-documents li { border-radius: 999px; padding: 5px 9px; background: #e9efff; color: #315fcc; font-size: 10px; font-weight: 700; }
+
+.employee-task-progress { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.employee-task-progress span { border-radius: 999px; padding: 3px 6px; background: #eef2f7; color: #637083; font-size: 9px; font-weight: 700; }
+.employee-task-progress span:first-child { background: #dcfce7; color: #167843; }
+.employee-task-progress span:nth-child(2) { background: #fef3c7; color: #946000; }
