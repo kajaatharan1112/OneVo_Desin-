@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Filter, Plus, Search, Settings, SlidersHorizontal } from 'lucide-react';
+import { BarChart3, Calendar, Filter, Plus, Search, Settings, SlidersHorizontal } from 'lucide-react';
 import { useWork } from '../context/work-context';
 import { PROJECT_NAV_TOOLS, projectNavLabel } from '../projectNav';
 import {
@@ -26,6 +26,7 @@ import { ProjectStatusPage } from '../components/project/ProjectStatusPage';
 import { ProjectCompletionPage } from '../components/project/ProjectCompletionPage';
 import { ProjectBudgetPage } from '../components/project/ProjectBudgetPage';
 import { ProjectRisksPage } from '../components/project/ProjectRisksPage';
+import { ProjectGoalsPage } from '../components/project/ProjectGoalsPage.tsx';
 
 export const ProjectDetailPage: React.FC = () => {
   const {
@@ -54,7 +55,6 @@ export const ProjectDetailPage: React.FC = () => {
   }
 
   const toolLabel = projectNavLabel(projectNavId);
-  const isOverview = projectNavId === 'overview';
 
   const renderContent = () => {
     switch (projectNavId) {
@@ -72,6 +72,7 @@ export const ProjectDetailPage: React.FC = () => {
       case 'reports': return <ProjectReportsPage project={project} />;
       case 'status': return <ProjectStatusPage project={project} />;
       case 'completion': return <ProjectCompletionPage project={project} />;
+      case 'goal': return <ProjectGoalsPage project={project} />;
       default: return null;
     }
   };
@@ -151,8 +152,8 @@ export const ProjectDetailPage: React.FC = () => {
   };
 
   return (
-    <div className={`work-proj-page${projectNavId === 'work-items' ? ' work-proj-page--board' : ''}${isOverview ? ' work-proj-page--overview' : ''}${projectNavId === 'cycle' ? ' work-proj-page--cycle' : ''}`}>
-      <header className={`work-proj-header${isOverview ? ' work-proj-header--overview' : ''}`}>
+    <div className={`work-proj-page${projectNavId === 'work-items' ? ' work-proj-page--board' : ''}${projectNavId === 'cycle' ? ' work-proj-page--cycle' : ''}`}>
+      <header className="work-proj-header">
         <div className="work-proj-header__main">
           <nav className="work-proj-breadcrumb" aria-label="Breadcrumb">
             <button type="button" className="work-proj-breadcrumb__link" onClick={returnToProjectList}>Projects</button>
@@ -164,33 +165,34 @@ export const ProjectDetailPage: React.FC = () => {
             <span className="work-proj-breadcrumb__sep">›</span>
             <span className="work-proj-breadcrumb__current">{toolLabel}</span>
           </nav>
-          {!isOverview && (
-            <>
-              <div className="work-proj-header__title-row">
-                <span
-                  className="work-proj-header__project-icon"
-                  style={projectIconSurfaceStyle(project)}
-                  aria-hidden="true"
-                >
-                  <ProjectIcon icon={project.icon} size={18} />
-                </span>
-                <h1 className="work-proj-header__title">{project.name}</h1>
-                <span className="work-proj-header__key">{project.key}</span>
-                <span className={`cfg-badge cfg-badge--${statusBadgeClass(project.status)}`}>
-                  {project.status.replace('_', ' ')}
-                </span>
-                <span className={`cfg-badge cfg-badge--${healthBadgeClass(project.health)}`}>
-                  {healthLabel(project.health)}
-                </span>
-              </div>
-              <div className="work-proj-header__meta">
-                {project.workspaceIds.map(wsId => (
-                  <span key={wsId} className="work-ws-badge">{workspaceName(wsId, workspaces)}</span>
-                ))}
-                <span className="work-proj-header__due">Due {formatWorkDate(project.dueDate)}</span>
-              </div>
-            </>
-          )}
+          <>
+            <div className="work-proj-header__title-row">
+              <span
+                className="work-proj-header__project-icon"
+                style={projectIconSurfaceStyle(project)}
+                aria-hidden="true"
+              >
+                <ProjectIcon icon={project.icon} size={18} />
+              </span>
+              <h1 className="work-proj-header__title">{project.name}</h1>
+              <span className="work-proj-header__key">{project.key}</span>
+              <span className={`cfg-badge cfg-badge--${statusBadgeClass(project.status)}`}>
+                {project.status.replace('_', ' ')}
+              </span>
+              <span className={`cfg-badge cfg-badge--${healthBadgeClass(project.health)}`}>
+                {healthLabel(project.health)}
+              </span>
+            </div>
+            <div className="work-proj-header__meta" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {project.workspaceIds.map(wsId => (
+                <span key={wsId} className="work-ws-badge">{workspaceName(wsId, workspaces)}</span>
+              ))}
+              <span className="work-proj-header__due" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar size={13} style={{ color: 'var(--text-m)', flexShrink: 0 }} />
+                <span>Due {formatWorkDate(project.dueDate)}</span>
+              </span>
+            </div>
+          </>
         </div>
         <div className="work-proj-header__actions">{renderActions()}</div>
       </header>
@@ -234,3 +236,4 @@ export const ProjectDetailPage: React.FC = () => {
     </div>
   );
 };
+

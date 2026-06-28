@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { EmployeeAccessArea } from './visibilityModel';
 import { normalizeEmployeeAccessArea } from './visibilityModel';
 import { POSITION_ACCESS_TEMPLATES } from './positionAccessTemplates';
@@ -53,7 +52,7 @@ function staticConfig(positionId: string): PositionAccessConfig | null {
   };
 }
 
-export const usePositionAccessConfigStore = create<PositionAccessConfigStore>()(persist((set, get) => ({
+export const usePositionAccessConfigStore = create<PositionAccessConfigStore>((set, get) => ({
   overrides: {},
 
   setConfig: (positionId, config) => {
@@ -85,7 +84,7 @@ export const usePositionAccessConfigStore = create<PositionAccessConfigStore>()(
       }
     ];
   }
-}), { name: 'onevo-position-access-config', version: 1 }));
+}));
 
 export function getPositionAccessTemplate(positionId: string): GeneratedAccessGrant[] {
   return usePositionAccessConfigStore.getState().getTemplateGrants(positionId);

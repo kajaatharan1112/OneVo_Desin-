@@ -15,6 +15,7 @@ import {
   MOCK_WORKSPACES,
   MOCK_BUDGET_EXPENSES,
   MOCK_RISKS,
+  MOCK_GOALS,
   countOpenTasks,
   nextTaskKey,
   projectAdminIds,
@@ -37,6 +38,8 @@ import {
   type WorkWorkspace,
   type ProjectBudgetExpense,
   type ProjectRisk,
+  type ProjectGoal,
+  type WorkTaskChecklistGroup,
 } from '../workMockData';
 import {
   buildProjectInviteNotification,
@@ -91,6 +94,8 @@ interface AddTaskInput {
   linkedWorkspaceId?: string | null;
   labels?: string[];
   customFieldValues?: Record<string, string | number>;
+  allocatedHours?: number;
+  checklist?: WorkTaskChecklistGroup[];
 }
 
 interface WorkContextValue {
@@ -106,6 +111,10 @@ interface WorkContextValue {
   relatedProjects: RelatedProjectLink[];
   budgetExpenses: ProjectBudgetExpense[];
   risks: ProjectRisk[];
+  goals: ProjectGoal[];
+  addGoal: (goal: ProjectGoal) => void;
+  updateGoal: (id: string, patch: Partial<ProjectGoal>) => void;
+  deleteGoal: (id: string) => void;
   selectedProjectId: string | null;
   selectedTaskId: string | null;
   projectNavId: ProjectNavId;
@@ -129,6 +138,8 @@ interface WorkContextValue {
   updateMilestone: (id: string, patch: Partial<PlannerMilestone>) => void;
   deleteMilestone: (id: string) => void;
   updateDocument: (id: string, patch: Partial<WorkDocument>) => void;
+  addDocument: (doc: WorkDocument) => void;
+  deleteDocument: (id: string) => void;
   addProjectMember: (projectId: string, employeeId: string, accessLevel: ProjectAccessLevel, workspaceSourceId: string | null) => void;
   removeProjectMember: (projectId: string, memberId: string) => void;
   updateProjectMemberAccess: (projectId: string, memberId: string, accessLevel: ProjectAccessLevel) => void;
@@ -194,6 +205,7 @@ export const WorkProvider: React.FC<{
   const [relatedProjects, setRelatedProjects] = useState<RelatedProjectLink[]>(MOCK_RELATED_PROJECTS);
   const [budgetExpenses, setBudgetExpenses] = useState<ProjectBudgetExpense[]>(MOCK_BUDGET_EXPENSES);
   const [risks, setRisks] = useState<ProjectRisk[]>(MOCK_RISKS);
+  const [goals, setGoals] = useState<ProjectGoal[]>(MOCK_GOALS);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [projectNavId, setProjectNavId] = useState<ProjectNavId>('work-items');
@@ -518,6 +530,10 @@ export const WorkProvider: React.FC<{
       priority: input.priority,
       labels: input.labels ?? [],
       customFieldValues: input.customFieldValues ?? {},
+      totalWorkedHours: 0,
+      timeSessions: [],
+      checklist: input.checklist ?? [],
+      estimate: input.allocatedHours,
     };
     setTasks(prev => {
       const next = [...prev, task];
@@ -778,6 +794,14 @@ export const WorkProvider: React.FC<{
     setDocuments(prev => prev.map(d => (d.id === id ? { ...d, ...patch } : d)));
   }, []);
 
+  const addDocument = useCallback((doc: WorkDocument) => {
+    setDocuments(prev => [...prev, doc]);
+  }, []);
+
+  const deleteDocument = useCallback((id: string) => {
+    setDocuments(prev => prev.filter(d => d.id !== id));
+  }, []);
+
   const addRelatedProject = useCallback((projectId: string, relatedProjectId: string, relationship: RelatedProjectRelationship) => {
     const link: RelatedProjectLink = {
       id: `rp-${Date.now()}`,
@@ -876,6 +900,18 @@ export const WorkProvider: React.FC<{
     setRisks(prev => prev.filter(r => r.id !== id));
   }, []);
 
+  const addGoal = useCallback((goal: ProjectGoal) => {
+    setGoals(prev => [...prev, goal]);
+  }, []);
+
+  const updateGoal = useCallback((id: string, patch: Partial<ProjectGoal>) => {
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...patch } : g));
+  }, []);
+
+  const deleteGoal = useCallback((id: string) => {
+    setGoals(prev => prev.filter(g => g.id !== id));
+  }, []);
+
   // Automatically calculate milestone achievements based on linked task completion
   useEffect(() => {
     setMilestones(prevMilestones => {
@@ -934,6 +970,8 @@ export const WorkProvider: React.FC<{
     updateMilestone,
     deleteMilestone,
     updateDocument,
+    addDocument,
+    deleteDocument,
     addProjectMember,
     removeProjectMember,
     updateProjectMemberAccess,
@@ -950,6 +988,10 @@ export const WorkProvider: React.FC<{
     addRisk,
     updateRisk,
     deleteRisk,
+    goals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
     activeModal,
     openModal: setActiveModal,
     closeModal: () => setActiveModal(null),
@@ -969,14 +1011,15 @@ export const WorkProvider: React.FC<{
     switchSettingsProject,
   }), [
     workspaceFilterId, workspaces, addWorkspace, projects, tasks, cycles, milestones, documents, relatedProjects,
-    budgetExpenses, risks,
+    budgetExpenses, risks, goals,
     selectedProjectId, selectedTaskId, projectNavId, analyticsOpen, openProject, closeProject, returnToProjectList,
     createProject, updateProject, restoreProject, duplicateProject, addTask, updateTask, openTaskDetail, closeTaskDetail,
-    openAnalytics, closeAnalytics, addCycle, addMilestone, updateMilestone, deleteMilestone, updateDocument,
+    openAnalytics, closeAnalytics, addCycle, addMilestone, updateMilestone, deleteMilestone, updateDocument, addDocument, deleteDocument,
     addProjectMember, removeProjectMember, updateProjectMemberAccess,
     linkWorkspace, updateParticipatingWorkspace, unlinkWorkspace, requestWorkspaceLink, requestWorkspaceParticipation,
     addRelatedProject, requestRelatedProjectLink, removeRelatedProject,
     addBudgetExpense, deleteBudgetExpense, addRisk, updateRisk, deleteRisk,
+    addGoal, updateGoal, deleteGoal,
     activeModal, workspaceFilterLabel, getProject, addWorkItemSignal, requestAddWorkItem,
     addCycleSignal, requestAddCycle, addMilestoneSignal, requestAddMilestone,
     projectSettingsOpen, settingsSectionId, openProjectSettings, closeProjectSettings, setSettingsSectionId, switchSettingsProject,

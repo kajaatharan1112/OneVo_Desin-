@@ -1,4 +1,4 @@
-import React, { useRef, type CSSProperties } from 'react';
+import React, { useRef } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, UserPlus, Users } from 'lucide-react';
 import type { Position } from '../../../types/organization';
@@ -9,7 +9,6 @@ import {
   getPositionOccupants
 } from '../../../utils/organizationUtils';
 import { useOrganizationStore } from '../../../store/organizationStore';
-import { useActorAccess } from '../../access/useActorAccess';
 
 interface PositionNodeProps {
   position: Position;
@@ -19,26 +18,7 @@ interface PositionNodeProps {
   isDragOverlay?: boolean;
   isGlobalDragging?: boolean;
   onSelect?: () => void;
-  visibleFields?: PositionCardVisibleFields;
 }
-
-export interface PositionCardVisibleFields {
-  employeeName: boolean;
-  department: boolean;
-  position: boolean;
-  description: boolean;
-  status: boolean;
-  email: boolean;
-}
-
-export const DEFAULT_POSITION_CARD_FIELDS: PositionCardVisibleFields = {
-  employeeName: true,
-  department: true,
-  position: true,
-  description: false,
-  status: false,
-  email: false
-};
 
 export const PositionNode: React.FC<PositionNodeProps> = ({
   position,
@@ -47,13 +27,8 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
   hasChildren,
   isDragOverlay = false,
   isGlobalDragging = false,
-  onSelect,
-  visibleFields = DEFAULT_POSITION_CARD_FIELDS
+  onSelect
 }) => {
-  const { hasPermission } = useActorAccess();
-  const canCreate = hasPermission('positions:create');
-  const canEdit = hasPermission('positions:edit');
-  const canAssign = hasPermission('employees:position:assign') || hasPermission('positions:edit');
   const didDragRef = useRef(false);
   const {
     departments,
@@ -79,27 +54,6 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
   const occupancy = getPositionOccupancy(position.id, position, assignments);
   const occupants = getPositionOccupants(position.id, assignments, employees);
   const assigneeNames = occupants.map(e => `${e.firstName} ${e.lastName}`);
-  const primaryOccupant = occupants[0];
-  const initials = primaryOccupant
-    ? `${primaryOccupant.firstName[0] ?? ''}${primaryOccupant.lastName[0] ?? ''}`.toUpperCase()
-    : position.name.slice(0, 2).toUpperCase();
-  const avatarUrl = primaryOccupant
-    ? `https://i.pravatar.cc/160?u=${encodeURIComponent(primaryOccupant.email)}`
-    : null;
-  const departmentName = getDepartmentName(position.departmentId, departments);
-  const colorIndex = [...position.departmentId].reduce((total, character) => total + character.charCodeAt(0), 0) % 5;
-  const departmentColors = [
-    ['#6d5dfc', '#9b8cff'],
-    ['#00a6a6', '#31d5c8'],
-    ['#f05678', '#ff8a9e'],
-    ['#e88920', '#ffc15c'],
-    ['#2878d0', '#5eb5ff']
-  ];
-  const [accent, accentSoft] = departmentColors[colorIndex];
-  const cardStyle = {
-    '--position-accent': accent,
-    '--position-accent-soft': accentSoft
-  } as CSSProperties;
 
   const showDropHint = isGlobalDragging && !isDragging && position.type !== 'pooled';
 
@@ -116,7 +70,6 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
     >
       <div
         ref={setDragRef}
-        style={cardStyle}
         className={[
           'position-card',
           isSelected && 'position-card--selected',
@@ -144,7 +97,7 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
           if (isDragging) didDragRef.current = true;
         }}
       >
-        <div className="position-card__top-actions">
+        <div className="position-card__header">
           <span className="position-card__drag-handle" aria-hidden>
             <GripVertical size={14} />
           </span>
@@ -164,59 +117,39 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
             </button>
           )}
 
-        </div>
+          <div className="position-card__titles">
+            <span className="position-card__name">{position.name}</span>
+            <span className="position-card__code">{position.code}</span>
+          </div>
 
-        {visibleFields.department && (
-          <span className="position-card__department-pill">{departmentName}</span>
-        )}
-
-        <div className={`position-card__avatar-ring${primaryOccupant ? '' : ' position-card__avatar-ring--vacant'}`}>
-          <span className={`position-card__avatar${primaryOccupant ? '' : ' position-card__avatar--vacant'}`}>
-            {avatarUrl && <img src={avatarUrl} alt="" onError={event => { event.currentTarget.style.display = 'none'; }} />}
-            <span>{initials}</span>
+          <span className={`position-card__type position-card__type--${position.type}`}>
+            {position.type}
           </span>
-          <span className={`position-card__presence${primaryOccupant ? '' : ' position-card__presence--vacant'}`} aria-hidden />
-        </div>
-
-        <div className="position-card__identity">
-          {visibleFields.employeeName && (
-            <strong>{primaryOccupant ? `${primaryOccupant.firstName} ${primaryOccupant.lastName}` : 'Open position'}</strong>
-          )}
-          {visibleFields.position && <span className="position-card__name">{position.name}</span>}
         </div>
 
         <div className="position-card__meta">
+          <span>{getDepartmentName(position.departmentId, departments)}</span>
           <span className="position-card__occupancy">
             <Users size={12} />
-            {position.type === 'pooled' ? `${occupancy.count} of ${occupancy.capacity} filled` : primaryOccupant ? 'Position filled' : 'Ready to assign'}
+            {occupancy.count}/{occupancy.capacity}
           </span>
         </div>
 
-        {visibleFields.employeeName && assigneeNames.length > 1 ? (
+        {assigneeNames.length > 0 ? (
           <div className="position-card__assignees">
-            Also: {assigneeNames.slice(1, 2).join(', ')}
+            {assigneeNames.slice(0, 2).join(', ')}
             {assigneeNames.length > 2 && ` +${assigneeNames.length - 2}`}
           </div>
-        ) : null}
-
-        {visibleFields.description && position.description && (
-          <div className="position-card__detail">{position.description}</div>
-        )}
-        {visibleFields.status && (
-          <div className={`position-card__status position-card__status--${position.status}`}>
-            {position.status}
-          </div>
-        )}
-        {visibleFields.email && primaryOccupant?.email && (
-          <div className="position-card__detail" title={primaryOccupant.email}>{primaryOccupant.email}</div>
+        ) : (
+          <div className="position-card__vacant">Vacant</div>
         )}
 
         {showDropHint && (
           <div className="position-card__drop-label">Drop to reparent</div>
         )}
 
-        {(canCreate || canEdit || canAssign) && <div className="position-card__toolbar">
-          {canCreate && <button
+        <div className="position-card__toolbar">
+          <button
             type="button"
             className="position-card__toolbar-btn"
             onPointerDown={e => e.stopPropagation()}
@@ -228,8 +161,8 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
             title="Add child position"
           >
             <Plus size={13} />
-          </button>}
-          {canEdit && <button
+          </button>
+          <button
             type="button"
             className="position-card__toolbar-btn"
             onPointerDown={e => e.stopPropagation()}
@@ -241,8 +174,8 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
             title="Edit position"
           >
             <Pencil size={13} />
-          </button>}
-          {canAssign && <button
+          </button>
+          <button
             type="button"
             className="position-card__toolbar-btn"
             onPointerDown={e => e.stopPropagation()}
@@ -254,8 +187,8 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
             title="Assign employee"
           >
             <UserPlus size={13} />
-          </button>}
-        </div>}
+          </button>
+        </div>
       </div>
     </div>
   );

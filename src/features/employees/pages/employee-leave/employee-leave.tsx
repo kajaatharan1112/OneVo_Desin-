@@ -18,6 +18,7 @@ import { useInbox, INBOX_CURRENT_USER } from '../../../../core/notifications/inb
 import { LeavePoliciesPage } from '../../../leave/configuration/LeavePoliciesPage';
 import { LeaveTypesPage } from '../../../leave/configuration/LeaveTypesPage';
 import { LeaveEntitlementsPage } from '../../../leave/configuration/LeaveEntitlementsPage';
+import { useEmployeeContext } from '../../context/employee-context';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
@@ -52,6 +53,8 @@ const DEFAULT_FORM: LeaveFormState = {
 
 export const EmployeeLeave: React.FC = () => {
   const { addInboxItem } = useInbox();
+  const { selectedEmployee } = useEmployeeContext();
+  const isManager = selectedEmployee.id === 'manager';
   const [activeView, setActiveView] = useState<'self' | 'team'>('self');
   const [configurationView, setConfigurationView] = useState<'menu' | 'types' | 'policies' | 'entitlements' | null>(null);
   const [isConfigDropdownOpen, setIsConfigDropdownOpen] = useState(false);
@@ -220,7 +223,9 @@ export const EmployeeLeave: React.FC = () => {
           <div className="elp-header__actions">
             <div className="elp-view-toggle" role="group" aria-label="Time off view">
               <button type="button" className={`elp-view-toggle__button${activeView === 'self' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('self')}>Self</button>
-              <button type="button" className={`elp-view-toggle__button${activeView === 'team' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('team')}>Team</button>
+              {isManager && (
+                <button type="button" className={`elp-view-toggle__button${activeView === 'team' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('team')}>Team</button>
+              )}
             </div>
             <div className="elp-config-dropdown-container" ref={dropdownRef}>
               <button
