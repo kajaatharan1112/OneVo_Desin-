@@ -48,20 +48,17 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     );
   }, [currentView, approvalRequests, selectedEmployeeId, requesterNotices]);
 
-  const inboxNotifications = useMemo(() => {
-    if (currentView !== 'employee') return [];
-    return getInboxForUser(selectedEmployeeId);
-  }, [currentView, getInboxForUser, selectedEmployeeId]);
+  const inboxNotifications = useMemo(
+    () => getInboxForUser(selectedEmployeeId),
+    [getInboxForUser, selectedEmployeeId]
+  );
 
   const allNotifications = useMemo(() => {
     const base = [...accessNotifications, ...inboxNotifications, ...staticNotifications];
-    if (currentView === 'employee') {
-      return base.filter(
-        n => !n.recipientId || n.recipientId === selectedEmployeeId
-      );
-    }
-    return base;
-  }, [accessNotifications, inboxNotifications, staticNotifications, currentView, selectedEmployeeId]);
+    return base.filter(
+      n => !n.recipientId || n.recipientId === selectedEmployeeId
+    );
+  }, [accessNotifications, inboxNotifications, staticNotifications, selectedEmployeeId]);
 
   const visibleNotifications = useMemo(
     () =>

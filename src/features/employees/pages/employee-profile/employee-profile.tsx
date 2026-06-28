@@ -104,13 +104,14 @@ const Section: React.FC<{ title: string; className?: string; children: React.Rea
 export const EmployeeSelfProfile: React.FC = () => {
   const navigate = useNavigate();
   const { addInboxItem } = useInbox();
-  const { selectedEmployee } = useEmployeeContext();
+  const { selectedEmployee, updateOnboardingProfile } = useEmployeeContext();
   const canEditCeoFields = selectedEmployee.id === CEO_PROFILE_ID;
   const [profile, setProfile] = useState<EmployeeOnboardingProfile>(selectedEmployee.onboardingProfile);
   const [documents, setDocuments] = useState<EmployeeProfileDocument[]>(selectedEmployee.onboardingProfile.documents);
   const [previewDocument, setPreviewDocument] = useState<EmployeeProfileDocument | null>(null);
   const [saved, setSaved] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     if (!saved) return;
@@ -141,7 +142,9 @@ export const EmployeeSelfProfile: React.FC = () => {
   };
 
   const saveProfile = () => {
-    setProfile(prev => ({ ...prev, documents }));
+    const updatedProfile = { ...profile, documents };
+    setProfile(updatedProfile);
+    updateOnboardingProfile(selectedEmployee.id, updatedProfile);
     setSaved(true);
     if (!canEditCeoFields) {
       addInboxItem({
@@ -165,7 +168,7 @@ export const EmployeeSelfProfile: React.FC = () => {
             <img src={selectedEmployee.avatarUrl} alt={selectedEmployee.name} />
             <div>
               <h1 id="employee-profile-title">Employee Profile</h1>
-              <p>{fullName} · {profile.position} · {profile.employeeNumber}</p>
+              <p>{fullName} - {profile.position} - {profile.employeeNumber}</p>
             </div>
           </div>
           <button className="esp-icon-btn" type="button" aria-label="Close profile" title="Close" onClick={() => navigate(-1)}><X size={19} /></button>
@@ -209,7 +212,7 @@ export const EmployeeSelfProfile: React.FC = () => {
             <div className="esp-docs">
               {documents.map(document => (
                 <div className="esp-doc" key={document.id}>
-                  <div><strong>{document.name}</strong><span>{document.type} · Uploaded {formatDate(document.uploadedAt)}</span></div>
+                  <div><strong>{document.name}</strong><span>{document.type} - Uploaded {formatDate(document.uploadedAt)}</span></div>
                   <button type="button" className="esp-icon-btn" onClick={() => setPreviewDocument(document)} aria-label={`View ${document.name}`} title="View document"><Eye size={17} /></button>
                 </div>
               ))}
@@ -228,7 +231,7 @@ export const EmployeeSelfProfile: React.FC = () => {
               <button className="esp-icon-btn esp-preview__close" type="button" aria-label="Close preview" onClick={() => setPreviewDocument(null)}><X size={18} /></button>
               <Eye size={32} />
               <h3>{previewDocument.name}</h3>
-              <p>{previewDocument.type} · Uploaded {formatDate(previewDocument.uploadedAt)}</p>
+              <p>{previewDocument.type} - Uploaded {formatDate(previewDocument.uploadedAt)}</p>
               {previewDocument.url && <a href={previewDocument.url} target="_blank" rel="noreferrer">Open uploaded file</a>}
             </div>
           </div>

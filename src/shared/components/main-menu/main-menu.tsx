@@ -44,15 +44,15 @@ const SETTINGS_POLICY_ITEMS = [
 ] as const;
 
 const SETTINGS_OTHER_ITEMS = [
-  { id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} />         },
   { id: 'devices',         label: 'Device',          icon: <Monitor size={13} />       },
   { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
 ] as const;
 
-export function buildSettingsNavItem(): NavItem {
-  const otherItems = SETTINGS_OTHER_ITEMS.filter(
-    item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
-  );
+export function buildSettingsNavItem(includeBulkOnboarding = false): NavItem {
+  const otherItems = [
+    ...(includeBulkOnboarding ? [{ id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} /> }] : []),
+    ...SETTINGS_OTHER_ITEMS.filter(item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY)
+  ];
   return {
     id: 'settings',
     label: 'Settings',
@@ -67,6 +67,7 @@ export function buildSettingsNavItem(): NavItem {
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
 export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
+export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
 export const WORK_NAV_ITEM: NavItem = {
@@ -98,6 +99,7 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   { id: 'people', label: 'People', icon: railIcon(UsersRound), subSections: [
     { id: 'main', items: [
       { id: 'employees', label: 'Employees', icon: <Users size={13} /> },
+      { id: 'offboarding', label: 'Offboarding', icon: <CalendarMinus size={13} /> },
       { id: 'checklist-templates', label: 'Checklist Templates', icon: <ListChecks size={13} /> },
     ]},
   ]},
@@ -109,7 +111,7 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
       { id: 'roles-permissions', label: 'Roles and Permission', icon: <ShieldCheck size={13} /> },
     ]},
   ]},
-  SETTINGS_NAV_ITEM,
+  TENANT_SETTINGS_NAV_ITEM,
 ];
 
 /** @deprecated Settings lives in the main rail; kept empty for compatibility. */

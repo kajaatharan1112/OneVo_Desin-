@@ -40,4 +40,6 @@ export interface EmployeeProfile {
   role: string;
   avatar: string;
   avatarUrl: string;
+  timezone: string;
+  onboardingProfile: EmployeeOnboardingProfile;
 }
