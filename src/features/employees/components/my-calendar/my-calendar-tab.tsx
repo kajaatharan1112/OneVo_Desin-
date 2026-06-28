@@ -173,7 +173,7 @@ export const MyCalendarTab: React.FC = () => {
   const filteredEvents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return scopedEvents.filter(ev =>
-      enabledTypes.has(ev.type) && (!q || ev.title.toLowerCase().includes(q))
+      !ev.archived && enabledTypes.has(ev.type) && (!q || ev.title.toLowerCase().includes(q))
     );
   }, [scopedEvents, enabledTypes, searchQuery]);
 

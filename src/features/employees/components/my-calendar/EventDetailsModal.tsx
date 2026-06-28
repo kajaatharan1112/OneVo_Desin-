@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MapPin, Users as UsersIcon, Trash2, Pencil, Copy } from 'lucide-react';
+import { X, MapPin, Users as UsersIcon, Trash2, Pencil, Copy, Archive } from 'lucide-react';
 import type { CalendarEvent, CalendarEventType } from '../../types/employee-calendar.types';
 import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
@@ -42,6 +42,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
   const [editingSeriesWide, setEditingSeriesWide] = useState(false);
   const updateSeries = useCalendarStore(s => s.updateSeries);
   const deleteSeries = useCalendarStore(s => s.deleteSeries);
+  const archiveEvent = useCalendarStore(s => s.archiveEvent);
 
   const { selectedEmployee } = useEmployeeContext();
   const attendeeTimeRows = event.attendees && event.start && event.end && !event.allDay
@@ -78,6 +79,16 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
       return;
     }
     finalizeSave();
+  };
+  const handleArchive = () => {
+    archiveEvent(event.id);
+    recordHistory({
+      category: 'Calendar',
+      title: 'Event archived',
+      description: `"${event.title}" was archived.`,
+      target: event.title
+    });
+    onClose();
   };
 
   return (
@@ -247,6 +258,12 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
                   >
                     <Trash2 size={13} />
                     Delete
+                  </button>
+                )}
+                {event.syncOrigin !== 'pulled' && (
+                  <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={handleArchive}>
+                    <Archive size={13} />
+                    Archive
                   </button>
                 )}
               </div>
