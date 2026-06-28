@@ -115,8 +115,11 @@ export const MyCalendarTab: React.FC = () => {
   const updateEvent = useCalendarStore(s => s.updateEvent);
   const deleteEventInStore = useCalendarStore(s => s.deleteEvent);
   const restoreEventInStore = useCalendarStore(s => s.restoreEvent);
+  const zoomConnected = useCalendarStore(s => s.zoomConnected);
+  const setZoomConnected = useCalendarStore(s => s.setZoomConnected);
   const { addInboxItem } = useInbox();
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
+  const [connectingZoom, setConnectingZoom] = useState(false);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 
@@ -283,6 +286,18 @@ export const MyCalendarTab: React.FC = () => {
       } else {
         finishSync(provider);
       }
+    }, 800);
+  };
+
+  const handleZoomToggle = () => {
+    if (zoomConnected) {
+      setZoomConnected(false);
+      return;
+    }
+    setConnectingZoom(true);
+    setTimeout(() => {
+      setZoomConnected(true);
+      setConnectingZoom(false);
     }, 800);
   };
 
@@ -1200,6 +1215,22 @@ export const MyCalendarTab: React.FC = () => {
                         )}
                       </div>
                     ))}
+                    <div className="emc-sync__row">
+                      <div className={`emc-sync__dot emc-sync__dot--${zoomConnected ? 'connected' : 'disconnected'}`} />
+                      <span className="emc-sync__label">Zoom</span>
+                      <span className={`emc-sync__badge emc-sync__badge--${zoomConnected ? 'connected' : 'disconnected'}`}>
+                        {zoomConnected ? 'Connected' : 'Not connected'}
+                      </span>
+                      <button
+                        type="button"
+                        className="era-btn era-btn--ghost emc-sync__btn"
+                        disabled={connectingZoom}
+                        onClick={handleZoomToggle}
+                      >
+                        <RefreshCw size={12} className={connectingZoom ? 'emc-sync__spin' : ''} />
+                        {connectingZoom ? 'Connecting…' : zoomConnected ? 'Disconnect' : 'Connect'}
+                      </button>
+                    </div>
                   </div>
                   <div className="emc-sync__meta">Synced {syncStatus.lastSynced}</div>
                 </div>
