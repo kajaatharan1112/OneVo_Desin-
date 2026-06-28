@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Bell, CalendarClock, FileText, Tag, X } from 'lucide-react';
-import type { CalendarEvent, CalendarEventCategory, CalendarEventPriority } from '../../types/employee-calendar.types';
+import type { CalendarEvent, CalendarEventCategory, CalendarEventPriority, CalendarScope } from '../../types/employee-calendar.types';
 import {
   buildEventsFromForm,
   EMPTY_NEW_EVENT_FORM,
@@ -14,6 +14,8 @@ import {
 import { AttendeeSearchField } from './AttendeeSearchField';
 import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
+import { useCalendarStore } from '../../../../store/calendarStore';
+import { generateZoomLink } from './zoom.utils';
 
 function formatTime(t: string): string {
   const [h, m] = t.split(':').map(Number);
@@ -23,11 +25,17 @@ function formatTime(t: string): string {
 }
 
 const TYPE_OPTIONS: { value: NewEventType; label: string }[] = [
-  { value: 'leave', label: 'Leave' },
   { value: 'meeting', label: 'Meeting' },
   { value: 'company-event', label: 'Company event' },
   { value: 'training', label: 'Training' },
   { value: 'holiday', label: 'Holiday' },
+];
+
+const AUDIENCE_OPTIONS: { value: CalendarScope; label: string }[] = [
+  { value: 'my', label: 'Just me' },
+  { value: 'team', label: 'Team' },
+  { value: 'department', label: 'Department' },
+  { value: 'organization', label: 'Organization' },
 ];
 
 const CATEGORY_OPTIONS: { value: CalendarEventCategory; label: string }[] = [
@@ -65,6 +73,8 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   const [form, setForm] = useState<NewEventFormState>(() => ({ ...EMPTY_NEW_EVENT_FORM, ...initialOverrides }));
   const [errors, setErrors] = useState<string[]>([]);
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
+
+  const zoomConnected = useCalendarStore(s => s.zoomConnected);
 
   const update = (patch: Partial<NewEventFormState>) => setForm(f => ({ ...f, ...patch }));
 
@@ -106,7 +116,10 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
   };
 
   const finalizeCreate = () => {
-    onCreate(buildEventsFromForm(form));
+    const effectiveForm = (form.type === 'meeting' && zoomConnected && !form.location.trim())
+      ? { ...form, location: generateZoomLink() }
+      : form;
+    onCreate(buildEventsFromForm(effectiveForm));
     onClose();
   };
 
@@ -144,20 +157,27 @@ export const NewEventWizard: React.FC<NewEventWizardProps> = ({ onClose, onCreat
       </label>
       <div className="emc-wizard__field">
         <span>Event type</span>
-        <div className="emc-wizard__radio-group">
+        <div className="emc-wizard__type-pills" role="radiogroup" aria-label="Event type">
           {visibleTypeOptions.map(opt => (
-            <label key={opt.value} className="emc-wizard__radio">
-              <input
-                type="radio"
-                name="event-type"
-                checked={form.type === opt.value}
-                onChange={() => handleTypeChange(opt.value)}
-              />
-              <span>{opt.label}</span>
-            </label>
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={form.type === opt.value}
+              className={`emc-wizard__type-pill emc-evpill--${opt.value}${form.type === opt.value ? ' emc-wizard__type-pill--active' : ''}`}
+              onClick={() => handleTypeChange(opt.value)}
+            >
+              {opt.label}
+            </button>
           ))}
         </div>
       </div>
+      <label className="emc-wizard__field">
+        <span>Audience</span>
+        <select value={form.audience} onChange={e => update({ audience: e.target.value as CalendarScope })}>
+          {AUDIENCE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+      </label>
       {fieldConfig.showCategoryPriority && (
         <div className="emc-wizard__field-row">
           <label className="emc-wizard__field">
