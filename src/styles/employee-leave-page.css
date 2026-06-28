@@ -376,7 +376,7 @@
 
 /* History table */
 .elp-history-panel {
-  padding: 1rem 1.125rem;
+  padding: 1.25rem 1.5rem;
 }
 
 .elp-history-table {
@@ -387,28 +387,54 @@
 
 .elp-history-table th {
   font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--nexus-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0 0.5rem 0.5rem;
+  letter-spacing: 0.06em;
+  padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
 
 .elp-history-table td {
-  padding: 0.5625rem 0.5rem;
+  padding: 0.875rem 1rem;
   color: var(--text);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  white-space: nowrap;
+  text-align: left;
+}
+
+/* Allow employee name column to have normal wrapping if needed, but dates/days/status should not wrap */
+.elp-history-table td:first-child {
+  white-space: normal;
 }
 
 .elp-history-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+.elp-history-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
 .elp-history-table tbody tr:hover td {
   background: var(--surface-muted);
+}
+
+.elp-team-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 /* Modal */
@@ -533,6 +559,10 @@
   .elp-balance-strip {
     grid-template-columns: 1fr;
   }
+
+  .elp-team-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
@@ -540,4 +570,145 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* ── View Toggle & Config Buttons ── */
+.elp-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.elp-view-toggle {
+  display: inline-flex;
+  background: var(--surface-muted);
+  padding: 0.1875rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.elp-view-toggle__button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nexus-text-muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  font-family: var(--sans);
+}
+
+.elp-view-toggle__button:hover {
+  color: var(--text-h);
+}
+
+.elp-view-toggle__button--active {
+  background: var(--surface-panel);
+  color: var(--text-h);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.elp-config-dropdown-container {
+  position: relative;
+}
+
+.elp-config-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--sans);
+  height: 32px;
+}
+
+.elp-config-button:hover,
+.elp-config-button--active {
+  background: var(--surface-muted);
+  border-color: var(--text-h);
+  color: var(--text-h);
+}
+
+.elp-config-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 150px;
+  padding: 0.25rem;
+}
+
+.elp-config-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+  font-family: var(--sans);
+}
+
+.elp-config-dropdown-item:hover {
+  background: var(--surface-muted);
+  color: var(--text-h);
+}
+
+/* ── Team Dashboard Layout ── */
+.elp-team-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  animation: elpFadeIn 0.35s ease-out;
+}
+
+.elp-team-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.elp-team-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+}
+
+.elp-team-summary__item span {
+  font-size: 0.75rem;
+  color: var(--nexus-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.elp-team-summary__item strong {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.2;
+}
+
+@keyframes elpFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
