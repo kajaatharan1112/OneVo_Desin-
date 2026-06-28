@@ -5,10 +5,10 @@ import {
   Sun, Plane, Clock, Bell, CalendarX2, Settings,
   GraduationCap, LogOut, Building2, Copy
 } from 'lucide-react';
-import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
 import type { SyncProvider } from '../../types/employee-calendar.types';
 import { pullEvents, detectConflict, type SyncConflict } from './calendar-sync.utils';
+import { useCalendarStore } from '../../../../store/calendarStore';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
@@ -105,14 +105,13 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
-  const [syncStatus, setSyncStatus] = useState(employeeCalendarData.syncStatus);
-  const [lastConnectedProvider, setLastConnectedProvider] = useState<SyncProvider | null>(
-    employeeCalendarData.syncStatus.google === 'connected' ? 'google' : null
-  );
+  const localEvents = useCalendarStore(s => s.events);
+  const syncStatus = useCalendarStore(s => s.syncStatus);
+  const lastConnectedProvider = useCalendarStore(s => s.lastConnectedProvider);
+  const addEvents = useCalendarStore(s => s.addEvents);
+  const updateEvent = useCalendarStore(s => s.updateEvent);
+  const deleteEventInStore = useCalendarStore(s => s.deleteEvent);
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
-
-  // Local mutable copy of the one events table — Edit/Delete write back here.
-  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(employeeCalendarData.events);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 
@@ -197,7 +196,7 @@ export const MyCalendarTab: React.FC = () => {
       ? events.map(ev => ({ ...ev, syncProvider: provider, syncOrigin: 'pushed' as const }))
       : events;
 
-    setLocalEvents(prev => [...prev, ...tagged]);
+    addEvents(tagged);
     setScope('my');
     setEnabledTypes(prev => {
       const next = new Set(prev);
@@ -209,9 +208,10 @@ export const MyCalendarTab: React.FC = () => {
   const handleConnect = (provider: SyncProvider) => {
     setConnectingProvider(provider);
     setTimeout(() => {
-      setSyncStatus(prev => ({ ...prev, [provider]: 'connected', lastSynced: 'just now' }));
-      setLastConnectedProvider(provider);
-      setLocalEvents(prev => [...prev, ...pullEvents(provider)]);
+      const store = useCalendarStore.getState();
+      store.setSyncStatus({ ...store.syncStatus, [provider]: 'connected', lastSynced: 'just now' });
+      store.setLastConnectedProvider(provider);
+      store.addEvents(pullEvents(provider));
       setConnectingProvider(null);
     }, 800);
   };
@@ -219,44 +219,45 @@ export const MyCalendarTab: React.FC = () => {
   const [activeConflict, setActiveConflict] = useState<{ provider: SyncProvider; conflict: SyncConflict } | null>(null);
 
   const finishSync = (_provider: SyncProvider) => {
-    setSyncStatus(prev => ({ ...prev, lastSynced: 'just now' }));
+    const store = useCalendarStore.getState();
+    store.setSyncStatus({ ...store.syncStatus, lastSynced: 'just now' });
     setConnectingProvider(null);
   };
 
   const handleSyncNow = (provider: SyncProvider) => {
     setConnectingProvider(provider);
     setTimeout(() => {
-      setLocalEvents(prev => {
-        const existingTitles = new Set(
-          prev.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pulled').map(ev => ev.title)
-        );
-        const fresh = pullEvents(provider).filter(ev => !existingTitles.has(ev.title));
-        const next = [...prev, ...fresh];
+      const store = useCalendarStore.getState();
+      const existingTitles = new Set(
+        store.events.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pulled').map(ev => ev.title)
+      );
+      const fresh = pullEvents(provider).filter(ev => !existingTitles.has(ev.title));
+      store.addEvents(fresh);
 
-        const conflict = detectConflict(
-          next.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pushed'),
-          provider
-        );
-        if (conflict) {
-          setActiveConflict({ provider, conflict });
-        } else {
-          finishSync(provider);
-        }
-        return next;
-      });
+      const next = [...store.events, ...fresh];
+      const conflict = detectConflict(
+        next.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pushed'),
+        provider
+      );
+      if (conflict) {
+        setActiveConflict({ provider, conflict });
+      } else {
+        finishSync(provider);
+      }
     }, 800);
   };
 
   const handleDisconnect = (provider: SyncProvider) => {
-    setLocalEvents(prev => prev
+    const store = useCalendarStore.getState();
+    store.setEvents(store.events
       .filter(ev => !(ev.syncProvider === provider && ev.syncOrigin === 'pulled'))
       .map(ev => (ev.syncProvider === provider && ev.syncOrigin === 'pushed')
         ? { ...ev, syncProvider: undefined, syncOrigin: undefined }
         : ev
       )
     );
-    setSyncStatus(prev => ({ ...prev, [provider]: 'disconnected' }));
-    if (lastConnectedProvider === provider) setLastConnectedProvider(null);
+    store.setSyncStatus({ ...store.syncStatus, [provider]: 'disconnected' });
+    if (store.lastConnectedProvider === provider) store.setLastConnectedProvider(null);
   };
 
   const handleConflictKeepMine = () => {
@@ -268,9 +269,11 @@ export const MyCalendarTab: React.FC = () => {
   const handleConflictKeepTheirs = () => {
     if (!activeConflict) return;
     const { provider, conflict } = activeConflict;
-    setLocalEvents(prev => prev.map(ev => (
-      ev.id === conflict.eventId ? { ...ev, start: conflict.theirsStart, end: conflict.theirsEnd } : ev
-    )));
+    const store = useCalendarStore.getState();
+    const target = store.events.find(ev => ev.id === conflict.eventId);
+    if (target) {
+      store.updateEvent(target.id, { ...target, start: conflict.theirsStart, end: conflict.theirsEnd });
+    }
     finishSync(provider);
     setActiveConflict(null);
   };
@@ -390,7 +393,7 @@ export const MyCalendarTab: React.FC = () => {
       return;
     }
 
-    setLocalEvents(prev => prev.map(ev => (ev.id === candidate.id ? candidate : ev)));
+    updateEvent(candidate.id, candidate);
     showDropNotice(`Moved "${original.title}" to ${dayKey} · ${formatTime(newStart)}`);
   };
 
@@ -401,17 +404,17 @@ export const MyCalendarTab: React.FC = () => {
     setSelectedEvent(ev);
   };
   const handleDeleteEvent = (id: string) => {
-    setLocalEvents(prev => prev.filter(e => e.id !== id));
+    deleteEventInStore(id);
     setSelectedEvent(null);
   };
   const handleSaveEvent = (updated: CalendarEvent) => {
-    setLocalEvents(prev => prev.map(e => (e.id === updated.id ? updated : e)));
+    updateEvent(updated.id, updated);
     setSelectedEvent(updated);
   };
   const handleRsvp = (id: string, accepted: boolean) => {
-    setLocalEvents(prev => prev.map(e => (
-      e.id === id ? { ...e, needsResponse: false, status: accepted ? 'confirmed' : 'rejected' } : e
-    )));
+    const target = localEvents.find(e => e.id === id);
+    if (!target) return;
+    updateEvent(id, { ...target, needsResponse: false, status: accepted ? 'confirmed' : 'rejected' });
   };
   const handleDuplicateEvent = (event: CalendarEvent) => {
     setSelectedEvent(null);
