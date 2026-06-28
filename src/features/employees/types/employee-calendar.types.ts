@@ -37,6 +37,7 @@ export interface CalendarEvent {
   syncProvider?: SyncProvider;
   syncOrigin?: 'pulled' | 'pushed';
   seriesId?: string;
+  archived?: boolean;
 }
 
 export interface CalendarSyncStatus {
