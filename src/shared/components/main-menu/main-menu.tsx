@@ -49,24 +49,35 @@ const SETTINGS_OTHER_ITEMS = [
   { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
 ] as const;
 
-export function buildSettingsNavItem(): NavItem {
+export function buildSettingsNavItem(isEmployee = false): NavItem {
   const otherItems = SETTINGS_OTHER_ITEMS.filter(
     item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
   );
+  const subSections: SubNavSection[] = [
+    { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
+  ];
+  if (!isEmployee) {
+    subSections.push({
+      id: 'policy',
+      label: 'Policy',
+      collapsible: true,
+      defaultOpen: true,
+      items: [...SETTINGS_POLICY_ITEMS],
+    });
+  }
+  subSections.push({ id: 'other', items: otherItems });
+
   return {
     id: 'settings',
     label: 'Settings',
     icon: railIcon(Settings),
-    subSections: [
-      { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
-      { id: 'policy', label: 'Policy', collapsible: true, defaultOpen: true, items: [...SETTINGS_POLICY_ITEMS] },
-      { id: 'other', items: otherItems },
-    ],
+    subSections,
   };
 }
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
-export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
+export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
+export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
 export const WORK_NAV_ITEM: NavItem = {
@@ -132,7 +143,7 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
   { id: 'calendar',        label: 'Calendar',                                         icon: railIcon(CalendarDays),    subSections: [] },
   { id: 'people',          label: 'People',                                           icon: railIcon(UsersRound),      subSections: [] },
   { id: 'reports',         label: 'Reports',                                          icon: railIcon(PieChart),        subSections: [] },
-  SETTINGS_NAV_ITEM,
+  EMPLOYEE_SETTINGS_NAV_ITEM,
 ];
 
 interface MainMenuProps {

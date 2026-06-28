@@ -8,6 +8,7 @@
   /* ~20% darker than #2563EB */
   --nexus-primary: #1e4fc0;
   --nexus-primary-hover: #1a3f9a;
+  --nexus-on-primary: #ffffff;
   --nexus-secondary: #475569;
   --nexus-accent: #06b6d4;
   --nexus-success: #10b981;

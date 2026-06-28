@@ -9,7 +9,8 @@ export const SEED_LEAVE_TYPES: LeaveType[] = [
     description: 'Paid time off for rest and recreation.',
     paidLeave: true,
     active: true,
-    status: 'active'
+    status: 'active',
+    genderApplicability: 'all'
   },
   {
     id: 'lt-sick',
@@ -19,7 +20,8 @@ export const SEED_LEAVE_TYPES: LeaveType[] = [
     description: 'Leave for illness or medical appointments.',
     paidLeave: true,
     active: true,
-    status: 'active'
+    status: 'active',
+    genderApplicability: 'all'
   },
   {
     id: 'lt-unpaid',
@@ -29,7 +31,8 @@ export const SEED_LEAVE_TYPES: LeaveType[] = [
     description: 'Unpaid time away from work.',
     paidLeave: false,
     active: true,
-    status: 'active'
+    status: 'active',
+    genderApplicability: 'all'
   },
   {
     id: 'lt-maternity',
@@ -39,7 +42,8 @@ export const SEED_LEAVE_TYPES: LeaveType[] = [
     description: 'Maternity leave for eligible employees.',
     paidLeave: true,
     active: true,
-    status: 'active'
+    status: 'active',
+    genderApplicability: 'female'
   },
   {
     id: 'lt-paternity',
@@ -49,7 +53,8 @@ export const SEED_LEAVE_TYPES: LeaveType[] = [
     description: 'Paternity leave for eligible employees.',
     paidLeave: true,
     active: true,
-    status: 'active'
+    status: 'active',
+    genderApplicability: 'male'
   },
   {
     id: 'lt-compassionate',
@@ -59,7 +64,8 @@ export const SEED_LEAVE_TYPES: LeaveType[] = [
     description: 'Leave for bereavement or family emergencies.',
     paidLeave: true,
     active: true,
-    status: 'active'
+    status: 'active',
+    genderApplicability: 'all'
   }
 ];
 
@@ -74,18 +80,20 @@ export const SEED_LEAVE_POLICIES: LeavePolicy[] = [
     appliesTo: 'company',
     departmentIds: [],
     positionIds: [],
-    daysPerYear: 14,
+    limitValue: 112,
+    limitUnit: 'hours',
+    limitPeriod: 'yearly',
     accrualMethod: 'yearly',
     proRataNewJoiners: true,
     carryForwardAllowed: true,
-    maxCarryForwardDays: 5,
+    maxCarryForwardValue: 40,
     carryForwardExpiryMonths: 3,
     minNoticeDays: 7,
     maxConsecutiveDays: 14,
-    minDaysPerRequest: 0.5,
+    minRequestValue: 4,
     blackoutPeriods: 'Dec 20 – Jan 5',
     requiresDocument: false,
-    documentRequiredAfterDays: null
+    documentRequiredAfterValue: null
   },
   {
     id: 'lp-eng-annual',
@@ -97,18 +105,20 @@ export const SEED_LEAVE_POLICIES: LeavePolicy[] = [
     appliesTo: 'department',
     departmentIds: ['dept-eng', 'dept-backend', 'dept-frontend'],
     positionIds: [],
-    daysPerYear: 16,
+    limitValue: 128,
+    limitUnit: 'hours',
+    limitPeriod: 'yearly',
     accrualMethod: 'yearly',
     proRataNewJoiners: true,
     carryForwardAllowed: true,
-    maxCarryForwardDays: 5,
+    maxCarryForwardValue: 40,
     carryForwardExpiryMonths: 3,
     minNoticeDays: 5,
     maxConsecutiveDays: 14,
-    minDaysPerRequest: 0.5,
+    minRequestValue: 4,
     blackoutPeriods: '',
     requiresDocument: false,
-    documentRequiredAfterDays: null
+    documentRequiredAfterValue: null
   },
   {
     id: 'lp-cto-annual',
@@ -120,18 +130,20 @@ export const SEED_LEAVE_POLICIES: LeavePolicy[] = [
     appliesTo: 'position',
     departmentIds: [],
     positionIds: ['pos-cto', 'pos-ceo'],
-    daysPerYear: 21,
+    limitValue: 168,
+    limitUnit: 'hours',
+    limitPeriod: 'yearly',
     accrualMethod: 'yearly',
     proRataNewJoiners: false,
     carryForwardAllowed: true,
-    maxCarryForwardDays: 7,
+    maxCarryForwardValue: 56,
     carryForwardExpiryMonths: 6,
     minNoticeDays: 3,
     maxConsecutiveDays: 21,
-    minDaysPerRequest: 1,
+    minRequestValue: 8,
     blackoutPeriods: '',
     requiresDocument: false,
-    documentRequiredAfterDays: null
+    documentRequiredAfterValue: null
   },
   {
     id: 'lp-company-sick',
@@ -143,18 +155,20 @@ export const SEED_LEAVE_POLICIES: LeavePolicy[] = [
     appliesTo: 'company',
     departmentIds: [],
     positionIds: [],
-    daysPerYear: 10,
+    limitValue: 80,
+    limitUnit: 'hours',
+    limitPeriod: 'yearly',
     accrualMethod: 'yearly',
     proRataNewJoiners: true,
     carryForwardAllowed: false,
-    maxCarryForwardDays: 0,
+    maxCarryForwardValue: 0,
     carryForwardExpiryMonths: 0,
     minNoticeDays: 0,
     maxConsecutiveDays: 10,
-    minDaysPerRequest: 0.5,
+    minRequestValue: 4,
     blackoutPeriods: '',
     requiresDocument: true,
-    documentRequiredAfterDays: 2
+    documentRequiredAfterValue: 16
   }
 ];
 

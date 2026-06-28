@@ -26,6 +26,7 @@ export const LeaveTypeFormPanel: React.FC<LeaveTypeFormPanelProps> = ({ onClose 
   const [description, setDescription] = useState('');
   const [paidLeave, setPaidLeave] = useState(true);
   const [active, setActive] = useState(true);
+  const [genderApplicability, setGenderApplicability] = useState<'all' | 'male' | 'female'>('all');
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -33,11 +34,13 @@ export const LeaveTypeFormPanel: React.FC<LeaveTypeFormPanelProps> = ({ onClose 
       setDescription(existing.description);
       setPaidLeave(existing.paidLeave);
       setActive(existing.active);
+      setGenderApplicability(existing.genderApplicability ?? 'all');
     } else {
       setName('');
       setDescription('');
       setPaidLeave(true);
       setActive(true);
+      setGenderApplicability('all');
     }
   }, [isEdit, existing, leaveTypeForm]);
 
@@ -51,7 +54,8 @@ export const LeaveTypeFormPanel: React.FC<LeaveTypeFormPanelProps> = ({ onClose 
       description,
       paidLeave,
       active,
-      status: active ? 'active' : 'inactive'
+      status: active ? 'active' : 'inactive',
+      genderApplicability
     });
     onClose();
   };
@@ -80,6 +84,17 @@ export const LeaveTypeFormPanel: React.FC<LeaveTypeFormPanelProps> = ({ onClose 
           <div className="org-form-field">
             <label>Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} />
+          </div>
+          <div className="org-form-field">
+            <label>Applicable Gender</label>
+            <select
+              value={genderApplicability}
+              onChange={e => setGenderApplicability(e.target.value as any)}
+            >
+              <option value="all">All</option>
+              <option value="male">Male Only</option>
+              <option value="female">Female Only</option>
+            </select>
           </div>
           <label className="leave-cfg-toggle">
             <input type="checkbox" checked={paidLeave} onChange={e => setPaidLeave(e.target.checked)} />

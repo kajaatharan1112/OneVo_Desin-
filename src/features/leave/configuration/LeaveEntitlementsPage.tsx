@@ -204,7 +204,7 @@ export const LeaveEntitlementsPage: React.FC = () => {
                   <th>Position</th>
                   <th>Leave Type</th>
                   <th>Applied Policy</th>
-                  <th>Total Days</th>
+                  <th>Limit</th>
                   <th>Used</th>
                   <th>Pending</th>
                   <th>Remaining</th>
@@ -231,10 +231,10 @@ export const LeaveEntitlementsPage: React.FC = () => {
                       <td>{info?.pos ?? '—'}</td>
                       <td>{typeName}</td>
                       <td>{e.policyName ?? '—'}</td>
-                      <td>{e.totalDays}</td>
-                      <td>{e.used}</td>
-                      <td>{e.pending}</td>
-                      <td>{e.remaining}</td>
+                      <td>{e.totalValue} {e.limitUnit} / {e.limitPeriod === 'yearly' ? 'yr' : 'mo'}</td>
+                      <td>{e.usedValue} {e.limitUnit}</td>
+                      <td>{e.pendingValue} {e.limitUnit}</td>
+                      <td>{e.remainingValue} {e.limitUnit}</td>
                       <td>{e.source === 'generated' ? 'Generated' : 'Manual Adjustment'}</td>
                       <td>
                         <span className={`cfg-badge cfg-badge--${e.status === 'active' ? 'active' : 'paused'}`}>
@@ -243,7 +243,7 @@ export const LeaveEntitlementsPage: React.FC = () => {
                       </td>
                       <td>
                         <div className="cfg-row-actions cfg-row-actions--labeled">
-                          <button type="button" className="cfg-action-btn" onClick={() => openAdjust(e.id, e.totalDays)}>
+                          <button type="button" className="cfg-action-btn" onClick={() => openAdjust(e.id, e.totalValue)}>
                             Adjust
                           </button>
                           <button type="button" className="cfg-action-btn" onClick={() => setAuditEntId(e.id)}>
@@ -266,7 +266,7 @@ export const LeaveEntitlementsPage: React.FC = () => {
                   <th>Employee</th>
                   <th>Leave Type</th>
                   <th>Change Type</th>
-                  <th>Days Changed</th>
+                  <th>Value Changed</th>
                   <th>Balance After</th>
                   <th>Reason</th>
                   <th>Changed By</th>
@@ -279,14 +279,16 @@ export const LeaveEntitlementsPage: React.FC = () => {
                 {displayAudit.map(a => {
                   const info = employeeMap.get(a.employeeId);
                   const typeName = leaveTypes.find(t => t.id === a.leaveTypeId)?.name ?? '—';
+                  const ent = entitlements.find(e => e.id === a.entitlementId);
+                  const unitLabel = ent ? ` ${ent.limitUnit}` : '';
                   return (
                     <tr key={a.id}>
                       <td>{new Date(a.date).toLocaleString()}</td>
                       <td>{info?.name ?? a.employeeId}</td>
                       <td>{typeName}</td>
                       <td>{a.changeType}</td>
-                      <td>{a.daysChanged > 0 ? `+${a.daysChanged}` : a.daysChanged}</td>
-                      <td>{a.balanceAfter}</td>
+                      <td>{a.daysChanged > 0 ? `+${a.daysChanged}` : a.daysChanged}{unitLabel}</td>
+                      <td>{a.balanceAfter}{unitLabel}</td>
                       <td>{a.reason}</td>
                       <td>{a.changedBy}</td>
                     </tr>
@@ -364,7 +366,7 @@ export const LeaveEntitlementsPage: React.FC = () => {
                         <th>Employee</th>
                         <th>Leave Type</th>
                         <th>Policy</th>
-                        <th>Days</th>
+                        <th>Limit Value</th>
                         <th>Result</th>
                       </tr>
                     </thead>
@@ -407,7 +409,7 @@ export const LeaveEntitlementsPage: React.FC = () => {
             </header>
             <div className="leave-cfg-modal__body">
               <div className="org-form-field">
-                <label>Total days</label>
+                <label>Total Value</label>
                 <input type="number" min={0} value={adjustDays} onChange={e => setAdjustDays(e.target.value)} />
               </div>
               <div className="org-form-field">
@@ -438,15 +440,19 @@ export const LeaveEntitlementsPage: React.FC = () => {
               {auditLog.filter(a => a.entitlementId === auditEntId).length === 0 && (
                 <p className="leave-cfg-hint">No audit history for this entitlement.</p>
               )}
-              {auditLog.filter(a => a.entitlementId === auditEntId).map(a => (
-                <div key={a.id} className="cfg-run-item">
-                  <div className="cfg-run-item__time">{new Date(a.date).toLocaleString()}</div>
-                  <div><strong>{a.changeType}</strong> — {a.daysChanged > 0 ? `+${a.daysChanged}` : a.daysChanged} days</div>
-                  <div>Balance after: {a.balanceAfter}</div>
-                  <div>{a.reason}</div>
-                  <div className="cfg-table__meta">By {a.changedBy}</div>
-                </div>
-              ))}
+              {auditLog.filter(a => a.entitlementId === auditEntId).map(a => {
+                const ent = entitlements.find(e => e.id === a.entitlementId);
+                const unitLabel = ent ? ` ${ent.limitUnit}` : '';
+                return (
+                  <div key={a.id} className="cfg-run-item">
+                    <div className="cfg-run-item__time">{new Date(a.date).toLocaleString()}</div>
+                    <div><strong>{a.changeType}</strong> — {a.daysChanged > 0 ? `+${a.daysChanged}` : a.daysChanged}{unitLabel}</div>
+                    <div>Balance after: {a.balanceAfter}{unitLabel}</div>
+                    <div>{a.reason}</div>
+                    <div className="cfg-table__meta">By {a.changedBy}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

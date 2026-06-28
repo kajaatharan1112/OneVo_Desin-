@@ -53,7 +53,7 @@ interface LeaveConfigState {
   recalculateEntitlements: (year: number) => number;
   adjustEntitlement: (
     entitlementId: string,
-    totalDays: number,
+    totalValue: number,
     reason: string,
     changedBy?: string
   ) => boolean;
@@ -204,6 +204,12 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
         : undefined;
 
       for (const lt of activeTypes) {
+        // Gender filter check
+        const empGender = emp.gender || 'male'; // fallback to male/female if undefined, or check if matches
+        if (lt.genderApplicability && lt.genderApplicability !== 'all' && empGender !== lt.genderApplicability) {
+          continue; // completely skip listing or generating if gender doesn't match
+        }
+
         const existing = get().entitlements.find(
           e => e.employeeId === emp.id && e.leaveTypeId === lt.id && e.year === opts.year
         );
@@ -215,7 +221,7 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
             positionName: position?.name ?? '—',
             leaveTypeName: lt.name,
             policyName: existing.policyName,
-            days: existing.totalDays,
+            days: existing.totalValue, // keep property 'days' in GeneratePreviewRow or rename it, let's keep it but store limitValue
             skipped: true,
             skipReason: 'Entitlement already exists'
           });
@@ -245,7 +251,7 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
           positionName: position?.name ?? '—',
           leaveTypeName: lt.name,
           policyName: policy.name,
-          days: policy.daysPerYear,
+          days: policy.limitValue,
           skipped: false
         });
       }
@@ -268,7 +274,9 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
       if (!lt) continue;
       const policy = matchPolicyForEmployee(row.employeeId, lt.id, policies, assignments, positions);
       const id = createId('ent');
-      const total = policy?.daysPerYear ?? 0;
+      const total = policy?.limitValue ?? 0;
+      const unit = policy?.limitUnit ?? 'hours';
+      const period = policy?.limitPeriod ?? 'yearly';
       newEntitlements.push({
         id,
         employeeId: row.employeeId,
@@ -276,10 +284,12 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
         policyId: policy?.id ?? null,
         policyName: policy?.name ?? null,
         year: opts.year,
-        totalDays: total,
-        used: 0,
-        pending: 0,
-        remaining: total,
+        totalValue: total,
+        usedValue: 0,
+        pendingValue: 0,
+        remainingValue: total,
+        limitUnit: unit,
+        limitPeriod: period,
         source: 'generated',
         status: policy ? 'active' : 'missing-policy'
       });
@@ -322,10 +332,10 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
           positions
         );
         if (!policy) return ent;
-        const newTotal = policy.daysPerYear;
-        if (newTotal === ent.totalDays) return ent;
+        const newTotal = policy.limitValue;
+        if (newTotal === ent.totalValue) return ent;
         updated += 1;
-        const remaining = newTotal - ent.used - ent.pending;
+        const remaining = newTotal - ent.usedValue - ent.pendingValue;
         newAudit.push({
           id: createId('aud'),
           entitlementId: ent.id,
@@ -333,15 +343,17 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
           employeeId: ent.employeeId,
           leaveTypeId: ent.leaveTypeId,
           changeType: 'Recalculated',
-          daysChanged: newTotal - ent.totalDays,
+          daysChanged: newTotal - ent.totalValue,
           balanceAfter: remaining,
           reason: `Recalculated from policy: ${policy.name}`,
           changedBy: 'System'
         });
         return {
           ...ent,
-          totalDays: newTotal,
-          remaining,
+          totalValue: newTotal,
+          remainingValue: remaining,
+          limitUnit: policy.limitUnit,
+          limitPeriod: policy.limitPeriod,
           policyId: policy.id,
           policyName: policy.name
         };
@@ -352,14 +364,14 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
     return updated;
   },
 
-  adjustEntitlement: (entitlementId, totalDays, reason, changedBy = 'HR Admin') => {
+  adjustEntitlement: (entitlementId, totalValue, reason, changedBy = 'HR Admin') => {
     if (!reason.trim()) return false;
     let ok = false;
     set(s => {
       const ent = s.entitlements.find(e => e.id === entitlementId);
       if (!ent) return s;
       ok = true;
-      const remaining = totalDays - ent.used - ent.pending;
+      const remaining = totalValue - ent.usedValue - ent.pendingValue;
       const audit: EntitlementAuditEntry = {
         id: createId('aud'),
         entitlementId,
@@ -367,7 +379,7 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
         employeeId: ent.employeeId,
         leaveTypeId: ent.leaveTypeId,
         changeType: 'Manual Adjustment',
-        daysChanged: totalDays - ent.totalDays,
+        daysChanged: totalValue - ent.totalValue,
         balanceAfter: remaining,
         reason: reason.trim(),
         changedBy
@@ -375,7 +387,7 @@ export const useLeaveConfigStore = create<LeaveConfigState>((set, get) => ({
       return {
         entitlements: s.entitlements.map(e =>
           e.id === entitlementId
-            ? { ...e, totalDays, remaining, source: 'manual' as const }
+            ? { ...e, totalValue, remainingValue: remaining, source: 'manual' as const }
             : e
         ),
         auditLog: [...s.auditLog, audit]
