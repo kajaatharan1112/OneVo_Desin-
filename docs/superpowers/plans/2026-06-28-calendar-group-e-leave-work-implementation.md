@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make Leave approvals and Work project/task deadlines automatically create calendar events, including building the minimal Approve/Reject action that the Leave module currently lacks entirely.
+**Goal:** Make Leave approvals and Work project/task deadlines automatically create calendar events, including building the minimal Approve/Reject action that the Leave module currently lacks entirely, plus logging a "task completed" calendar event when a task's status flips to `'done'`.
 
 **Architecture:** A new persisted `leaveRequestStore.ts` unifies "my own" and "team" leave requests (currently two disconnected datasets) and calls `calendarStore.addEvents`/`recordHistory` directly from its own actions, mirroring how `roleStore.ts` already calls `recordHistory`. The Work module (`work-context.tsx`) keeps its existing React Context architecture — `createProject`/`addTask` just gain a few lines calling `calendarStore.addEvents` directly.
 
@@ -17,6 +17,7 @@
 - Work's `createProject`/`addTask` do NOT log to `recordHistory` at all — every task/project creation would be too frequent for a meaningful audit trail (deliberate asymmetry with Leave, not an oversight).
 - Work-sourced calendar events use `type: 'reminder'` (already labeled "Deadline/Form" in the calendar UI — no new type needed). Leave-sourced events use `type: 'leave'` (already exists).
 - `ownerName` on Work-sourced events will show a raw id (e.g. `'user-4'`), not a resolved display name — known simplification, not a bug to fix in this plan.
+- A "task completed" calendar event fires only on the transition INTO `'done'` (i.e. the task's previous status was not already `'done'`) — re-saving an already-done task must never create a duplicate completion event. The completion event's date is the real wall-clock date at the moment of completion (`new Date()`), not the task's `dueDate` — these can differ (early/late completion) and that's intentional.
 - Editing/deleting an auto-created calendar event never writes back to the source `LeaveRequest`/`WorkTask`/`WorkProject`. Updating a task/project's `dueDate` after creation never updates/removes its already-created event. One-way, fire-and-forget creation only.
 - No test runner exists in this repo (no Jest/Vitest, no `test` script in `package.json`). Verification per task is `npm run build` for type safety plus a manual/code-level walkthrough via `npm run dev`.
 
@@ -27,7 +28,7 @@
 - Modify: `src/features/employees/data/employee-leave.data.ts` — add `employeeName?: string` to `LeaveRequest`.
 - Create: `src/store/leaveRequestStore.ts` — persisted zustand store unifying own + team leave requests, with `approveRequest`/`rejectRequest` calling into `calendarStore`/`historyStore`.
 - Modify: `src/features/employees/pages/employee-leave/employee-leave.tsx` — read/write through the store; Approve/Reject buttons in Team view.
-- Modify: `src/features/work/context/work-context.tsx` — `createProject`/`addTask` call `calendarStore.addEvents` when a `dueDate` is set.
+- Modify: `src/features/work/context/work-context.tsx` — `createProject`/`addTask` call `calendarStore.addEvents` when a `dueDate` is set; `updateTask` calls it again when a task's status transitions into `'done'`.
 
 ---
 
@@ -654,8 +655,89 @@ git commit -m "feat(work): auto-create calendar events for project/task due date
 
 ---
 
+### Task 5: Task completion → calendar event
+
+**Files:**
+- Modify: `src/features/work/context/work-context.tsx`
+
+**Interfaces:**
+- Consumes: `useCalendarStore` (Task 4's import, already in this file).
+- Produces: nothing consumed by later tasks — leaf task, independent of Tasks 1-4 except sharing the same file/import as Task 4.
+
+- [ ] **Step 1: Read the previous task and detect the done-transition in `updateTask`**
+
+Replace `updateTask` (as it stands after Task 4 — Task 4 does not touch this function, so it is unchanged from the plan's File Structure baseline):
+
+```tsx
+  const updateTask = useCallback((id: string, patch: Partial<WorkTask>) => {
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === id ? { ...t, ...patch } : t));
+      const projectId = prev.find(t => t.id === id)?.projectId;
+      if (projectId) {
+        setProjects(ps => ps.map(p => {
+          if (p.id !== projectId) return p;
+          return { ...p, openTasks: countOpenTasks(next.filter(t => t.projectId === p.id)) };
+        }));
+      }
+      return next;
+    });
+  }, []);
+```
+
+with:
+
+```tsx
+  const updateTask = useCallback((id: string, patch: Partial<WorkTask>) => {
+    const prevTask = tasks.find(t => t.id === id);
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === id ? { ...t, ...patch } : t));
+      const projectId = prev.find(t => t.id === id)?.projectId;
+      if (projectId) {
+        setProjects(ps => ps.map(p => {
+          if (p.id !== projectId) return p;
+          return { ...p, openTasks: countOpenTasks(next.filter(t => t.projectId === p.id)) };
+        }));
+      }
+      return next;
+    });
+    if (patch.status === 'done' && prevTask && prevTask.status !== 'done') {
+      const today = new Date();
+      const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      useCalendarStore.getState().addEvents([{
+        id: `task-done-${id}-${Date.now()}`,
+        title: `${prevTask.title} completed`,
+        date: dateKey,
+        type: 'reminder',
+        status: 'confirmed',
+        source: 'personal',
+        scope: prevTask.assigneeId === CURRENT_USER_ID ? 'my' : 'team',
+        ownerName: prevTask.assigneeId === CURRENT_USER_ID ? undefined : prevTask.assigneeId,
+        allDay: true,
+        note: prevTask.totalWorkedHours ? `Logged ${prevTask.totalWorkedHours}h` : undefined
+      }]);
+    }
+  }, [tasks]);
+```
+
+(The dependency array changes from `[]` to `[tasks]` — necessary because the function now reads `tasks.find(...)` directly in its body, not only inside the `setTasks` updater. This means `updateTask`'s identity changes when `tasks` changes; this is already accounted for since `updateTask` is already listed in the `value` `useMemo`'s dependency array further down the file — no other change needed there.)
+
+- [ ] **Step 2: Verify**
+
+Run: `npm run build` — expect no new TypeScript errors.
+Run: `npm run dev`. Open a task that has logged some time via clock-in/out (`WorkItemDetailDrawer.tsx`'s existing clock-in feature — clock in, wait a few seconds, clock out to populate `totalWorkedHours`), then mark its status `'done'`. Confirm a new "reminder"-type calendar event titled "`<task title>` completed" appears on today's real date, with a note showing the logged hours. Mark an already-done task's status to `'done'` again (e.g. via any other field edit that happens to re-send `status: 'done'`) — confirm no duplicate completion event is created.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/features/work/context/work-context.tsx
+git commit -m "feat(work): log a calendar event when a task is marked done"
+```
+
+---
+
 ## Self-Review Notes
 
 - Spec §1 (`leaveRequestStore.ts`) → Task 2. §2 (Team Leave UI) → Task 3. §3 (Work module wiring) → Task 4. §4 (no calendar-type-system changes needed) → confirmed, no task touches `employee-calendar.types.ts`. §5 (out of scope: Shift/Attendance/Availability/Training/Review/Announcements/Publish, milestones, ownerName resolution, rejection-reason input, write-back) → none of these appear in any task. §6 (verification convention) → reflected in Global Constraints and every task's verify step.
+- Task 5 (task-completion → calendar event) was added after the spec was written, per a follow-up request mid-conversation — it reuses Task 4's `useCalendarStore` import and the same `'reminder'`/scope-by-assignee conventions, so it doesn't introduce a new pattern.
 - One implementation detail resolved beyond the spec's pseudocode, not a scope change: the spec's `enumerateDates` example assumed ISO-formatted dates, but the actual `leaveRequests` seed data in `employee-leave.data.ts` uses human-readable strings (`'Jun 15, 2026'`), while the Apply Leave form (and the Work module's `dueDate`s) already produce/use ISO `YYYY-MM-DD`. Task 2's `toIsoDate`/`enumerateDates` handle both formats safely using local-time date arithmetic (matching the same local-time convention `my-calendar-tab.tsx`'s `parseLocalDate`/`toDateKey` already use), avoiding a UTC-vs-local off-by-one bug that naively mixing `new Date(isoString)` (parsed as UTC) and `new Date(humanString)` (parsed as local) would cause.
 - Type/name consistency check: `employeeName`, `addRequest`, `approveRequest`, `rejectRequest`, `myRequests`, `teamRequests` are spelled identically everywhere they appear across Tasks 1–3.
