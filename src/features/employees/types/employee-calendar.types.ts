@@ -4,9 +4,10 @@ export type CalendarViewMode = 'day' | 'week' | 'month' | 'agenda';
 export type CalendarEventType = 'meeting' | 'holiday' | 'leave' | 'shift' | 'reminder' | 'training' | 'out-of-office' | 'company-event';
 export type CalendarEventCategory = 'hr' | 'project' | 'training' | 'review' | 'client' | 'compliance' | 'management';
 export type CalendarEventPriority = 'low' | 'medium' | 'high' | 'critical';
-export type CalendarEventStatus = 'confirmed' | 'pending' | 'needs-response' | 'rejected';
+export type CalendarEventStatus = 'confirmed' | 'pending' | 'needs-response' | 'rejected' | 'tentative';
 export type CalendarEventSource = 'company' | 'personal' | 'schedule' | 'leave';
 export type SyncConnectionStatus = 'connected' | 'disconnected';
+export type SyncProvider = 'google' | 'outlook';
 
 /** Whose calendar an event belongs to. 'Combined' is a view-time union, not a stored scope. */
 export type CalendarScope = 'my' | 'team' | 'department' | 'organization';
@@ -33,6 +34,10 @@ export interface CalendarEvent {
   category?: CalendarEventCategory;
   priority?: CalendarEventPriority;
   leaveType?: LeaveTypeKey;
+  syncProvider?: SyncProvider;
+  syncOrigin?: 'pulled' | 'pushed';
+  seriesId?: string;
+  archived?: boolean;
 }
 
 export interface CalendarSyncStatus {

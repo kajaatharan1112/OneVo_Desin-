@@ -12,6 +12,8 @@ export interface LeaveRequest {
   reason?: string;
   approver?: string;
   rejectionNote?: string;
+  attachmentName?: string;
+  employeeName?: string;
 }
 
 export interface LeaveHistoryEntry {
