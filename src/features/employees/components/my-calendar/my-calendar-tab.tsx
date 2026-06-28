@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, CalendarDays, ChevronDown,
-  Users, RefreshCw, Filter, Plus, Check, X,
+  Users, RefreshCw, Filter, Plus, Check, X, HelpCircle,
   Sun, Plane, Clock, Bell, CalendarX2, Settings,
   GraduationCap, LogOut, Building2, Copy
 } from 'lucide-react';
@@ -411,10 +411,11 @@ export const MyCalendarTab: React.FC = () => {
     updateEvent(updated.id, updated);
     setSelectedEvent(updated);
   };
-  const handleRsvp = (id: string, accepted: boolean) => {
+  const handleRsvp = (id: string, response: 'accepted' | 'declined' | 'tentative') => {
     const target = localEvents.find(e => e.id === id);
     if (!target) return;
-    updateEvent(id, { ...target, needsResponse: false, status: accepted ? 'confirmed' : 'rejected' });
+    const status = response === 'accepted' ? 'confirmed' : response === 'declined' ? 'rejected' : 'tentative';
+    updateEvent(id, { ...target, needsResponse: false, status });
   };
   const handleDuplicateEvent = (event: CalendarEvent) => {
     setSelectedEvent(null);
@@ -541,7 +542,7 @@ export const MyCalendarTab: React.FC = () => {
                   {dayEvts.slice(0, 3).map(ev => (
                     <div
                       key={ev.id}
-                      className={`emc-month__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}
+                      className={`emc-month__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`}
                       onClick={e => openEvent(e, ev)}
                       onContextMenu={e => handleEventContextMenu(e, ev)}
                     >
@@ -608,7 +609,7 @@ export const MyCalendarTab: React.FC = () => {
             {days.map((d, i) => (
               <div key={toDateKey(d)} className="emc-week__alldaycell">
                 {allDayRows[i].map(ev => (
-                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
+                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
                 ))}
               </div>
             ))}
@@ -640,7 +641,7 @@ export const MyCalendarTab: React.FC = () => {
                     {hourEvts.map(ev => (
                       <div
                         key={ev.id}
-                        className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-week__ev--dragging' : ''}`}
+                        className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}${draggedEventId === ev.id ? ' emc-week__ev--dragging' : ''}`}
                         onClick={e => openEvent(e, ev)}
                         onContextMenu={e => handleEventContextMenu(e, ev)}
                         draggable
@@ -674,7 +675,7 @@ export const MyCalendarTab: React.FC = () => {
           <div className="emc-day__allday">
             <span className="emc-day__allday-label">All day</span>
             {allDay.map(ev => (
-              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
+              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
             ))}
           </div>
         )}
@@ -700,7 +701,7 @@ export const MyCalendarTab: React.FC = () => {
                   {hourEvts.map(ev => (
                     <div
                       key={ev.id}
-                      className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-day__ev--dragging' : ''}`}
+                      className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}${draggedEventId === ev.id ? ' emc-day__ev--dragging' : ''}`}
                       onClick={e => openEvent(e, ev)}
                       onContextMenu={e => handleEventContextMenu(e, ev)}
                       draggable
@@ -760,7 +761,7 @@ export const MyCalendarTab: React.FC = () => {
                   const Icon = AGENDA_TYPE_ICON[ev.type];
                   return (
                     <div key={ev.id} className="emc-agenda__ev" onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>
-                      <div className={`emc-agenda__icon emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}>
+                      <div className={`emc-agenda__icon emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`}>
                         <Icon size={13} />
                       </div>
                       <span className="emc-agenda__ev-time">
@@ -799,8 +800,9 @@ export const MyCalendarTab: React.FC = () => {
         </div>
         {ev.needsResponse && (
           <div className="emc-rail__ev-actions">
-            <button type="button" className="emc-iconbtn emc-iconbtn--accept" aria-label="Accept" onClick={() => handleRsvp(ev.id, true)}><Check size={10} /></button>
-            <button type="button" className="emc-iconbtn emc-iconbtn--decline" aria-label="Decline" onClick={() => handleRsvp(ev.id, false)}><X size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--accept" aria-label="Accept" onClick={() => handleRsvp(ev.id, 'accepted')}><Check size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--tentative" aria-label="Tentative" onClick={() => handleRsvp(ev.id, 'tentative')}><HelpCircle size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--decline" aria-label="Decline" onClick={() => handleRsvp(ev.id, 'declined')}><X size={10} /></button>
           </div>
         )}
       </div>

@@ -147,6 +147,10 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
               <p className="emc-modal__rejected-note">Rejected by manager.</p>
             )}
 
+            {event.status === 'tentative' && (
+              <p className="emc-modal__tentative-note">Tentative response.</p>
+            )}
+
             <div className="emc-modal__actions">
               {event.syncOrigin !== 'pulled' && (
                 <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>

@@ -909,6 +909,15 @@
   background: color-mix(in srgb, var(--error, #ef4444) 10%, transparent);
 }
 
+.emc-iconbtn--tentative {
+  color: #d97706;
+  border-color: color-mix(in srgb, #d97706 30%, var(--border));
+}
+
+.emc-iconbtn--tentative:hover {
+  background: color-mix(in srgb, #d97706 10%, transparent);
+}
+
 /* ── Calendar sync ───────────────────────────────────────────────────────── */
 
 .emc-sync {
@@ -1883,6 +1892,12 @@
   color: #dc2626;
 }
 
+.emc-modal__tentative-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #d97706;
+}
+
 /* Pending / rejected event pills */
 .emc-month__evpill.emc-evpill--pending-status,
 .emc-week__evpill.emc-evpill--pending-status,
@@ -1895,5 +1910,11 @@
 .emc-evpill--rejected-status {
   --ev-color: #dc2626;
   --ev-bg: color-mix(in srgb, #dc2626 10%, transparent);
+  border-style: dashed;
+}
+
+.emc-evpill--tentative-status {
+  --ev-color: #d97706;
+  --ev-bg: color-mix(in srgb, #d97706 10%, transparent);
   border-style: dashed;
 }
