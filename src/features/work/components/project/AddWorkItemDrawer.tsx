@@ -20,7 +20,6 @@ import {
   type TaskPriority,
   type TaskStatus,
   type WorkProject,
-  employeeName,
 } from '../../workMockData';
 
 interface Props {
@@ -223,17 +222,6 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       }
     }
     onClose();
-  };
-
-  const getStatusLabel = (s: TaskStatus) => {
-    switch (s) {
-      case 'backlog': return 'Backlog';
-      case 'todo': return 'To Do';
-      case 'in_progress': return 'In Progress';
-      case 'review': return 'Review';
-      case 'done': return 'Done';
-      default: return 'Status';
-    }
   };
 
   const getPriorityColor = (p: TaskPriority) => {

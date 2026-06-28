@@ -12,6 +12,7 @@ export interface LeaveRequest {
   reason?: string;
   approver?: string;
   rejectionNote?: string;
+  attachmentName?: string;
 }
 
 export interface LeaveHistoryEntry {

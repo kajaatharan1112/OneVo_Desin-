@@ -85,7 +85,7 @@ function App() {
     }
     if (location.pathname.startsWith('/organization/')) {
       setActiveTab('Organization');
-      setActiveSubItemId(location.pathname.includes('/positions') ? 'positions' : 'departments');
+      setActiveSubItemId(location.pathname.includes('/departments') ? 'departments' : location.pathname.includes('/roles-permissions') ? 'roles-permissions' : 'positions');
       return;
     }
     if (location.pathname.startsWith('/automations')) {
@@ -93,6 +93,15 @@ function App() {
       setActiveSubItemId('automations');
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleNavigate = () => {
+      setActiveTab('Settings');
+      setActiveSubItemId('clock-in-policy');
+    };
+    window.addEventListener('navigate-to-clock-in-policy', handleNavigate);
+    return () => window.removeEventListener('navigate-to-clock-in-policy', handleNavigate);
+  }, []);
 
   const handleSubItemSelect = (id: string) => {
     setActiveSubItemId(id);
@@ -173,6 +182,7 @@ function App() {
           case 'general': return <GeneralSettingsPage />;
           case 'branding': return <BrandingSettingsPage />;
           case 'users': return <AdminUsersPage />;
+          case 'roles-permissions': return <RolesPermissionsPage />;
           case 'notifications': return <NotificationsSettingsPage />;
           case 'billing': return <BillingSettingsPage />;
           case 'devices':
@@ -251,7 +261,10 @@ function App() {
         if (resolvedSubId === 'roles-permissions') {
           return <RolesPermissionsPage />;
         }
-        return <DepartmentsPage />;
+        if (resolvedSubId === 'departments') {
+          return <DepartmentsPage />;
+        }
+        return <PositionsPage />;
       }
       if (activeTab === 'Settings') {
         switch (resolvedSubId) {
@@ -261,6 +274,8 @@ function App() {
             return <BrandingSettingsPage />;
           case 'users':
             return <AdminUsersPage />;
+          case 'roles-permissions':
+            return <RolesPermissionsPage />;
           case 'notifications':
             return <NotificationsSettingsPage />;
           case 'billing':

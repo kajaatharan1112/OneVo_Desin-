@@ -15,7 +15,8 @@ const EMPTY_FORM = (): EmployeeFormValues => ({
   employmentType: 'full-time',
   startDate: new Date().toISOString().slice(0, 10),
   workMode: 'onsite',
-  positionId: ''
+  positionId: '',
+  gender: ''
 });
 
 interface EmployeeFormPanelProps {
@@ -52,7 +53,8 @@ export const EmployeeFormPanel: React.FC<EmployeeFormPanelProps> = ({ onClose })
         employmentType: existing.employmentType,
         startDate: existing.startDate,
         workMode: existing.workMode ?? '',
-        positionId: activeAssignment?.positionId ?? ''
+        positionId: activeAssignment?.positionId ?? '',
+        gender: existing.gender ?? ''
       });
     } else {
       setValues(EMPTY_FORM());
@@ -146,6 +148,18 @@ export const EmployeeFormPanel: React.FC<EmployeeFormPanelProps> = ({ onClose })
                 onChange={e => setValues(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="Optional"
               />
+            </div>
+            <div className="org-form-field">
+              <label>Gender</label>
+              <select
+                value={values.gender}
+                onChange={e => setValues(prev => ({ ...prev, gender: e.target.value as any }))}
+              >
+                <option value="">Select gender…</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
             </div>
           </div>
 

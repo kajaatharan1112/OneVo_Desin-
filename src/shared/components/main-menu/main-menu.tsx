@@ -28,7 +28,8 @@ export interface NavItem {
 
 const SETTINGS_SUB_ITEMS = [
   { id: 'general',       label: 'General',      icon: <Settings size={13} />  },
-  { id: 'users',         label: 'User',          icon: <Users size={13} />     },
+  { id: 'users',         label: 'User Access',   icon: <Users size={13} />     },
+  { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} /> },
   { id: 'billing',       label: 'Billing',       icon: <CreditCard size={13} /> },
   { id: 'notifications', label: 'Notification', icon: <Bell size={13} />      },
 ] as const;
@@ -45,29 +46,50 @@ const SETTINGS_POLICY_ITEMS = [
 
 const SETTINGS_OTHER_ITEMS = [
   { id: 'devices',         label: 'Device',          icon: <Monitor size={13} />       },
-  { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
+  { id: 'audit-log',       label: 'History',         icon: <ClipboardList size={13} /> },
 ] as const;
 
+kaviz/offboarding
 export function buildSettingsNavItem(includeBulkOnboarding = false): NavItem {
   const otherItems = [
     ...(includeBulkOnboarding ? [{ id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} /> }] : []),
     ...SETTINGS_OTHER_ITEMS.filter(item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY)
   ];
+export function buildSettingsNavItem(isEmployee = false): NavItem {
+  const otherItems = SETTINGS_OTHER_ITEMS.filter(
+    item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
+  );
+  const subSections: SubNavSection[] = [
+    { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
+  ];
+  if (!isEmployee) {
+    subSections.push({
+      id: 'policy',
+      label: 'Policy',
+      collapsible: true,
+      defaultOpen: true,
+      items: [...SETTINGS_POLICY_ITEMS],
+    });
+  }
+  subSections.push({ id: 'other', items: otherItems });
+
+main
   return {
     id: 'settings',
     label: 'Settings',
     icon: railIcon(Settings),
-    subSections: [
-      { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
-      { id: 'policy', label: 'Policy', collapsible: true, defaultOpen: true, items: [...SETTINGS_POLICY_ITEMS] },
-      { id: 'other', items: otherItems },
-    ],
+    subSections,
   };
 }
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
+kaviz/offboarding
 export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
-export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
+export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true)
+
+export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
+export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
+main
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
 export const WORK_NAV_ITEM: NavItem = {
@@ -106,8 +128,8 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   { id: 'reports', label: 'Reports', icon: railIcon(PieChart), subSections: [] },
   { id: 'organization', label: 'Organization', railLabel: 'Org', icon: railIcon(Building2), subSections: [
     { id: 'main', items: [
-      { id: 'departments',       label: 'Departments',         icon: <Building size={13} />    },
       { id: 'positions',         label: 'Positions',            icon: <Briefcase size={13} />   },
+      { id: 'departments',       label: 'Departments',         icon: <Building size={13} />    },
       { id: 'roles-permissions', label: 'Roles and Permission', icon: <ShieldCheck size={13} /> },
     ]},
   ]},
@@ -134,7 +156,7 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
   { id: 'calendar',        label: 'Calendar',                                         icon: railIcon(CalendarDays),    subSections: [] },
   { id: 'people',          label: 'People',                                           icon: railIcon(UsersRound),      subSections: [] },
   { id: 'reports',         label: 'Reports',                                          icon: railIcon(PieChart),        subSections: [] },
-  SETTINGS_NAV_ITEM,
+  EMPLOYEE_SETTINGS_NAV_ITEM,
 ];
 
 interface MainMenuProps {
@@ -177,7 +199,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       return;
     }
     if (currentView === 'tenant' && item.label === 'Organization' && subId) {
-      navigate(subId === 'positions' ? '/organization/positions' : '/organization/departments');
+      navigate(
+        subId === 'positions'
+          ? '/organization/positions'
+          : subId === 'roles-permissions'
+            ? '/organization/roles-permissions'
+            : '/organization/departments'
+      );
       return;
     }
     if (currentView === 'employee' && item.label === 'People') {

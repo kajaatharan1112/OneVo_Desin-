@@ -41,6 +41,7 @@ const EMPTY_VALUES = (): EmployeeOnboardingValues => ({
   workMode: 'onsite',
   positionId: '',
   confirmedRoleIds: [],
+  gender: ''
 });
 
 interface AddEmployeeWizardProps {
@@ -246,6 +247,18 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                     onChange={e => setValues(v => ({ ...v, email: e.target.value }))}
                     required
                   />
+                </div>
+                <div className="org-form-field">
+                  <label>Gender</label>
+                  <select
+                    value={values.gender}
+                    onChange={e => setValues(v => ({ ...v, gender: e.target.value as any }))}
+                  >
+                    <option value="">Select gender…</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
               </div>
                 <div className="emp-form-section">

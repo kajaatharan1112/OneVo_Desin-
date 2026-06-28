@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type {
   AssignmentFormState,
   Department,
@@ -22,6 +23,8 @@ import {
   isPositionCodeUnique,
   suggestDepartmentCode
 } from '../utils/organizationUtils';
+import { useRoleStore } from './roleStore';
+import { recordHistory } from './historyStore';
 
 const SEED_DEPARTMENTS: Department[] = [
   {
@@ -242,19 +245,19 @@ const SEED_POSITIONS: Position[] = [
 ];
 
 const SEED_EMPLOYEES: Employee[] = [
-  { id: 'emp-1', firstName: 'Ahmad', lastName: 'Razif', email: 'ahmad.razif@onevo.com', phone: '+94 77 123 4567', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
-  { id: 'emp-2', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@onevo.com', phone: '+94 77 234 5678', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
-  { id: 'emp-3', firstName: 'Lee', lastName: 'Wei Ming', email: 'lee.weiming@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-03-01', workMode: 'onsite' },
-  { id: 'emp-4', firstName: 'Zara', lastName: 'Hassan', email: 'zara.hassan@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
-  { id: 'emp-5', firstName: 'Maria', lastName: 'Gomez', email: 'maria.gomez@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
-  { id: 'emp-6', firstName: 'Alex', lastName: 'Rivera', email: 'alex.rivera@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'hybrid' },
-  { id: 'emp-7', firstName: 'Jordan', lastName: 'Chen', email: 'jordan.chen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'hybrid' },
-  { id: 'emp-8', firstName: 'Sam', lastName: 'Patel', email: 'sam.patel@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote' },
-  { id: 'emp-9', firstName: 'Taylor', lastName: 'Brooks', email: 'taylor.brooks@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote' },
-  { id: 'emp-10', firstName: 'Morgan', lastName: 'Lee', email: 'morgan.lee@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
-  { id: 'emp-11', firstName: 'Casey', lastName: 'Nguyen', email: 'casey.nguyen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-08-01', workMode: 'field' },
-  { id: 'emp-12', firstName: 'Riley', lastName: 'Foster', email: 'riley.foster@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-07-01', workMode: 'remote' },
-  { id: 'emp-13', firstName: 'Dana', lastName: 'Brooks', email: 'dana.brooks@onevo.com', phone: '+94 77 345 6789', status: 'active', employmentType: 'full-time', startDate: '2024-02-01', workMode: 'hybrid' }
+  { id: 'emp-1', firstName: 'Ahmad', lastName: 'Razif', email: 'ahmad.razif@onevo.com', phone: '+94 77 123 4567', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite', gender: 'male' },
+  { id: 'emp-2', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@onevo.com', phone: '+94 77 234 5678', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite', gender: 'female' },
+  { id: 'emp-3', firstName: 'Lee', lastName: 'Wei Ming', email: 'lee.weiming@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-03-01', workMode: 'onsite', gender: 'male' },
+  { id: 'emp-4', firstName: 'Zara', lastName: 'Hassan', email: 'zara.hassan@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite', gender: 'female' },
+  { id: 'emp-5', firstName: 'Maria', lastName: 'Gomez', email: 'maria.gomez@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite', gender: 'female' },
+  { id: 'emp-6', firstName: 'Alex', lastName: 'Rivera', email: 'alex.rivera@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'hybrid', gender: 'male' },
+  { id: 'emp-7', firstName: 'Jordan', lastName: 'Chen', email: 'jordan.chen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'hybrid', gender: 'male' },
+  { id: 'emp-8', firstName: 'Sam', lastName: 'Patel', email: 'sam.patel@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote', gender: 'male' },
+  { id: 'emp-9', firstName: 'Taylor', lastName: 'Brooks', email: 'taylor.brooks@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-06-01', workMode: 'remote', gender: 'female' },
+  { id: 'emp-10', firstName: 'Morgan', lastName: 'Lee', email: 'morgan.lee@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite', gender: 'female' },
+  { id: 'emp-11', firstName: 'Casey', lastName: 'Nguyen', email: 'casey.nguyen@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-08-01', workMode: 'field', gender: 'male' },
+  { id: 'emp-12', firstName: 'Riley', lastName: 'Foster', email: 'riley.foster@onevo.com', status: 'active', employmentType: 'full-time', startDate: '2024-07-01', workMode: 'remote', gender: 'male' },
+  { id: 'emp-13', firstName: 'Dana', lastName: 'Brooks', email: 'dana.brooks@onevo.com', phone: '+94 77 345 6789', status: 'active', employmentType: 'full-time', startDate: '2024-02-01', workMode: 'hybrid', gender: 'female' }
 ];
 
 const SEED_ASSIGNMENTS: PositionAssignment[] = [
@@ -310,11 +313,15 @@ interface OrganizationState {
     id?: string;
     name: string;
     code: string;
+    description?: string;
     departmentId: string;
     reportsToPositionId: string | null;
     type: Position['type'];
     capacity: number;
     status: Position['status'];
+    coverageType?: 'position' | 'department';
+    primaryCoverageId?: string | null;
+    secondaryCoverageIds?: string[];
   }) => { ok: boolean; error?: string };
 
   reparentPosition: (positionId: string, newReportsToPositionId: string) => boolean;
@@ -352,7 +359,9 @@ interface OrganizationState {
   ) => { ok: boolean; error?: string };
 }
 
-export const useOrganizationStore = create<OrganizationState>((set, get) => ({
+export const useOrganizationStore = create<OrganizationState>()(
+  persist(
+    (set, get) => ({
   departments: SEED_DEPARTMENTS,
   positions: SEED_POSITIONS,
   employees: SEED_EMPLOYEES,
@@ -455,6 +464,7 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     }
 
     get().closeDepartmentForm();
+    recordHistory({ title: data.id ? 'Department updated' : 'Department created', description: `${data.name.trim()} was ${data.id ? 'updated' : 'added to the organization structure'}.`, category: 'Organization', target: data.name.trim() });
     return { ok: true };
   },
 
@@ -555,11 +565,15 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
                 ...p,
                 name: data.name.trim(),
                 code: data.code.trim().toUpperCase(),
+                description: data.description?.trim() ?? p.description,
                 departmentId: data.departmentId,
                 reportsToPositionId: data.reportsToPositionId,
                 type: data.type,
                 capacity,
-                status: data.status
+                status: data.status,
+                coverageType: data.coverageType ?? p.coverageType,
+                primaryCoverageId: data.primaryCoverageId ?? p.primaryCoverageId ?? null,
+                secondaryCoverageIds: data.secondaryCoverageIds ?? p.secondaryCoverageIds ?? []
               }
             : p
         )
@@ -569,16 +583,22 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
         id: createId('pos'),
         name: data.name.trim(),
         code: data.code.trim().toUpperCase(),
+        description: data.description?.trim() ?? '',
         departmentId: data.departmentId,
         reportsToPositionId: data.reportsToPositionId,
         type: data.type,
         capacity,
-        status: data.status
+        status: data.status,
+        coverageType: data.coverageType ?? 'department',
+        primaryCoverageId: data.primaryCoverageId ?? null,
+        secondaryCoverageIds: data.secondaryCoverageIds ?? []
       };
       set({ positions: [...positions, newPos] });
     }
 
     get().closePositionForm();
+    const reportingName = data.reportsToPositionId ? positions.find(position => position.id === data.reportsToPositionId)?.name : null;
+    recordHistory({ title: data.id ? 'Position updated' : 'Position created', description: reportingName ? `${data.name.trim()} was ${data.id ? 'updated' : 'placed'} under ${reportingName}.` : `${data.name.trim()} was ${data.id ? 'updated' : 'created as a root position'}.`, category: 'Organization', target: data.name.trim() });
     return { ok: true };
   },
 
@@ -595,6 +615,9 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       ),
       dragError: null
     });
+    const moved = get().positions.find(position => position.id === positionId);
+    const manager = get().positions.find(position => position.id === newReportsToPositionId);
+    if (moved && manager) recordHistory({ title: 'Reporting line changed', description: `${moved.name} now reports to ${manager.name}.`, category: 'Organization', target: moved.name });
     return true;
   },
 
@@ -786,7 +809,8 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       employmentType: values.employmentType,
       startDate: values.startDate,
       workMode: values.workMode || null,
-      roleIds: values.confirmedRoleIds
+      roleIds: values.confirmedRoleIds,
+      gender: values.gender || undefined
     };
 
     const newAssignment: PositionAssignment = {
@@ -802,6 +826,8 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       employees: [...employees, employee],
       assignments: [...assignments, newAssignment]
     });
+
+    useRoleStore.getState().setEmployeeRoles(employee.id, values.confirmedRoleIds);
 
     get().showToast('Employee added. Invite sent.');
     return { ok: true, employeeId: employee.id };
@@ -836,7 +862,8 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       status: values.status,
       employmentType: values.employmentType,
       startDate: values.startDate,
-      workMode: values.workMode || null
+      workMode: values.workMode || null,
+      gender: values.gender || undefined
     };
 
     set({
@@ -895,7 +922,19 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     get().showToast(existing ? 'Employee updated.' : 'Employee added.');
     return { ok: true };
   }
-}));
+    }),
+    {
+      name: 'onevo-organization-store',
+      version: 1,
+      partialize: state => ({
+        departments: state.departments,
+        positions: state.positions,
+        employees: state.employees,
+        assignments: state.assignments
+      })
+    }
+  )
+);
 
 function wouldCreateCycle(
   positionId: string,

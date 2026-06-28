@@ -13,6 +13,10 @@ export type PolicyScope = 'company' | 'department' | 'position';
 export type EntitlementSource = 'generated' | 'manual';
 export type EntitlementStatus = 'active' | 'missing-policy';
 
+export type GenderApplicability = 'all' | 'male' | 'female';
+export type LeaveLimitUnit = 'hours' | 'minutes';
+export type LeaveLimitPeriod = 'yearly' | 'monthly';
+
 export interface LeaveType {
   id: string;
   name: string;
@@ -22,6 +26,7 @@ export interface LeaveType {
   paidLeave: boolean;
   active: boolean;
   status: LeaveStatus;
+  genderApplicability: GenderApplicability;
 }
 
 export interface LeavePolicy {
@@ -34,18 +39,20 @@ export interface LeavePolicy {
   appliesTo: PolicyScope;
   departmentIds: string[];
   positionIds: string[];
-  daysPerYear: number;
+  limitValue: number;
+  limitUnit: LeaveLimitUnit;
+  limitPeriod: LeaveLimitPeriod;
   accrualMethod: AccrualMethod;
   proRataNewJoiners: boolean;
   carryForwardAllowed: boolean;
-  maxCarryForwardDays: number;
+  maxCarryForwardValue: number;
   carryForwardExpiryMonths: number;
   minNoticeDays: number;
   maxConsecutiveDays: number | null;
-  minDaysPerRequest: number;
+  minRequestValue: number;
   blackoutPeriods: string;
   requiresDocument: boolean;
-  documentRequiredAfterDays: number | null;
+  documentRequiredAfterValue: number | null;
 }
 
 export interface LeaveEntitlement {
@@ -55,10 +62,12 @@ export interface LeaveEntitlement {
   policyId: string | null;
   policyName: string | null;
   year: number;
-  totalDays: number;
-  used: number;
-  pending: number;
-  remaining: number;
+  totalValue: number;
+  usedValue: number;
+  pendingValue: number;
+  remainingValue: number;
+  limitUnit: LeaveLimitUnit;
+  limitPeriod: LeaveLimitPeriod;
   source: EntitlementSource;
   status: EntitlementStatus;
 }
