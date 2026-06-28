@@ -6,6 +6,8 @@ import {
   GraduationCap, LogOut, Building2, Copy
 } from 'lucide-react';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
+import { useChecklistTaskStore } from '../../../../store/checklistTaskStore';
+import { useEmployeeContext } from '../../context/employee-context';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
 import type { SyncProvider } from '../../types/employee-calendar.types';
 import { pullEvents, detectConflict, type SyncConflict } from './calendar-sync.utils';
@@ -105,6 +107,33 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
+kaviz/offboarding
+  const { syncStatus } = employeeCalendarData;
+  const { selectedEmployeeId } = useEmployeeContext();
+  const onboardingTasks = useChecklistTaskStore(state => state.tasks);
+
+  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(() => {
+    if (selectedEmployeeId !== 'manager') return employeeCalendarData.events;
+    const seen = new Set<string>();
+    const reminders: CalendarEvent[] = onboardingTasks
+      .filter(task => task.templateType === 'onboarding' && task.assigneeEmployeeId)
+      .filter(task => {
+        const key = `${task.employeeId}-${task.templateId}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map(task => ({
+        id: `onboarding-reminder-${task.employeeId}-${task.templateId}`,
+        title: `Collect documents - ${task.employeeName || 'New employee'}`,
+        date: task.dueDate,
+        start: task.dueTime || '17:00',
+        type: 'reminder', status: 'pending', source: 'personal', scope: 'my',
+        note: `${task.employeeName || 'Employee'} (${task.employeeNumber || '--'}) onboarding document checklist.`
+      }));
+    return [...employeeCalendarData.events, ...reminders];
+  });
+
   const [syncStatus, setSyncStatus] = useState(employeeCalendarData.syncStatus);
   const [lastConnectedProvider, setLastConnectedProvider] = useState<SyncProvider | null>(
     employeeCalendarData.syncStatus.google === 'connected' ? 'google' : null
@@ -113,6 +142,7 @@ export const MyCalendarTab: React.FC = () => {
 
   // Local mutable copy of the one events table — Edit/Delete write back here.
   const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(employeeCalendarData.events);
+main
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 

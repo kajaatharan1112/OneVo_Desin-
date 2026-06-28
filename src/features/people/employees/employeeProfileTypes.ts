@@ -42,6 +42,8 @@ export interface EmployeeDocument {
   type: string;
   status: 'uploaded' | 'generated' | 'pending';
   date: string;
+  url?: string;
+  mimeType?: string;
 }
 
 export interface EmployeeActivityEntry {

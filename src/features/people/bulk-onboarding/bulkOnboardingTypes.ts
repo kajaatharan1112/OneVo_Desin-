@@ -59,4 +59,5 @@ export interface ImportRun {
   status: ImportRunStatus;
   createdEmployeeIds: string[];
   failedRows: BulkImportRow[];
+  rows?: BulkImportRow[];
 }
