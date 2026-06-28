@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useChecklistTaskStore } from '../../../store/checklistTaskStore';
 import { useChecklistTemplateStore } from '../../../store/checklistTemplateStore';
+import { useInbox } from '../../../core/notifications/inbox-context';
 import { getReportingManagerPreviewForPosition } from '../../../utils/organizationUtils';
 import { getSuggestedRolesForPosition } from './positionAccessUtils';
 import type { ChecklistTemplate } from '../checklist-templates/checklistTemplateTypes';
@@ -10,7 +11,6 @@ import type { EmployeeOnboardingValues, EmploymentType } from '../../../types/or
 
 const STEPS = ['Employee Details', 'Review & Create'] as const;
 const HAS_MULTIPLE_ENTITIES = false;
-const CAN_MANAGE_ACCESS = true;
 
 function findMatchingOnboardingTemplate(
   positionId: string,
@@ -26,18 +26,22 @@ function findMatchingOnboardingTemplate(
   );
 }
 
+const nextEmployeeNumber = () => `EMP-${String(Date.now()).slice(-6)}`;
+
 const EMPTY_VALUES = (): EmployeeOnboardingValues => ({
   firstName: '',
   lastName: '',
   email: '',
+  workEmail: '',
   phone: '',
-  employeeNumber: '',
+  employeeNumber: nextEmployeeNumber(),
   legalEntity: '',
   employmentType: 'full-time',
   startDate: new Date().toISOString().slice(0, 10),
   workMode: 'onsite',
   positionId: '',
   confirmedRoleIds: [],
+  gender: ''
 });
 
 interface AddEmployeeWizardProps {
@@ -46,6 +50,7 @@ interface AddEmployeeWizardProps {
 
 export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose }) => {
   const { positions, departments, assignments, employees, completeEmployeeOnboarding } = useOrganizationStore();
+  const { addInboxItem } = useInbox();
   const { generateTasksForEmployee } = useChecklistTaskStore();
   const { templates } = useChecklistTemplateStore();
 
@@ -54,7 +59,11 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ email: string } | null>(null);
-  const [adjustingAccess, setAdjustingAccess] = useState(false);
+  const [checklistTemplateId, setChecklistTemplateId] = useState('ct-onboarding-employee');
+  const [reportingManagerId, setReportingManagerId] = useState('');
+  const [taskDueDate, setTaskDueDate] = useState(new Date().toISOString().slice(0, 10));
+  const [taskDueTime, setTaskDueTime] = useState('17:00');
+  const [notificationId] = useState(() => 'onboarding-documents-' + Date.now());
 
   const activeDepartments = useMemo(
     () => departments.filter(d => d.status === 'active'),
@@ -78,7 +87,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
       ? positions.find(p => p.id === selectedPosition.reportsToPositionId) ?? null
       : null;
     const rm = getReportingManagerPreviewForPosition(selectedPosition, positions, assignments, employees);
-    const rmUnresolved = !rm.label || rm.label === '—';
+    const rmUnresolved = !rm.label || rm.label === '--';
     const accessRoles = getSuggestedRolesForPosition(selectedPosition.id);
     const matchingTemplate = findMatchingOnboardingTemplate(
       selectedPosition.id,
@@ -87,7 +96,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     );
     return {
       positionName: selectedPosition.name,
-      departmentName: dept?.name ?? '—',
+      departmentName: dept?.name ?? '--',
       reportsToName: parentPosition?.name ?? null,
       reportingManager: rm.label,
       rmUnresolved,
@@ -96,25 +105,47 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     };
   }, [selectedPosition, departments, positions, assignments, employees, templates]);
 
-  // Auto-set confirmedRoleIds from position access when position changes
-  useEffect(() => {
-    if (!values.positionId) {
-      setValues(v => ({ ...v, confirmedRoleIds: [] }));
-      return;
-    }
-    const roles = getSuggestedRolesForPosition(values.positionId);
-    setValues(v => ({ ...v, confirmedRoleIds: roles.map(r => r.id) }));
-  }, [values.positionId]);
 
+  const managerOptions = useMemo(() => {
+    const selectedDepartment = selectedPosition?.departmentId;
+    return employees.filter(employee => {
+      const assignment = assignments.find(item => item.employeeId === employee.id && item.status === 'active');
+      const position = positions.find(item => item.id === assignment?.positionId);
+      if (!position) return false;
+      return /manager|head|chief|hr/i.test(position.name) &&
+        (position.departmentId === selectedDepartment || /hr|human resources/i.test(position.name));
+    });
+  }, [employees, assignments, positions, selectedPosition]);
+
+  const selectedManager = managerOptions.find(manager => manager.id === reportingManagerId);
+  const selectedChecklist = templates.find(template => template.id === checklistTemplateId);
+
+
+  const handlePositionChange = (positionId: string) => {
+    const position = positions.find(item => item.id === positionId);
+    const name = position?.name.toLowerCase() || '';
+    const preferred = name.includes('intern') ? 'ct-onboarding-intern'
+      : name.includes('manager') || name.includes('head') ? 'ct-onboarding-manager'
+      : name.includes('hr') ? 'ct-onboarding-hr'
+      : 'ct-onboarding-employee';
+    const roles = positionId ? getSuggestedRolesForPosition(positionId) : [];
+    setValues(current => ({ ...current, positionId, confirmedRoleIds: roles.map(role => role.id) }));
+    setChecklistTemplateId(preferred);
+    setReportingManagerId('');
+  };
   const handleDepartmentChange = (deptId: string) => {
     setSelectedDepartmentId(deptId);
-    setValues(v => ({ ...v, positionId: '' }));
+    setValues(v => ({ ...v, positionId: '', confirmedRoleIds: [] }));
   };
 
   const validateStep1 = (): string | null => {
     if (!values.firstName.trim() || !values.lastName.trim()) return 'First and last name are required.';
-    if (!values.email.trim()) return 'Work email is required.';
+    if (!values.email.trim()) return 'Email address is required.';
     if (!values.startDate) return 'Start date is required.';
+    if (!values.workEmail?.trim()) return 'Work email is required.';
+    if (!reportingManagerId) return 'Reporting Manager is required.';
+    if (!checklistTemplateId) return 'Onboarding checklist is required.';
+    if (!taskDueDate || !taskDueTime) return 'Task due date and time are required.';
     if (!selectedDepartmentId) return 'Department is required.';
     if (!values.positionId) return 'Position is required.';
     return null;
@@ -124,7 +155,6 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     const issue = validateStep1();
     if (issue) { setError(issue); return; }
     setError(null);
-    setAdjustingAccess(false);
     setStep(1);
   };
 
@@ -139,7 +169,19 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
       setError(result.error ?? 'Unable to create employee.');
       return;
     }
-    generateTasksForEmployee(result.employeeId, 'onboarding', values.startDate);
+    const employeeName = `${values.firstName} ${values.lastName}`.trim();
+    const managerName = selectedManager ? `${selectedManager.firstName} ${selectedManager.lastName}` : 'Reporting Manager';
+    generateTasksForEmployee(result.employeeId, 'onboarding', values.startDate, checklistTemplateId, {
+      managerId: reportingManagerId, managerName, dueDate: taskDueDate, dueTime: taskDueTime,
+      employeeName, employeeNumber: values.employeeNumber
+    });
+    const documents = selectedChecklist?.items.map(item => item.requiredDocument || item.title).join(', ') || 'Onboarding documents';
+    addInboxItem({
+      id: `${notificationId}-${result.employeeId}`,
+      recipientId: 'manager', category: 'warning', title: 'New employee document collection task',
+      message: `${employeeName} (${values.employeeNumber}) - ${documents}. Due ${taskDueDate} at ${taskDueTime}. An email notification was also sent.`,
+      timeLabel: 'Just now', filter: 'new', actions: []
+    });
     setDone({ email: values.email });
   };
 
@@ -147,7 +189,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
     <div className="org-slideover-backdrop" onClick={onClose}>
       <div className="org-slideover org-slideover--wide" onClick={e => e.stopPropagation()}>
         <header className="org-slideover__header">
-          <h2>Add Employee</h2>
+          <h2>New Employee Onboarding</h2>
           <button type="button" className="org-slideover__close" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
@@ -178,9 +220,9 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
             </div>
           ) : step === 0 ? (
             <>
-              {/* ── Section: Identity ── */}
+              {/* Section: Identity */}
               <div className="emp-form-section">
-                <h3 className="emp-form-section__title">Identity</h3>
+                <h3 className="emp-form-section__title">About Me</h3>
                 <div className="org-form-field">
                   <label>First Name</label>
                   <input
@@ -198,7 +240,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   />
                 </div>
                 <div className="org-form-field">
-                  <label>Work Email</label>
+                  <label>Email Address</label>
                   <input
                     type="email"
                     value={values.email}
@@ -206,18 +248,29 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                     required
                   />
                 </div>
+                <div className="org-form-field">
+                  <label>Gender</label>
+                  <select
+                    value={values.gender}
+                    onChange={e => setValues(v => ({ ...v, gender: e.target.value as any }))}
+                  >
+                    <option value="">Select gender…</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
-
-              {/* ── Section: Employment ── */}
-              <div className="emp-form-section">
-                <h3 className="emp-form-section__title">Employment</h3>
+                <div className="emp-form-section">
+                <h3 className="emp-form-section__title">Contact Details</h3>
+                <div className="org-form-field">
+                  <label>Work Email</label>
+                  <input type="email" value={values.workEmail ?? ''} onChange={e => setValues(v => ({ ...v, workEmail: e.target.value }))} required />
+                </div>
                 <div className="org-form-field">
                   <label>Employee Number</label>
                   <input
-                    value={values.employeeNumber}
-                    onChange={e => setValues(v => ({ ...v, employeeNumber: e.target.value }))}
-                    placeholder="e.g. EMP-001"
-                  />
+                    value={values.employeeNumber} readOnly aria-readonly="true" title="Automatically generated" />
                 </div>
                 {HAS_MULTIPLE_ENTITIES && (
                   <div className="org-form-field">
@@ -245,21 +298,19 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   >
                     <option value="full-time">Full-time</option>
                     <option value="part-time">Part-time</option>
-                    <option value="contract">Contract</option>
                   </select>
                 </div>
               </div>
-
-              {/* ── Section: Position Assignment ── */}
+              {/* Section: Position Assignment */}
               <div className="emp-form-section">
-                <h3 className="emp-form-section__title">Position Assignment</h3>
+                <h3 className="emp-form-section__title">Onboarding Task Assignment</h3>
                 <p className="emp-form-hint">
                   Position controls reporting line, default access, and onboarding defaults.
                 </p>
                 <div className="org-form-field">
                   <label>Department</label>
                   <select value={selectedDepartmentId} onChange={e => handleDepartmentChange(e.target.value)}>
-                    <option value="">Select department…</option>
+                    <option value="">Select department...</option>
                     {activeDepartments.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
@@ -269,11 +320,11 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   <label>Position</label>
                   <select
                     value={values.positionId}
-                    onChange={e => setValues(v => ({ ...v, positionId: e.target.value }))}
+                    onChange={e => handlePositionChange(e.target.value)}
                     disabled={!selectedDepartmentId}
                   >
                     <option value="">
-                      {selectedDepartmentId ? 'Select position…' : 'Select a department first'}
+                      {selectedDepartmentId ? 'Select position...' : 'Select a department first'}
                     </option>
                     {departmentPositions.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -281,6 +332,26 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   </select>
                 </div>
 
+                <div className="org-form-field">
+                  <label>Task</label>
+                  <select value={checklistTemplateId} onChange={event => setChecklistTemplateId(event.target.value)} disabled={!values.positionId}>
+                    <option value="">Select onboarding checklist</option>
+                    {templates.filter(template => template.type === 'onboarding' && template.status === 'active').map(template => (
+                      <option key={template.id} value={template.id}>{template.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="org-form-field">
+                  <label>Reporting Manager Name</label>
+                  <select value={reportingManagerId} onChange={event => setReportingManagerId(event.target.value)} disabled={!values.positionId}>
+                    <option value="">Select HR / Manager</option>
+                    {managerOptions.map(manager => <option key={manager.id} value={manager.id}>{manager.firstName} {manager.lastName}</option>)}
+                  </select>
+                </div>
+                <div className="add-emp-due-grid">
+                  <div className="org-form-field"><label>Due Date</label><input type="date" value={taskDueDate} onChange={event => setTaskDueDate(event.target.value)} /></div>
+                  <div className="org-form-field"><label>Due Time</label><input type="time" value={taskDueTime} onChange={event => setTaskDueTime(event.target.value)} /></div>
+                </div>
                 {/* Position preview */}
                 {positionPreview && (
                   <div className="add-emp-position-preview">
@@ -305,29 +376,12 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                         )}
                       </div>
                       <div className="add-emp-position-preview__row">
-                        <span className="add-emp-position-preview__label">Access from selected position</span>
-                        {positionPreview.accessRoles.length === 0 ? (
-                          <span className="add-emp-position-preview__muted">
-                            No system access is granted from this position.
-                          </span>
-                        ) : (
-                          <span className="add-emp-position-preview__access-list">
-                            {positionPreview.accessRoles.map(r => (
-                              <span key={r.id} className="add-emp-access-tag">
-                                {r.name}
-                                <span className="add-emp-access-tag__badge">Auto applied</span>
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                      </div>
-                      <div className="add-emp-position-preview__row">
                         <span className="add-emp-position-preview__label">Onboarding checklist</span>
                         {positionPreview.matchingTemplate ? (
                           <span>
                             {positionPreview.matchingTemplate.name}
                             <span className="add-emp-position-preview__muted">
-                              {' '}— {positionPreview.matchingTemplate.items.length} tasks
+                              {' '} - {positionPreview.matchingTemplate.items.length} tasks
                             </span>
                           </span>
                         ) : (
@@ -341,7 +395,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
             </>
           ) : (
             <>
-              {/* ── STEP 2: Review & Create ── */}
+              {/* STEP 2: Review & Create */}
 
               {/* Employee summary */}
               <div className="emp-form-section">
@@ -353,7 +407,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                   </div>
                   <div className="emp-record-field">
                     <span className="emp-record-field__label">Work Email</span>
-                    <div className="emp-record-field__value">{values.email}</div>
+                    <div className="emp-record-field__value">{values.workEmail}</div>
                   </div>
                   {values.employeeNumber && (
                     <div className="emp-record-field">
@@ -384,11 +438,11 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                 <div className="emp-record-grid">
                   <div className="emp-record-field">
                     <span className="emp-record-field__label">Department</span>
-                    <div className="emp-record-field__value">{positionPreview?.departmentName ?? '—'}</div>
+                    <div className="emp-record-field__value">{positionPreview?.departmentName ?? '--'}</div>
                   </div>
                   <div className="emp-record-field">
                     <span className="emp-record-field__label">Position</span>
-                    <div className="emp-record-field__value">{positionPreview?.positionName ?? '—'}</div>
+                    <div className="emp-record-field__value">{positionPreview?.positionName ?? '--'}</div>
                   </div>
                   <div className="emp-record-field">
                     <span className="emp-record-field__label">Reports to position</span>
@@ -404,67 +458,28 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose })
                           <AlertTriangle size={12} /> Unresolved
                         </span>
                       ) : (
-                        positionPreview?.reportingManager ?? '—'
+                        positionPreview?.reportingManager ?? '--'
                       )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Access summary */}
+              {/* Onboarding task summary */}
               <div className="emp-form-section">
-                <h3 className="emp-form-section__title">Access from selected position</h3>
-                {CAN_MANAGE_ACCESS ? (
-                  positionPreview && positionPreview.accessRoles.length > 0 ? (
-                    <>
-                      {positionPreview.accessRoles.map(r => (
-                        <div key={r.id} className="add-emp-access-row">
-                          <span className="add-emp-access-row__name">{r.name}</span>
-                          <span className="cfg-badge cfg-badge--active">Auto applied</span>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="org-btn org-btn--ghost org-btn--xs"
-                        style={{ marginTop: 8 }}
-                        onClick={() => setAdjustingAccess(a => !a)}
-                      >
-                        {adjustingAccess ? 'Cancel adjustment' : 'Adjust access'}
-                      </button>
-                      {adjustingAccess && (
-                        <p className="emp-form-hint" style={{ marginTop: 8 }}>
-                          Access adjustment is bounded to roles within your tenant's active entitlements.
-                          Changing access here applies only to this employee.
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="emp-form-hint">No system access is granted from this position.</p>
-                  )
-                ) : (
-                  <p className="emp-form-hint">
-                    Access will be applied from the selected position. Access changes that require
-                    approval will be sent for review.
-                  </p>
-                )}
-              </div>
-
-              {/* Checklist summary */}
-              <div className="emp-form-section">
-                <h3 className="emp-form-section__title">Onboarding checklist</h3>
-                {positionPreview?.matchingTemplate ? (
-                  <p className="emp-form-hint">
-                    <strong>{positionPreview.matchingTemplate.name}</strong>
-                    {' '}— {positionPreview.matchingTemplate.items.length} tasks will be generated.
-                  </p>
-                ) : (
-                  <p className="emp-form-hint">
-                    No matching onboarding checklist template found. Tasks will not be generated
-                    automatically.
-                  </p>
-                )}
-              </div>
-            </>
+                <h3 className="emp-form-section__title">Document Collection Task</h3>
+                <div className="emp-record-grid">
+                  <div className="emp-record-field"><span className="emp-record-field__label">Checklist</span><div className="emp-record-field__value">{selectedChecklist?.name ?? '--'}</div></div>
+                  <div className="emp-record-field"><span className="emp-record-field__label">Reporting Manager</span><div className="emp-record-field__value">{selectedManager ? `${selectedManager.firstName} ${selectedManager.lastName}` : '--'}</div></div>
+                  <div className="emp-record-field"><span className="emp-record-field__label">Due Date</span><div className="emp-record-field__value">{taskDueDate}</div></div>
+                  <div className="emp-record-field"><span className="emp-record-field__label">Due Time</span><div className="emp-record-field__value">{taskDueTime}</div></div>
+                </div>
+                <div className="onboarding-review-documents">
+                  <span>Documents sent in the notification</span>
+                  <ul>{selectedChecklist?.items.map(item => <li key={item.id}>{item.requiredDocument || item.title}</li>)}</ul>
+                </div>
+                <p className="emp-form-hint">The Reporting Manager receives an in-app notification, email notification, and calendar reminder.</p>
+              </div>            </>
           )}
         </div>
 

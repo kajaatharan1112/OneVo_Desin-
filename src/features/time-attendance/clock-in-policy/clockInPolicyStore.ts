@@ -11,14 +11,16 @@ import type {
   OutageFallbackDraft,
   OutageFormValues,
   PhotoRequired,
-  WorkTypeRule
+  WorkTypeRule,
+  LateAttendancePolicy
 } from './clockInPolicyTypes';
 import {
   DEFAULT_MANUAL_CORRECTION,
   DEFAULT_OUTAGE_DRAFT,
   SEED_EXEMPTIONS,
   SEED_OUTAGE_FALLBACKS,
-  SEED_WORK_TYPE_RULES
+  SEED_WORK_TYPE_RULES,
+  SEED_LATE_ATTENDANCE_POLICY
 } from './clockInPolicyMockData';
 import {
   buildAppliesToLabel,
@@ -53,6 +55,10 @@ interface ClockInPolicyStore extends ClockInPolicyState {
   closeExemptionForm: () => void;
   saveExemption: (values: ExemptionFormValues) => { ok: boolean; error?: string };
   deleteExemption: (id: string) => void;
+  openLateAttendanceForm: () => void;
+  closeLateAttendanceForm: () => void;
+  saveLateAttendancePolicy: (policy: Partial<LateAttendancePolicy>) => void;
+  deleteLateAttendancePolicy: () => void;
   savePolicy: () => void;
   clearToast: () => void;
 }
@@ -67,6 +73,8 @@ export const useClockInPolicyStore = create<ClockInPolicyStore>((set, get) => ({
   outageForm: { open: false },
   manualCorrection: DEFAULT_MANUAL_CORRECTION,
   exemptionForm: closedExemptionForm(),
+  lateAttendancePolicy: SEED_LATE_ATTENDANCE_POLICY,
+  lateAttendanceForm: { open: false },
   toast: null,
 
   setDefaultRequirement: value => set({ defaultRequirement: value }),
@@ -188,6 +196,20 @@ export const useClockInPolicyStore = create<ClockInPolicyStore>((set, get) => ({
     set({
       exemptions: get().exemptions.filter(e => e.id !== id),
       toast: 'Exemption removed.'
+    }),
+
+  openLateAttendanceForm: () => set({ lateAttendanceForm: { open: true } }),
+  closeLateAttendanceForm: () => set({ lateAttendanceForm: { open: false } }),
+  saveLateAttendancePolicy: (patch) =>
+    set({
+      lateAttendancePolicy: { ...get().lateAttendancePolicy, ...patch, active: true },
+      lateAttendanceForm: { open: false },
+      toast: 'Late attendance policy saved.'
+    }),
+  deleteLateAttendancePolicy: () =>
+    set({
+      lateAttendancePolicy: { ...get().lateAttendancePolicy, active: false },
+      toast: 'Late attendance policy deactivated.'
     }),
 
   savePolicy: () => set({ toast: 'Clock-in policy saved.' }),

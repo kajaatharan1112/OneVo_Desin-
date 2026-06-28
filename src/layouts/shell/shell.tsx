@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PanelLeftOpen } from 'lucide-react';
 import { countNewNotifications } from '../../core/notifications/notification-data';
-import { INBOX_CURRENT_USER, useInboxOptional } from '../../core/notifications/inbox-context';
+import { useInboxOptional } from '../../core/notifications/inbox-context';
+import { useEmployeeContext } from '../../features/employees/context/employee-context';
 import { NotificationPanelProvider } from '../../core/notifications/notification-panel-context';
 import { type TenantCompany } from '../../shared/components/app-brand/app-brand';
 import {
@@ -94,7 +95,7 @@ export const Shell: React.FC<ShellProps> = ({
       : activeSubSections[0]?.items[0];
     setActiveSubItemId(firstItem?.id ?? '');
     setSubNavCollapsed(false);
-    // Only reset sub-nav when the main section or workspace view changes — not on sub-item clicks.
+    // Only reset sub-nav when the main section or workspace view changes - not on sub-item clicks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, activeTab]);
 
@@ -110,13 +111,14 @@ export const Shell: React.FC<ShellProps> = ({
   );
 
   const inbox = useInboxOptional();
+  const { selectedEmployeeId } = useEmployeeContext();
   const { projectSettingsOpen, selectedProjectId } = useWork();
 
   const notificationUnreadCount = useMemo(() => {
     const staticCount = countNewNotifications(currentView);
-    if (currentView !== 'employee' || !inbox) return staticCount;
-    return staticCount + inbox.countNewForUser(INBOX_CURRENT_USER);
-  }, [currentView, inbox]);
+    if (!inbox) return staticCount;
+    return staticCount + inbox.countNewForUser(selectedEmployeeId);
+  }, [currentView, inbox, selectedEmployeeId]);
 
   const openNotificationPanel = useCallback(() => {
     setNotificationsOpen(true);
@@ -159,8 +161,7 @@ export const Shell: React.FC<ShellProps> = ({
     <NotificationPanelProvider value={notificationPanelContext}>
       <div className={shellClassName}>
        <div className="app-frame">
-
-        {/* ── Full-width topbar ── */}
+        {/* Full-width topbar */}
         <div className="content-panel content-panel--header">
           <Navbar
             currentView={currentView}
@@ -178,11 +179,9 @@ export const Shell: React.FC<ShellProps> = ({
             onOpenBrandActions={() => setBrandMenuOpen((open) => !open)}
           />
         </div>
-
-        {/* ── Body: sidebar + content ── */}
+        {/* Body: sidebar + content */}
         <div className="shell-body">
-
-          {/* ── Sidebar: 68px icon rail for both views ── */}
+          {/* Sidebar: 68px icon rail for both views */}
           <aside
             id="app-sidebar"
             className={[
@@ -245,8 +244,7 @@ export const Shell: React.FC<ShellProps> = ({
               </button>
             )}
           </aside>
-
-          {/* ── Content island ── */}
+          {/* Content island */}
           <div className="content-pane">
             <div className="content-pane__body">
               <div className="main-scrollable">

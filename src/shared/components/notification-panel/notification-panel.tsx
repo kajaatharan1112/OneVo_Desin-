@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { getNotificationsForView } from '../../../core/notifications/notification-data';
 import {
-  INBOX_CURRENT_USER,
   useInbox,
 } from '../../../core/notifications/inbox-context';
 import type { NotificationFilter } from '../../types/notification.types';
@@ -49,20 +48,17 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     );
   }, [currentView, approvalRequests, selectedEmployeeId, requesterNotices]);
 
-  const inboxNotifications = useMemo(() => {
-    if (currentView !== 'employee') return [];
-    return getInboxForUser(INBOX_CURRENT_USER);
-  }, [currentView, getInboxForUser]);
+  const inboxNotifications = useMemo(
+    () => getInboxForUser(selectedEmployeeId),
+    [getInboxForUser, selectedEmployeeId]
+  );
 
   const allNotifications = useMemo(() => {
     const base = [...accessNotifications, ...inboxNotifications, ...staticNotifications];
-    if (currentView === 'employee') {
-      return base.filter(
-        n => !n.recipientId || n.recipientId === selectedEmployeeId
-      );
-    }
-    return base;
-  }, [accessNotifications, inboxNotifications, staticNotifications, currentView, selectedEmployeeId]);
+    return base.filter(
+      n => !n.recipientId || n.recipientId === selectedEmployeeId
+    );
+  }, [accessNotifications, inboxNotifications, staticNotifications, selectedEmployeeId]);
 
   const visibleNotifications = useMemo(
     () =>

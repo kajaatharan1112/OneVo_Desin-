@@ -4,14 +4,14 @@ import type { LeavePolicy, LeaveStatus, PolicyScope } from './leaveConfigTypes';
 export const POLICY_ADVANCED_DEFAULTS = {
   proRataNewJoiners: true,
   carryForwardAllowed: false,
-  maxCarryForwardDays: 0,
+  maxCarryForwardValue: 0,
   carryForwardExpiryMonths: 3,
   minNoticeDays: 7,
   maxConsecutiveDays: null as number | null,
-  minDaysPerRequest: 0.5,
+  minRequestValue: 4,
   blackoutPeriods: '',
   requiresDocument: false,
-  documentRequiredAfterDays: null as number | null
+  documentRequiredAfterValue: null as number | null
 };
 
 export interface PolicyConflict {

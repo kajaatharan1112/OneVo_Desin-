@@ -19,11 +19,15 @@ export interface Position {
   id: string;
   name: string;
   code: string;
+  description?: string;
   departmentId: string;
   reportsToPositionId: string | null;
   type: PositionType;
   capacity: number;
   status: EntityStatus;
+  coverageType?: 'position' | 'department';
+  primaryCoverageId?: string | null;
+  secondaryCoverageIds?: string[];
 }
 
 export interface Employee {
@@ -39,12 +43,14 @@ export interface Employee {
   workMode: WorkMode | null;
   /** Role IDs confirmed by admin during onboarding (Access Confirmation step). */
   roleIds?: string[];
+  gender?: 'male' | 'female' | 'other';
 }
 
 export interface EmployeeOnboardingValues {
   firstName: string;
   lastName: string;
   email: string;
+  workEmail?: string;
   phone: string;
   employeeNumber: string;
   legalEntity: string;
@@ -53,6 +59,7 @@ export interface EmployeeOnboardingValues {
   workMode: WorkMode | '';
   positionId: string;
   confirmedRoleIds: string[];
+  gender?: 'male' | 'female' | 'other' | '';
 }
 
 export interface PositionAssignment {
@@ -121,4 +128,5 @@ export interface EmployeeFormValues {
   startDate: string;
   workMode: WorkMode | '';
   positionId: string;
+  gender?: 'male' | 'female' | 'other' | '';
 }

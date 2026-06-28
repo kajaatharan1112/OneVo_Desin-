@@ -1855,3 +1855,59 @@
   color: #166534;
   white-space: nowrap;
 }
+
+/* Onboarding checklist todo layout */
+.onboarding-todo-page .cfg-page__body { padding-top: 20px; }
+.onboarding-todo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; align-content: start; }
+.onboarding-todo-card { display: flex; flex-direction: column; min-height: 420px; border: 1px solid #dce3ec; border-radius: 14px; padding: 20px; background: #fff; box-shadow: 0 3px 12px rgba(15, 23, 42, .045); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.onboarding-todo-card:hover { transform: translateY(-2px); border-color: #c7d2fe; box-shadow: 0 10px 28px rgba(15, 23, 42, .08); }
+.onboarding-todo-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding-bottom: 15px; border-bottom: 1px solid #edf0f4; }
+.onboarding-todo-card__head h2 { margin: 0; color: #172033; font-size: 15px; }
+.onboarding-todo-card__head p { margin: 5px 0 0; color: #748095; font-size: 12px; }
+.onboarding-todo-list { display: grid; gap: 11px; margin: 18px 0; padding: 0; list-style: none; }
+.onboarding-todo-list li { display: flex; align-items: center; gap: 10px; color: #344054; font-size: 13px; }
+.onboarding-todo-box { width: 17px; height: 17px; flex: 0 0 auto; border: 1.5px solid #b5c0cf; border-radius: 5px; background: #fbfcfe; }
+.onboarding-todo-card__assignee { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; border-radius: 8px; padding: 10px 12px; background: #f6f8fc; color: #748095; font-size: 11px; }
+.onboarding-todo-card__assignee strong { color: #344054; font-size: 12px; }
+.onboarding-todo-card__actions { display: flex; align-items: center; gap: 7px; margin-top: 14px; }
+.onboarding-todo-card__actions .org-btn--primary { margin-right: auto; }
+.onboarding-progress-overlay { position: fixed; inset: 0; z-index: 1300; display: flex; justify-content: flex-end; background: rgba(15, 23, 42, .4); backdrop-filter: blur(2px); animation: onboarding-fade .18s ease; }
+.onboarding-progress { display: flex; flex-direction: column; width: min(680px, 100vw); height: 100dvh; background: #f7f9fc; box-shadow: -18px 0 45px rgba(15, 23, 42, .18); animation: onboarding-slide .24s ease-out; }
+.onboarding-progress > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px; border-bottom: 1px solid #e2e8f0; background: #fff; }
+.onboarding-progress h2 { margin: 4px 0; color: #172033; font-size: 18px; }
+.onboarding-progress header p { margin: 0; color: #748095; font-size: 12px; }
+.onboarding-progress__eyebrow { color: #315acb; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.onboarding-progress__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 18px 24px; }
+.onboarding-progress__stats > div { display: flex; flex-direction: column; gap: 4px; border: 1px solid #e1e6ee; border-radius: 10px; padding: 14px; background: #fff; }
+.onboarding-progress__stats strong { color: #172033; font-size: 22px; }
+.onboarding-progress__stats span { color: #748095; font-size: 11px; }
+.onboarding-progress__stats .is-complete strong { color: #168a4b; }
+.onboarding-progress__stats .is-pending strong { color: #c27803; }
+.onboarding-progress__stats .is-todo strong { color: #526176; }
+.onboarding-progress__list { display: grid; gap: 9px; padding: 0 24px 24px; overflow-y: auto; }
+.onboarding-progress__item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; border: 1px solid #e1e6ee; border-radius: 10px; padding: 13px 14px; background: #fff; }
+.onboarding-progress__item div { min-width: 0; }
+.onboarding-progress__item strong, .onboarding-progress__item div span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.onboarding-progress__item strong { color: #273247; font-size: 13px; }
+.onboarding-progress__item div span { margin-top: 4px; color: #8490a3; font-size: 11px; }
+.onboarding-progress__status-icon { display: grid; place-items: center; color: #8c98aa; }
+.onboarding-progress__status-icon.is-completed { color: #1b9a58; }
+.onboarding-progress__status-icon.is-pending { color: #d08a18; }
+.onboarding-status { border-radius: 999px; padding: 5px 9px; font-size: 10px; font-weight: 750; }
+.onboarding-status--completed { background: #dcfce7; color: #167843; }
+.onboarding-status--pending { background: #fef3c7; color: #9a6100; }
+.onboarding-status--todo { background: #edf1f6; color: #526176; }
+@keyframes onboarding-fade { from { opacity: 0; } }
+@keyframes onboarding-slide { from { transform: translateX(36px); opacity: .7; } }
+@media (max-width: 620px) { .onboarding-progress__stats { grid-template-columns: repeat(2, 1fr); } .onboarding-todo-grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .onboarding-todo-card, .onboarding-progress-overlay, .onboarding-progress { animation: none; transition: none; } }.emp-checklist-item .cip-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.emp-checklist-status { border: 1px solid #d7dee8; border-radius: 999px; padding: 4px 24px 4px 9px; background: #f4f6f9; color: #526176; font-size: 10px; font-weight: 700; }
+.emp-checklist-status--pending { border-color: #f3d38a; background: #fff8e6; color: #946000; }
+.emp-checklist-status--completed { border-color: #a9e3c2; background: #ecfdf3; color: #167843; }
+.add-emp-due-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.employee-task-select { width: min(220px, 100%); min-height: 34px; border: 1px solid #d8e0ea; border-radius: 7px; padding: 0 28px 0 9px; background: #f8fafc; color: #344054; font-size: 11px; opacity: 1; }
+@media (max-width: 640px) { .add-emp-due-grid { grid-template-columns: 1fr; } }
+.onboarding-review-documents { margin-top: 16px; border: 1px solid #e1e7ef; border-radius: 10px; padding: 13px; background: #f8fafc; }
+.onboarding-review-documents > span { color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.onboarding-review-documents ul { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
+.onboarding-review-documents li { border-radius: 999px; padding: 5px 9px; background: #e9efff; color: #315fcc; font-size: 10px; font-weight: 700; }

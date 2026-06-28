@@ -80,8 +80,8 @@ interface ProjectCardProps {
   p: ReturnType<typeof accessibleProjects>[0];
   workspaces: ReturnType<typeof useWork>['workspaces'];
   visibleWs: Set<string>;
-  openProject: (id: string, nav?: ProjectNavId) => void;
-  openProjectSettings: () => void;
+  openProject: ReturnType<typeof useWork>['openProject'];
+  openProjectSettings: ReturnType<typeof useWork>['openProjectSettings'];
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ p, workspaces, visibleWs, openProject, openProjectSettings }) => {
