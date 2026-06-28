@@ -339,6 +339,7 @@ export const MyCalendarTab: React.FC = () => {
   const [dropTargetCell, setDropTargetCell] = useState<string | null>(null);
   const [dropNotice, setDropNotice] = useState<string | null>(null);
   const dropNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dragConflict, setDragConflict] = useState<{ candidate: CalendarEvent; clashes: CalendarEvent[]; top: number; left: number } | null>(null);
 
   const showDropNotice = (message: string) => {
     setDropNotice(message);
@@ -389,12 +390,21 @@ export const MyCalendarTab: React.FC = () => {
     const candidate: CalendarEvent = { ...original, date: dayKey, start: newStart, end: newEnd };
     const clashes = findEventConflicts(candidate, localEvents.filter(ev => ev.scope === 'my'));
     if (clashes.length > 0) {
-      showDropNotice(`Can't move "${original.title}" — clashes with ${clashes.map(c => c.title).join(', ')}.`);
+      setDragConflict({ candidate, clashes, top: e.clientY, left: e.clientX });
       return;
     }
 
     updateEvent(candidate.id, candidate);
     showDropNotice(`Moved "${original.title}" to ${dayKey} · ${formatTime(newStart)}`);
+  };
+
+  const handleDragConflictCancel = () => setDragConflict(null);
+  const handleDragConflictMoveAnyway = () => {
+    if (!dragConflict) return;
+    const { candidate } = dragConflict;
+    updateEvent(candidate.id, candidate);
+    showDropNotice(`Moved "${candidate.title}" to ${candidate.date} · ${formatTime(candidate.start!)}`);
+    setDragConflict(null);
   };
 
   // Event details modal
@@ -814,6 +824,25 @@ export const MyCalendarTab: React.FC = () => {
     <div className="emc-root">
 
       {dropNotice && <div className="emc-dropnotice">{dropNotice}</div>}
+
+      {dragConflict && (
+        <div
+          className="emc-dragconflict"
+          style={{ top: dragConflict.top, left: dragConflict.left }}
+        >
+          <p className="emc-dragconflict__text">
+            Clashes with {dragConflict.clashes.map(c => c.title).join(', ')}
+          </p>
+          <div className="emc-dragconflict__actions">
+            <button type="button" className="era-btn era-btn--ghost emc-dragconflict__btn" onClick={handleDragConflictCancel}>
+              Cancel
+            </button>
+            <button type="button" className="era-btn emc-dragconflict__btn" onClick={handleDragConflictMoveAnyway}>
+              Move anyway
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="emc-header">

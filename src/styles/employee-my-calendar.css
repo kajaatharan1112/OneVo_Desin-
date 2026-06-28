@@ -24,6 +24,34 @@
   max-width: 320px;
 }
 
+.emc-dragconflict {
+  position: fixed;
+  z-index: 50;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.625rem 0.75rem;
+  max-width: 260px;
+}
+
+.emc-dragconflict__text {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.emc-dragconflict__actions {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: flex-end;
+}
+
+.emc-dragconflict__btn {
+  font-size: 0.6875rem;
+  padding: 3px 9px;
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
 .emc-header {
