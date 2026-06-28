@@ -7,6 +7,7 @@ export interface LeaveRequest {
   startDate: string;
   endDate: string;
   days: number;
+  hours?: number;
   status: LeaveRequestStatus;
   submittedDate: string;
   reason?: string;
@@ -21,6 +22,7 @@ export interface LeaveHistoryEntry {
   startDate: string;
   endDate: string;
   days: number;
+  hours?: number;
   status: 'approved' | 'rejected';
   approver: string;
 }
@@ -31,6 +33,7 @@ export interface UpcomingLeave {
   startDate: string;
   endDate: string;
   days: number;
+  hours?: number;
 }
 
 export interface LeaveCompanyHoliday {

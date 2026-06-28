@@ -11,6 +11,7 @@ import { useEmployeeContext } from '../../../features/employees/context/employee
 import { useAccessStore } from '../../../features/access/accessStore';
 import { getAccessApprovalNotifications } from '../../../features/access/accessNotifications';
 import { AccessApprovalModal } from '../../../features/access/AccessApprovalModal';
+import { useMonitoringStore } from '../../../features/employees/pages/employee-monitoring/monitoringStore';
 
 interface NotificationPanelProps {
   currentView: 'employee' | 'tenant';
@@ -81,6 +82,12 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       openApprovalRequest(notification.accessApprovalMeta.requestId);
       return;
     }
+    if (notification?.deviceRequestMeta) {
+      useMonitoringStore.getState().setActiveRequestId(notification.deviceRequestMeta.requestId);
+      useMonitoringStore.getState().setShowRequestDrawer(true);
+      onClose();
+      return;
+    }
     if (notification?.workMeta) {
       resolveInboxAction(notificationId, actionId);
       return;
@@ -140,6 +147,11 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 onOpen={n => {
                   if (n.accessApprovalMeta) {
                     openApprovalRequest(n.accessApprovalMeta.requestId);
+                  }
+                  if (n.deviceRequestMeta) {
+                    useMonitoringStore.getState().setActiveRequestId(n.deviceRequestMeta.requestId);
+                    useMonitoringStore.getState().setShowRequestDrawer(true);
+                    onClose();
                   }
                 }}
               />
