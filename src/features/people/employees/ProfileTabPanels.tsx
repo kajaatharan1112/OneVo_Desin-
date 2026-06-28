@@ -1,8 +1,14 @@
+ kaviz/offboarding
 import React, { useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Circle, Clock3, Edit, Eye, FileText, Trash2, Upload, X } from 'lucide-react';
 import type { Employee, EmploymentType, WorkMode } from '../../../types/organization';
 import type { EmployeeDocument } from './employeeProfileTypes';
 import { useInbox } from '../../../core/notifications/inbox-context';
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { Edit, Trash2, Upload } from 'lucide-react';
+import type { Employee, EmploymentType, WorkMode } from '../../../types/organization';
+ main
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import { useClockInPolicyStore } from '../../time-attendance/clock-in-policy/clockInPolicyStore';
@@ -30,7 +36,7 @@ const checklistStatusLabel = {
 } as const;
 
 const Dash: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
-  <span className="emp-record-value">{children ?? '--'}</span>
+  <span className="emp-record-value">{children ?? '—'}</span>
 );
 
 const RecordCard: React.FC<{
@@ -69,7 +75,7 @@ export const AboutTab: React.FC<{
 }> = ({ employee, onEditProfile, onEditEmployment }) => {
   const { addInboxItem } = useInbox();
   const { positions, departments, assignments, employees } = useOrganizationStore();
-  const { getTasksForEmployee, setTaskStatus } = useChecklistTaskStore();
+  const { getTasksForEmployee, toggleTaskStatus } = useChecklistTaskStore();
   const employment = useMemo(
     () => getEmployeeEmploymentContext(employee.id, positions, departments, assignments, employees),
     [employee.id, positions, departments, assignments, employees]
@@ -147,6 +153,7 @@ export const AboutTab: React.FC<{
       </RecordCard>
 
       {tasks.length > 0 && (
+ kaviz/offboarding
         <RecordCard title={tasks[0].templateType === 'onboarding' ? 'Onboarding Document Progress' : 'Offboarding Task Progress'}>
           <div className="emp-checklist-summary">
             <div className="emp-checklist-stat emp-checklist-stat--total"><span>Total documents</span><strong>{checklistStats.total}</strong></div>
@@ -186,6 +193,26 @@ export const AboutTab: React.FC<{
                 </li>
               );
             })}
+
+        <RecordCard title={tasks[0].templateType === 'onboarding' ? 'Onboarding Checklist' : 'Offboarding Checklist'}>
+          <ul className="emp-checklist-list">
+            {tasks.map(task => (
+              <li key={task.id} className="emp-checklist-item">
+                <label className="cip-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={task.status === 'completed'}
+                    onChange={() => toggleTaskStatus(task.id)}
+                  />
+                  <span className={task.status === 'completed' ? 'emp-checklist-item__title--done' : ''}>{task.title}</span>
+                </label>
+                <span className="emp-checklist-item__meta">
+                  {task.assigneeLabel} · Due {formatProfileDate(task.dueDate)}
+                  {task.requiredDocument && ` · Requires: ${task.requiredDocument}`}
+                </span>
+              </li>
+            ))}
+ main
           </ul>
         </RecordCard>
       )}
@@ -232,10 +259,22 @@ export const EmploymentTab: React.FC<{
               value={values.positionId}
               onChange={e => setValues(v => ({ ...v, positionId: e.target.value }))}
             >
+ kaviz/offboarding
               <option value="">Select position...</option>
               {activePositions.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
+
+              <option value="">Select position…</option>
+              {activePositions.map(p => {
+                const dept = departments.find(d => d.id === p.departmentId);
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{dept ? ` · ${dept.name}` : ''}
+                  </option>
+                );
+              })}
+ main
             </select>
           </div>
           <div className="org-form-field">
@@ -282,7 +321,7 @@ export const EmploymentTab: React.FC<{
               value={values.workMode}
               onChange={e => setValues(v => ({ ...v, workMode: e.target.value as WorkMode | '' }))}
             >
-              <option value="">Select work mode...</option>
+              <option value="">Select work mode…</option>
               {WORK_MODE_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
@@ -422,25 +461,19 @@ export const DocumentsTab: React.FC<{ employee: Employee }> = ({ employee }) => 
   const profile = useEmployeeProfileStore();
   const docs = profile.getDocuments(employee.id);
 
-  const [previewDocument, setPreviewDocument] = useState<EmployeeDocument | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const type = file.type.includes('pdf') ? 'PDF' : file.type.startsWith('image/') ? 'Image' : 'General';
-    profile.uploadDocument(employee.id, file.name, type, URL.createObjectURL(file), file.type);
-    event.target.value = '';
+  const handleUpload = () => {
+    const name = window.prompt('Document name');
+    if (!name?.trim()) return;
+    const type = window.prompt('Document type', 'General') ?? 'General';
+    profile.uploadDocument(employee.id, name.trim(), type);
   };
 
   return (
-    <>
     <div className="emp-record-tab">
       <div className="emp-record-tab__toolbar">
-        <button type="button" className="org-btn org-btn--secondary org-btn--sm" onClick={() => fileInputRef.current?.click()}>
+        <button type="button" className="org-btn org-btn--secondary org-btn--sm" onClick={handleUpload}>
           <Upload size={13} /> Upload Document
         </button>
-        <input ref={fileInputRef} hidden type="file" accept=".pdf,image/*,.doc,.docx" onChange={handleUpload} />
       </div>
       <div className="cfg-table-wrap">
         <table className="cfg-table">
@@ -450,12 +483,11 @@ export const DocumentsTab: React.FC<{ employee: Employee }> = ({ employee }) => 
               <th>Type</th>
               <th>Status</th>
               <th>Date</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {docs.length === 0 ? (
-              <tr><td colSpan={5} className="emp-record-empty">No documents yet.</td></tr>
+              <tr><td colSpan={4} className="emp-record-empty">No documents yet.</td></tr>
             ) : (
               docs.map(doc => (
                 <tr key={doc.id}>
@@ -463,7 +495,6 @@ export const DocumentsTab: React.FC<{ employee: Employee }> = ({ employee }) => 
                   <td>{doc.type}</td>
                   <td><span className="cfg-badge cfg-badge--active">{doc.status}</span></td>
                   <td>{formatProfileDate(doc.date)}</td>
-                  <td><button type="button" className="emp-document-view-btn" onClick={() => setPreviewDocument(doc)}><Eye size={14} /> View</button></td>
                 </tr>
               ))
             )}
@@ -471,21 +502,9 @@ export const DocumentsTab: React.FC<{ employee: Employee }> = ({ employee }) => 
         </table>
       </div>
     </div>
-      {previewDocument && (
-        <div className="emp-document-preview-overlay" onMouseDown={() => setPreviewDocument(null)}>
-          <section className="emp-document-preview" role="dialog" aria-modal="true" aria-labelledby="document-preview-title" onMouseDown={event => event.stopPropagation()}>
-            <header><div><span>Document Preview</span><h2 id="document-preview-title">{previewDocument.name}</h2></div><button type="button" className="cfg-action-btn" aria-label="Close preview" onClick={() => setPreviewDocument(null)}><X size={17} /></button></header>
-            <div className="emp-document-preview__body">
-              {previewDocument.url && previewDocument.mimeType?.startsWith('image/') ? <img src={previewDocument.url} alt={previewDocument.name} /> : previewDocument.url ? <iframe src={previewDocument.url} title={previewDocument.name} /> : (
-                <div className="emp-document-preview__paper"><FileText size={42} /><h3>{previewDocument.name}</h3><p>This is a generated HRMS document preview.</p><dl><div><dt>Employee</dt><dd>{employee.firstName} {employee.lastName}</dd></div><div><dt>Document type</dt><dd>{previewDocument.type}</dd></div><div><dt>Status</dt><dd>{previewDocument.status}</dd></div><div><dt>Date</dt><dd>{formatProfileDate(previewDocument.date)}</dd></div></dl></div>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
-    </>
   );
 };
+
 export const ActivityTab: React.FC<{ employee: Employee }> = ({ employee }) => {
   const activity = useEmployeeProfileStore(s => s.activity);
   const entries = useMemo(() => {

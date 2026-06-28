@@ -24,7 +24,6 @@ import {
   type PermissionOverride,
   type ActiveSession,
 } from './adminMockData';
-import { recordHistory } from '../../store/historyStore';
 
 type DrawerMode = 'create-access' | 'access' | null;
 
@@ -70,8 +69,6 @@ export const AdminUsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [drawer, setDrawer] = useState<DrawerMode>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [resendUserId, setResendUserId] = useState<string | null>(null);
-  const [inviteLink, setInviteLink] = useState('');
 
   const [createForm, setCreateForm] = useState({ employeeId: '', email: '' });
 
@@ -174,16 +171,8 @@ export const AdminUsersPage: React.FC = () => {
     updateUser(userId, { accountStatus: 'active' });
   };
 
-  const openResendInvite = (userId: string) => {
-    setResendUserId(userId);
-    setInviteLink(`${window.location.origin}/invite/${crypto.randomUUID()}`);
-  };
-
   const resendInvite = (userId: string) => {
-    const invitedUser = users.find(user => user.id === userId);
     updateUser(userId, { inviteStatus: 'sent', accountStatus: 'no_login_access' });
-    if (invitedUser) recordHistory({ title: 'Invitation resent', description: `A new invitation was sent to ${invitedUser.firstName} ${invitedUser.lastName}.`, category: 'People', target: invitedUser.email });
-    setResendUserId(null);
   };
 
   const revokeSessions = (userId: string) => {
@@ -400,7 +389,7 @@ export const AdminUsersPage: React.FC = () => {
                         <Eye size={13} /> View Access
                       </button>
                       {(u.inviteStatus === 'sent' || u.inviteStatus === 'expired') && (
-                        <button type="button" className="cfg-action-btn" onClick={() => openResendInvite(u.id)}>
+                        <button type="button" className="cfg-action-btn" onClick={() => resendInvite(u.id)}>
                           <Send size={13} /> Resend Invite
                         </button>
                       )}
@@ -779,11 +768,6 @@ export const AdminUsersPage: React.FC = () => {
           </div>
         </div>
       )}
-      {resendUserId && (() => {
-        const inviteUser = users.find(user => user.id === resendUserId);
-        if (!inviteUser) return null;
-        return <div className="billing-inner-modal" onClick={() => setResendUserId(null)}><div className="billing-inner-modal__card resend-invite-modal" role="dialog" aria-modal="true" aria-label="Resend invitation" onClick={event => event.stopPropagation()}><header><div><h3>Resend invitation</h3><p>Review the recipient and newly generated invitation link.</p></div><button onClick={() => setResendUserId(null)} aria-label="Close"><X /></button></header><div className="org-form-field"><label>User email</label><input value={inviteUser.email} readOnly /></div><div className="org-form-field"><label>New invitation link</label><textarea value={inviteLink} readOnly rows={3} /></div><p className="admin-hint admin-hint--info">The previous invitation link will be replaced when this invitation is sent.</p><footer><button className="org-btn org-btn--secondary" onClick={() => setResendUserId(null)}>Cancel</button><button className="org-btn org-btn--primary" onClick={() => resendInvite(inviteUser.id)}><Send /> Send invitation</button></footer></div></div>;
-      })()}
     </div>
   );
 };

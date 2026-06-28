@@ -21,7 +21,6 @@ import { EmployeeLeave } from '../features/employees/pages/employee-leave/employ
 import { EmployeeCalendar } from '../features/employees/pages/employee-calendar/employee-calendar';
 import { EmployeeChat } from '../features/employees/pages/employee-chat/employee-chat';
 import { EmployeeReports } from '../features/employees/pages/employee-reports/employee-reports';
-import { EmployeeSelfProfile } from '../features/employees/pages/employee-profile/employee-profile';
 
 import { TenantAttendance } from '../features/tenant/pages/tenant-attendance/tenant-attendance';
 import { TenantAllCompaniesEmptyPage } from '../features/tenant/pages/tenant-all-companies-empty/tenant-all-companies-empty';
@@ -45,8 +44,6 @@ import { SchedulesPage } from '../features/time-attendance/configuration/Schedul
 import { ClockInPolicyPage } from '../features/time-attendance/clock-in-policy/ClockInPolicyPage';
 import { PeopleEmployeesRoutes } from '../features/people/employees/PeopleEmployeesRoutes';
 import { WorkProvider } from '../features/work/context/work-context';
-import { BulkOnboardingPage } from '../features/people/bulk-onboarding/BulkOnboardingPage';
-import { OffboardingPage } from '../features/people/offboarding/OffboardingPage';
 import { InboxProvider } from '../core/notifications/inbox-context';
 import { WorkRoutes } from '../features/work/WorkRoutes';
 import {
@@ -72,11 +69,6 @@ function App() {
       setActiveSubItemId('employees');
       return;
     }
-    if (location.pathname.startsWith('/people/offboarding')) {
-      setActiveTab('People');
-      setActiveSubItemId('offboarding');
-      return;
-    }
     if (location.pathname.startsWith('/people/checklist-templates')) {
       setActiveTab('People');
       setActiveSubItemId('checklist-templates');
@@ -84,7 +76,7 @@ function App() {
     }
     if (location.pathname.startsWith('/organization/')) {
       setActiveTab('Organization');
-      setActiveSubItemId(location.pathname.includes('/departments') ? 'departments' : location.pathname.includes('/roles-permissions') ? 'roles-permissions' : 'positions');
+      setActiveSubItemId(location.pathname.includes('/positions') ? 'positions' : 'departments');
       return;
     }
     if (location.pathname.startsWith('/automations')) {
@@ -93,23 +85,10 @@ function App() {
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    const handleNavigate = () => {
-      setActiveTab('Settings');
-      setActiveSubItemId('clock-in-policy');
-    };
-    window.addEventListener('navigate-to-clock-in-policy', handleNavigate);
-    return () => window.removeEventListener('navigate-to-clock-in-policy', handleNavigate);
-  }, []);
-
   const handleSubItemSelect = (id: string) => {
     setActiveSubItemId(id);
     if (activeTab === 'People' && id === 'employees') {
       navigate('/people/employees');
-      return;
-    }
-    if (activeTab === 'People' && id === 'offboarding') {
-      navigate('/people/offboarding');
       return;
     }
     if (activeTab === 'People' && id === 'checklist-templates') {
@@ -123,6 +102,9 @@ function App() {
     if (activeTab === 'Settings' && id === 'automations') {
       navigate('/automations');
       return;
+    }
+    if (activeTab === 'Settings' && id === 'bulk-onboarding') {
+      navigate('/people/employees');
     }
   };
 
@@ -164,10 +146,6 @@ function App() {
   const isAutomationRoute = location.pathname.startsWith('/automations');
 
   const renderActivePageContent = () => {
-    if (location.pathname.startsWith('/profile')) {
-      return <EmployeeSelfProfile key={selectedEmployeeId} />;
-    }
-
     if (isAutomationRoute || (activeTab === 'Settings' && activeSubItemId === 'automations')) {
       return <AutomationRoutes />;
     }
@@ -181,7 +159,6 @@ function App() {
           case 'general': return <GeneralSettingsPage />;
           case 'branding': return <BrandingSettingsPage />;
           case 'users': return <AdminUsersPage />;
-          case 'roles-permissions': return <RolesPermissionsPage />;
           case 'notifications': return <NotificationsSettingsPage />;
           case 'billing': return <BillingSettingsPage />;
           case 'devices':
@@ -196,6 +173,7 @@ function App() {
           case 'monitoring-privacy-setting':
           case 'app-allowlist':
             return renderSectionPage('Settings', allEmployeeItems, resolvedSubId);
+          case 'bulk-onboarding': return <GeneralSettingsPage />;
           default: return <GeneralSettingsPage />;
         }
       }
@@ -247,9 +225,6 @@ function App() {
       if (activeTab === 'People' && (resolvedSubId === 'checklist-templates' || location.pathname.startsWith('/people/checklist-templates'))) {
         return <ChecklistTemplatesPage />;
       }
-      if (activeTab === 'People' && (resolvedSubId === 'offboarding' || location.pathname.startsWith('/people/offboarding'))) {
-        return <OffboardingPage />;
-      }
       if (activeTab === 'People' && (resolvedSubId === 'employees' || location.pathname.startsWith('/people/employees'))) {
         return <PeopleEmployeesRoutes canAddEmployee canBulkOnboard />;
       }
@@ -260,10 +235,7 @@ function App() {
         if (resolvedSubId === 'roles-permissions') {
           return <RolesPermissionsPage />;
         }
-        if (resolvedSubId === 'departments') {
-          return <DepartmentsPage />;
-        }
-        return <PositionsPage />;
+        return <DepartmentsPage />;
       }
       if (activeTab === 'Settings') {
         switch (resolvedSubId) {
@@ -273,8 +245,6 @@ function App() {
             return <BrandingSettingsPage />;
           case 'users':
             return <AdminUsersPage />;
-          case 'roles-permissions':
-            return <RolesPermissionsPage />;
           case 'notifications':
             return <NotificationsSettingsPage />;
           case 'billing':
@@ -283,11 +253,8 @@ function App() {
             return TENANT_DEVICE_CAPABILITY ? <DevicesSettingsPage /> : <GeneralSettingsPage />;
           case 'audit-log':
             return <AuditLogPage />;
-
           case 'automations':
             return <AutomationRoutes />;
-          case 'bulk-onboarding':
-            return <BulkOnboardingPage />;
           case 'clock-in-policy':
             return <ClockInPolicyPage />;
           case 'time-off-type':

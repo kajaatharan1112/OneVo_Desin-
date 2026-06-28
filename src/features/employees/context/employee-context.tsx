@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { DEFAULT_EMPLOYEE_ID, employees, getEmployeeById } from '../data/employees.data';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import type { EmployeeId, EmployeeOnboardingProfile, EmployeeProfile } from '../types/employee.types';
@@ -8,7 +8,9 @@ interface EmployeeContextValue {
   selectedEmployee: EmployeeProfile;
   employees: EmployeeProfile[];
   setSelectedEmployeeId: (id: EmployeeId) => void;
+ kaviz/offboarding
   updateOnboardingProfile: (id: EmployeeId, profile: EmployeeOnboardingProfile) => void;
+ main
 }
 
 const EmployeeContext = createContext<EmployeeContextValue | null>(null);
@@ -19,6 +21,7 @@ interface EmployeeProviderProps {
   children: React.ReactNode;
 }
 
+kaviz/offboarding
 const initials = (firstName: string, lastName: string) => `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
 
 export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ selectedEmployeeId, onSelectEmployee, children }) => {
@@ -98,11 +101,28 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ selectedEmpl
     updateOnboardingProfile
   }), [selectedEmployeeId, onSelectEmployee, allProfiles, updateOnboardingProfile]);
 
+export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({
+  selectedEmployeeId,
+  onSelectEmployee,
+  children
+}) => {
+  const value = useMemo(
+    () => ({
+      selectedEmployeeId,
+      selectedEmployee: getEmployeeById(selectedEmployeeId),
+      employees,
+      setSelectedEmployeeId: onSelectEmployee
+    }),
+    [selectedEmployeeId, onSelectEmployee]
+  );
+main
+
   return <EmployeeContext.Provider value={value}>{children}</EmployeeContext.Provider>;
 };
 
 export function useEmployeeContext(): EmployeeContextValue {
   const context = useContext(EmployeeContext);
+kaviz/offboarding
   if (!context) return {
     selectedEmployeeId: DEFAULT_EMPLOYEE_ID,
     selectedEmployee: getEmployeeById(DEFAULT_EMPLOYEE_ID),
@@ -110,5 +130,17 @@ export function useEmployeeContext(): EmployeeContextValue {
     setSelectedEmployeeId: () => undefined,
     updateOnboardingProfile: () => undefined
   };
+
+
+  if (!context) {
+    return {
+      selectedEmployeeId: DEFAULT_EMPLOYEE_ID,
+      selectedEmployee: getEmployeeById(DEFAULT_EMPLOYEE_ID),
+      employees,
+      setSelectedEmployeeId: () => undefined
+    };
+  }
+
+main
   return context;
 }

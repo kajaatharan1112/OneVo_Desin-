@@ -609,6 +609,7 @@
     flex-direction: column;
   }
 }
+ kaviz/offboarding
 
 .emp-document-view-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #d6deea; border-radius: 8px; padding: 6px 10px; background: #fff; color: #315fcc; font-size: 11px; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
 .emp-document-view-btn:hover { border-color: #9eb3ec; background: #f2f6ff; transform: translateY(-1px); }
@@ -833,3 +834,5 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
+
+ main

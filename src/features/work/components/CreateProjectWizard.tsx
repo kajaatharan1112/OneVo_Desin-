@@ -14,27 +14,6 @@ import {
   MOCK_EMPLOYEES,
 } from '../workMockData';
 
-const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-};
-
-const getAvatarColor = (id: string) => {
-  const colors = [
-    '#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf',
-    '#38bdf8', '#60a5fa', '#818cf8', '#a78bfa', '#f472b6'
-  ];
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-};
 
 interface ProjectTypeOption {
   id: string;
@@ -46,9 +25,6 @@ interface ProjectTypeOption {
 const PROJECT_TYPES: ProjectTypeOption[] = [
   { id: 'scrum', name: 'Scrum', desc: 'Sprint-based agile workflow', template: 'software' },
   { id: 'kanban', name: 'Kanban', desc: 'Visual board workflow', template: 'kanban' },
-  { id: 'proj-mgmt', name: 'Project Management', desc: 'General project planning', template: 'none' },
-  { id: 'marketing', name: 'Marketing', desc: 'Campaign workflow', template: 'marketing' },
-  { id: 'custom', name: 'Custom', desc: 'Build your own workflow', template: 'none' },
 ];
 
 export const CreateProjectWizard: React.FC = () => {
@@ -70,17 +46,14 @@ export const CreateProjectWizard: React.FC = () => {
   const [icon, setIcon] = useState('📁');
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const iconRef = useRef<HTMLButtonElement>(null);
+  const [allocatedHours, setAllocatedHours] = useState('');
+  const [leadId, setLeadId] = useState(CURRENT_USER_ID);
 
 
 
   // Dates and Invites States
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [inviteMenuOpen, setInviteMenuOpen] = useState(false);
-  const [memberSearch, setMemberSearch] = useState('');
-  const inviteContainerRef = useRef<HTMLDivElement>(null);
-
   // Dropdown list
   const activeWorkspaces = useMemo(
     () => workspaces.filter(w => w.status === 'active'),
@@ -88,16 +61,6 @@ export const CreateProjectWizard: React.FC = () => {
   );
 
   const existingKeys = useMemo(() => projects.map(p => p.key), [projects]);
-
-  const filteredEmployees = useMemo(() => {
-    const searchLower = memberSearch.toLowerCase().trim();
-    if (!searchLower) return MOCK_EMPLOYEES;
-    return MOCK_EMPLOYEES.filter(emp =>
-      emp.name.toLowerCase().includes(searchLower) ||
-      emp.position.toLowerCase().includes(searchLower) ||
-      emp.department.toLowerCase().includes(searchLower)
-    );
-  }, [memberSearch]);
 
   const formatPreviewDates = (start: string, due: string | null) => {
     if (!start && !due) return '';
@@ -123,18 +86,7 @@ export const CreateProjectWizard: React.FC = () => {
     return '';
   };
 
-  // Click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (inviteContainerRef.current && !inviteContainerRef.current.contains(event.target as Node)) {
-        setInviteMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+
 
   // Reset when modal opens
   useEffect(() => {
@@ -152,9 +104,8 @@ export const CreateProjectWizard: React.FC = () => {
       setIconPickerOpen(false);
       setStartDate(new Date().toISOString().slice(0, 10));
       setDueDate('');
-      setSelectedMembers([]);
-      setMemberSearch('');
-      setInviteMenuOpen(false);
+      setAllocatedHours('');
+      setLeadId(CURRENT_USER_ID);
     }
   }, [activeModal, workspaceFilterId, activeWorkspaces]);
 
@@ -178,21 +129,17 @@ export const CreateProjectWizard: React.FC = () => {
       workspaceIds: [workspaceId],
       primaryWorkspaceId: workspaceId,
       visibility: 'private',
-      leadId: CURRENT_USER_ID,
+      leadId: leadId,
       icon,
       iconType: 'emoji',
       iconColor: null,
       coverColor,
       coverImage: null,
-      invites: selectedMembers.map(empId => ({
-        employeeId: empId,
-        accessLevel: 'member',
-        workspaceSourceId: null
-      })),
+      invites: [],
       startDate: startDate || new Date().toISOString().slice(0, 10),
       dueDate: dueDate || null,
       template,
-      allocatedHours: undefined,
+      allocatedHours: allocatedHours ? Number(allocatedHours) : undefined,
       budgetLimit: undefined,
       riskLevel: 'Medium',
       tags: [],
@@ -816,94 +763,7 @@ export const CreateProjectWizard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="qcm-field" style={{ position: 'relative' }} ref={inviteContainerRef}>
-                  <label className="qcm-label">Invite Members</label>
-                  
-                  <div className="qcm-members-selector-container" onClick={() => setInviteMenuOpen(true)}>
-                    <div className="qcm-selected-tags">
-                      {selectedMembers.map(empId => {
-                        const emp = MOCK_EMPLOYEES.find(e => e.id === empId);
-                        if (!emp) return null;
-                        return (
-                          <div key={emp.id} className="qcm-member-tag">
-                            <span
-                              className="qcm-member-tag-avatar"
-                              style={{ backgroundColor: getAvatarColor(emp.id) }}
-                            >
-                              {getInitials(emp.name)}
-                            </span>
-                            <span className="qcm-member-tag-name">{emp.name}</span>
-                            <button
-                              type="button"
-                              className="qcm-member-tag-remove"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedMembers(prev => prev.filter(id => id !== emp.id));
-                              }}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        );
-                      })}
-                      
-                      <input
-                        type="text"
-                        placeholder={selectedMembers.length === 0 ? "Search and add team members..." : ""}
-                        className="qcm-members-input-inline"
-                        value={memberSearch}
-                        onChange={e => {
-                          setMemberSearch(e.target.value);
-                          setInviteMenuOpen(true);
-                        }}
-                        onFocus={() => setInviteMenuOpen(true)}
-                      />
-                    </div>
-                  </div>
 
-                  {inviteMenuOpen && (
-                    <div className="qcm-members-dropdown">
-                      <div className="qcm-dropdown-scroll">
-                        {filteredEmployees.length === 0 ? (
-                          <div className="qcm-no-results">No members found</div>
-                        ) : (
-                          filteredEmployees.map(emp => {
-                            const isSelected = selectedMembers.includes(emp.id);
-                            return (
-                              <button
-                                key={emp.id}
-                                type="button"
-                                className={`qcm-dropdown-item${isSelected ? ' selected' : ''}`}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setSelectedMembers(prev => prev.filter(id => id !== emp.id));
-                                  } else {
-                                    setSelectedMembers(prev => [...prev, emp.id]);
-                                  }
-                                  setMemberSearch('');
-                                }}
-                              >
-                                <span
-                                  className="qcm-item-avatar"
-                                  style={{ backgroundColor: getAvatarColor(emp.id) }}
-                                >
-                                  {getInitials(emp.name)}
-                                </span>
-                                <div className="qcm-item-info">
-                                  <span className="qcm-item-name">{emp.name}</span>
-                                  <span className="qcm-item-role">{emp.position} &middot; {emp.department}</span>
-                                </div>
-                                {isSelected && (
-                                  <span className="qcm-item-check">✓</span>
-                                )}
-                              </button>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 <div className="qcm-field">
                   <label htmlFor="qcm-description-input" className="qcm-label">Description</label>
@@ -915,6 +775,39 @@ export const CreateProjectWizard: React.FC = () => {
                     placeholder="Describe this project's scope, goals, or milestones..."
                     rows={3}
                   />
+                </div>
+
+                <div className="qcm-row">
+                  <div className="qcm-field" style={{ flex: 1 }}>
+                    <label htmlFor="qcm-allocated-hours" className="qcm-label">
+                      Allocate Hours
+                    </label>
+                    <input
+                      type="number"
+                      id="qcm-allocated-hours"
+                      className="qcm-input"
+                      value={allocatedHours}
+                      onChange={e => setAllocatedHours(e.target.value)}
+                      placeholder="e.g. 150"
+                    />
+                  </div>
+                  <div className="qcm-field" style={{ flex: 1 }}>
+                    <label htmlFor="qcm-lead-select" className="qcm-label">
+                      Project Owner
+                    </label>
+                    <select
+                      id="qcm-lead-select"
+                      className="qcm-input"
+                      value={leadId}
+                      onChange={e => setLeadId(e.target.value)}
+                    >
+                      {MOCK_EMPLOYEES.map(emp => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.name} ({emp.position})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="qcm-field">
@@ -987,35 +880,7 @@ export const CreateProjectWizard: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Avatar Stack Preview */}
-                  {selectedMembers.length > 0 && (
-                    <div className="qcm-preview-members">
-                      <div className="qcm-preview-avatar-stack">
-                        {selectedMembers.slice(0, 4).map((empId) => {
-                          const emp = MOCK_EMPLOYEES.find(e => e.id === empId);
-                          if (!emp) return null;
-                          return (
-                            <span
-                              key={emp.id}
-                              className="qcm-preview-avatar"
-                              style={{ backgroundColor: getAvatarColor(emp.id) }}
-                              title={emp.name}
-                            >
-                              {getInitials(emp.name)}
-                            </span>
-                          );
-                        })}
-                        {selectedMembers.length > 4 && (
-                          <span className="qcm-preview-avatar-more">
-                            +{selectedMembers.length - 4}
-                          </span>
-                        )}
-                      </div>
-                      <span className="qcm-preview-members-text">
-                        {selectedMembers.length} {selectedMembers.length === 1 ? 'member' : 'members'} invited
-                      </span>
-                    </div>
-                  )}
+
 
                   <div className="qcm-preview-workspace">
                     <Sparkles size={14} style={{ color: 'var(--accent)' }} />

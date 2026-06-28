@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { X, MapPin, Users as UsersIcon, Trash2, Pencil, Copy } from 'lucide-react';
+import { X, MapPin, Users as UsersIcon, Trash2, Pencil, Copy, Archive } from 'lucide-react';
 import type { CalendarEvent, CalendarEventType } from '../../types/employee-calendar.types';
 import { getAttendeeTimeRows } from './timezone.utils';
 import { useEmployeeContext } from '../../context/employee-context';
 import { findEventConflicts } from './new-event-wizard.utils';
+import { useCalendarStore } from '../../../../store/calendarStore';
+import { recordHistory, useHistoryStore } from '../../../../store/historyStore';
+import { useInbox } from '../../../../core/notifications/inbox-context';
 
 export const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
   shift: 'Shift',
@@ -36,6 +39,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(event);
   const [conflicts, setConflicts] = useState<CalendarEvent[] | null>(null);
+  const [seriesAction, setSeriesAction] = useState<'edit' | 'delete' | null>(null);
+  const [editingSeriesWide, setEditingSeriesWide] = useState(false);
+  const updateSeries = useCalendarStore(s => s.updateSeries);
+  const deleteSeries = useCalendarStore(s => s.deleteSeries);
+  const archiveEvent = useCalendarStore(s => s.archiveEvent);
+  const { addInboxItem } = useInbox();
+  const historyEntries = useHistoryStore(s => s.entries).filter(
+    e => e.category === 'Calendar' && e.target === event.title
+  );
 
   const { selectedEmployee } = useEmployeeContext();
   const attendeeTimeRows = event.attendees && event.start && event.end && !event.allDay
@@ -43,7 +55,46 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
     : [];
 
   const startEdit = () => { setForm(event); setEditing(true); };
-  const finalizeSave = () => { onSave(form); setEditing(false); setConflicts(null); };
+  const finalizeSave = () => {
+    if (editingSeriesWide && event.seriesId) {
+      updateSeries(event.seriesId, { title: form.title, location: form.location, note: form.note });
+      recordHistory({
+        category: 'Calendar',
+        title: 'Series updated',
+        description: `All occurrences of "${event.title}" were updated.`,
+        target: event.title
+      });
+      addInboxItem({
+        id: `notif-${Date.now()}-updated`,
+        category: 'meeting',
+        title: 'Event updated',
+        message: `All occurrences of "${event.title}" were updated.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
+      });
+    } else {
+      onSave(form);
+      recordHistory({
+        category: 'Calendar',
+        title: 'Event updated',
+        description: `"${event.title}" was updated.`,
+        target: event.title
+      });
+      addInboxItem({
+        id: `notif-${Date.now()}-updated`,
+        category: 'meeting',
+        title: 'Event updated',
+        message: `"${event.title}" was updated.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
+      });
+    }
+    setEditing(false);
+    setConflicts(null);
+    setEditingSeriesWide(false);
+  };
   const handleSave = () => {
     const clashes = findEventConflicts(form, existingMyEvents);
     if (clashes.length > 0) {
@@ -51,6 +102,16 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
       return;
     }
     finalizeSave();
+  };
+  const handleArchive = () => {
+    archiveEvent(event.id);
+    recordHistory({
+      category: 'Calendar',
+      title: 'Event archived',
+      description: `"${event.title}" was archived.`,
+      target: event.title
+    });
+    onClose();
   };
 
   return (
@@ -147,26 +208,109 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({ event, onC
               <p className="emc-modal__rejected-note">Rejected by manager.</p>
             )}
 
-            <div className="emc-modal__actions">
-              {event.syncOrigin !== 'pulled' && (
-                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={startEdit}>
-                  <Pencil size={13} />
-                  Edit
+            {event.status === 'tentative' && (
+              <p className="emc-modal__tentative-note">Tentative response.</p>
+            )}
+
+            {historyEntries.length > 0 && (
+              <div className="emc-modal__history">
+                <p className="emc-modal__history-label">History</p>
+                <ul className="emc-modal__history-list">
+                  {historyEntries.map(entry => (
+                    <li key={entry.id}>{entry.title} — {new Date(entry.createdAt).toLocaleString()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {seriesAction ? (
+              <div className="emc-modal__actions">
+                <span className="emc-modal__series-prompt">
+                  {seriesAction === 'edit' ? 'Edit' : 'Delete'} this event, or all events in the series?
+                </span>
+                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => setSeriesAction(null)}>
+                  Cancel
                 </button>
-              )}
-              {event.syncOrigin !== 'pulled' && event.type === 'meeting' && (
-                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => onDuplicate(event)}>
-                  <Copy size={13} />
-                  Duplicate
+                <button
+                  type="button"
+                  className="era-btn era-btn--ghost emc-modal__action"
+                  onClick={() => {
+                    setSeriesAction(null);
+                    setEditingSeriesWide(false);
+                    if (seriesAction === 'edit') startEdit(); else onDelete(event.id);
+                  }}
+                >
+                  This event
                 </button>
-              )}
-              {event.syncOrigin !== 'pulled' && (
-                <button type="button" className="era-btn emc-modal__action emc-modal__action--danger" onClick={() => onDelete(event.id)}>
-                  <Trash2 size={13} />
-                  Delete
+                <button
+                  type="button"
+                  className="era-btn emc-modal__action emc-modal__action--danger"
+                  onClick={() => {
+                    setSeriesAction(null);
+                    if (seriesAction === 'edit') {
+                      setEditingSeriesWide(true);
+                      setForm(event);
+                      setEditing(true);
+                    } else if (event.seriesId) {
+                      recordHistory({
+                        category: 'Calendar',
+                        title: 'Series deleted',
+                        description: `All occurrences of "${event.title}" were deleted.`,
+                        target: event.title
+                      });
+                      addInboxItem({
+                        id: `notif-${Date.now()}-cancelled`,
+                        category: 'meeting',
+                        title: 'Event cancelled',
+                        message: `All occurrences of "${event.title}" were cancelled.`,
+                        timeLabel: 'Just now',
+                        filter: 'new',
+                        actions: []
+                      });
+                      deleteSeries(event.seriesId);
+                      onClose();
+                    }
+                  }}
+                >
+                  All events in series
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="emc-modal__actions">
+                {event.syncOrigin !== 'pulled' && (
+                  <button
+                    type="button"
+                    className="era-btn era-btn--ghost emc-modal__action"
+                    onClick={() => (event.seriesId ? setSeriesAction('edit') : startEdit())}
+                  >
+                    <Pencil size={13} />
+                    Edit
+                  </button>
+                )}
+                {event.syncOrigin !== 'pulled' && event.type === 'meeting' && (
+                  <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={() => onDuplicate(event)}>
+                    <Copy size={13} />
+                    Duplicate
+                  </button>
+                )}
+                {event.syncOrigin !== 'pulled' && (
+                  <button
+                    type="button"
+                    className="era-btn emc-modal__action emc-modal__action--danger"
+                    onClick={() => (event.seriesId ? setSeriesAction('delete') : onDelete(event.id))}
+                  >
+                    <Trash2 size={13} />
+                    Delete
+                  </button>
+                )}
+                {event.syncOrigin !== 'pulled' && (
+                  <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={handleArchive}>
+                    <Archive size={13} />
+                    Archive
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="emc-modal__body">

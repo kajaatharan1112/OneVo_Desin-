@@ -2,6 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Plus, Users } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
+ kaviz/offboarding
+
+import { useBulkOnboardingStore } from '../../../store/bulkOnboardingStore';
+ main
 import { ConfigShellHeader } from '../../../shared/components/config-shell-header/ConfigShellHeader';
 import { OrgToast } from '../../organization/components/OrgToast';
 import { EmployeeFormPanel } from './EmployeeFormPanel';
@@ -74,13 +78,18 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ canAddEmployee }) 
         ) : null}
       />
 
-      <div className="cfg-page__body">
+   <div className="cfg-page__body">
         <div className="cfg-table-wrap">
           <table className="cfg-table">
             <thead>
               <tr>
                 <th>Employee</th>
-                <th>Position</th>
+                <th>Position</th>   
+ kaviz/offboarding
+
+                <th>Department</th>
+                <th>Reporting Manager</th>
+ main
                 <th>Employment Type</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -98,7 +107,10 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ canAddEmployee }) 
                       <div className="cfg-table__meta">{employee.email}</div>
                     </td>
                     <td>{ctx.positionName}</td>
-
+ kaviz/offboarding
+                    <td>{ctx.departmentName}</td>
+                    <td>{ctx.reportingManager}</td>
+ main
                     <td>{employmentTypeLabel(employee.employmentType)}</td>
                     <td>
                       <span className={`cfg-badge ${statusBadgeClass(employee.status)}`}>

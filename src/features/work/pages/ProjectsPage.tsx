@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useWork } from '../context/work-context';
+import { type ProjectNavId } from '../projectNav';
 import {
   accessibleProjects,
   healthBadgeClass,
@@ -79,8 +80,8 @@ interface ProjectCardProps {
   p: ReturnType<typeof accessibleProjects>[0];
   workspaces: ReturnType<typeof useWork>['workspaces'];
   visibleWs: Set<string>;
-  openProject: ReturnType<typeof useWork>['openProject'];
-  openProjectSettings: ReturnType<typeof useWork>['openProjectSettings'];
+  openProject: (id: string, nav?: ProjectNavId) => void;
+  openProjectSettings: () => void;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ p, workspaces, visibleWs, openProject, openProjectSettings }) => {

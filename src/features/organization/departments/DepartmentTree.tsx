@@ -5,9 +5,10 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  ListFilter,
   Search
 } from 'lucide-react';
-import { buildDepartmentTree } from '../../../utils/organizationUtils';
+import { buildDepartmentTree, getDepartmentHeadEmployee } from '../../../utils/organizationUtils';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import type { DepartmentTreeNode } from '../../../types/organization';
 import { DepartmentTableRow } from './DepartmentTableRow';
@@ -53,6 +54,23 @@ function collectExpandableIds(nodes: DepartmentTreeNode[]): string[] {
   return ids;
 }
 
+function nodeHasIssue(
+  node: DepartmentTreeNode,
+  departments: ReturnType<typeof useOrganizationStore.getState>['departments'],
+  positions: ReturnType<typeof useOrganizationStore.getState>['positions'],
+  assignments: ReturnType<typeof useOrganizationStore.getState>['assignments'],
+  employees: ReturnType<typeof useOrganizationStore.getState>['employees']
+): boolean {
+  const { headPosition, headEmployee } = getDepartmentHeadEmployee(
+    node.id,
+    departments,
+    positions,
+    assignments,
+    employees
+  );
+  return Boolean(headPosition && !headEmployee) || !headPosition;
+}
+
 function nodeMatchesSearch(node: DepartmentTreeNode, query: string): boolean {
   const q = query.toLowerCase();
   return node.name.toLowerCase().includes(q) || node.code.toLowerCase().includes(q);
@@ -62,11 +80,14 @@ export const DepartmentTree: React.FC = () => {
   const {
     departments,
     positions,
+    assignments,
+    employees,
     collapsedDeptIds
   } = useOrganizationStore();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [issuesOnly, setIssuesOnly] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
@@ -78,6 +99,9 @@ export const DepartmentTree: React.FC = () => {
 
     return rows.filter(({ node }) => {
       if (statusFilter !== 'all' && node.status !== statusFilter) return false;
+      if (issuesOnly && !nodeHasIssue(node, departments, positions, assignments, employees)) {
+        return false;
+      }
       if (q && !nodeMatchesSearch(node, q)) return false;
       return true;
     });
@@ -85,7 +109,12 @@ export const DepartmentTree: React.FC = () => {
     tree,
     collapsedDeptIds,
     search,
-    statusFilter
+    statusFilter,
+    issuesOnly,
+    departments,
+    positions,
+    assignments,
+    employees
   ]);
 
   const totalDepartments = departments.length;
@@ -144,6 +173,17 @@ export const DepartmentTree: React.FC = () => {
             <option value="inactive">Inactive</option>
           </select>
 
+          <label className="dept-table__checkbox">
+            <input
+              type="checkbox"
+              checked={issuesOnly}
+              onChange={e => {
+                setIssuesOnly(e.target.checked);
+                setPage(1);
+              }}
+            />
+            Show issues only
+          </label>
         </div>
 
         <div className="dept-table__toolbar-right">
@@ -154,6 +194,13 @@ export const DepartmentTree: React.FC = () => {
           <button type="button" className="dept-table__toolbar-btn" onClick={collapseAll}>
             <ChevronsUpDown size={14} aria-hidden />
             Collapse All
+          </button>
+          <button
+            type="button"
+            className="dept-table__toolbar-btn dept-table__toolbar-btn--icon"
+            aria-label="Table settings"
+          >
+            <ListFilter size={15} />
           </button>
         </div>
       </div>
