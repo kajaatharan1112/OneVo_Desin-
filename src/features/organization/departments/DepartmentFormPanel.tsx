@@ -168,13 +168,13 @@ export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClos
           </div>
 
           <div className="org-form-field">
-            <label htmlFor="dept-parent">Head Department</label>
+            <label htmlFor="dept-parent">Parent Department</label>
             <select
               id="dept-parent"
               value={parentId ?? ''}
               onChange={e => setParentId(e.target.value || null)}
             >
-              <option value="">Top level department</option>
+              <option value="">None (root department)</option>
               {parentOptions.map(opt => (
                 <option key={opt.id} value={opt.id}>
                   {'—'.repeat(opt.depth)}{opt.depth > 0 ? ' ' : ''}{opt.name}
@@ -185,7 +185,7 @@ export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClos
 
           {isEdit && (
             <div className="org-form-field">
-              <label htmlFor="dept-head">Department Head</label>
+              <label htmlFor="dept-head">Head Position</label>
               <select
                 id="dept-head"
                 value={headPositionId ?? ''}

@@ -14,9 +14,7 @@ import {
 import { resolveSubItemId } from '../../shared/utils/nav-utils';
 import { SubNavPanel } from '../../shared/components/sub-nav-panel/sub-nav-panel';
 import { WorkSubNavPanel } from '../../features/work/components/WorkSubNavPanel';
-import { ProjectSettingsSubNavPanel } from '../../features/work/components/ProjectSettingsSubNavPanel';
 import { OrganizationSubNavPanel } from '../../features/organization/components/OrganizationSubNavPanel';
-import { useWork } from '../../features/work/context/work-context';
 import { NotificationPanel } from '../../shared/components/notification-panel/notification-panel';
 import { BrandMenuToast } from '../../shared/components/brand-menu-toast/brand-menu-toast';
 import { ApplyMainApplicationToast } from '../../shared/components/apply-main-application-toast/apply-main-application-toast';
@@ -110,7 +108,6 @@ export const Shell: React.FC<ShellProps> = ({
   );
 
   const inbox = useInboxOptional();
-  const { projectSettingsOpen, selectedProjectId } = useWork();
 
   const notificationUnreadCount = useMemo(() => {
     const staticCount = countNewNotifications(currentView);
@@ -213,15 +210,11 @@ export const Shell: React.FC<ShellProps> = ({
                   onCollapse={() => setSubNavCollapsed(true)}
                 />
               ) : isWorkNav ? (
-                projectSettingsOpen && selectedProjectId ? (
-                  <ProjectSettingsSubNavPanel onCollapse={() => setSubNavCollapsed(true)} />
-                ) : (
-                  <WorkSubNavPanel
-                    activeId={resolvedSubItemId}
-                    onSelect={onSubItemSelect}
-                    onCollapse={() => setSubNavCollapsed(true)}
-                  />
-                )
+                <WorkSubNavPanel
+                  activeId={resolvedSubItemId}
+                  onSelect={onSubItemSelect}
+                  onCollapse={() => setSubNavCollapsed(true)}
+                />
               ) : (
                 <SubNavPanel
                   sections={activeSubSections}

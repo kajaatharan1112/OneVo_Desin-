@@ -19,15 +19,11 @@ export interface Position {
   id: string;
   name: string;
   code: string;
-  description?: string;
   departmentId: string;
   reportsToPositionId: string | null;
   type: PositionType;
   capacity: number;
   status: EntityStatus;
-  coverageType?: 'position' | 'department';
-  primaryCoverageId?: string | null;
-  secondaryCoverageIds?: string[];
 }
 
 export interface Employee {

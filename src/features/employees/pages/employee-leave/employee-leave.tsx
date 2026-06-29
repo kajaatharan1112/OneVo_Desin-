@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sun, Thermometer, Coffee, Calendar, X, Plus,
-  CalendarDays, Clock, Info, Users
+  CalendarDays, Clock, Info, Users, Settings, Paperclip, UploadCloud
 } from 'lucide-react';
 import { employeeLeaveBalance } from '../../data/employee-requests.data';
 import {
-  leaveRequests as SEED_REQUESTS,
   leaveHistory,
   upcomingLeaves,
   leaveCompanyHolidays,
@@ -13,19 +12,13 @@ import {
   type LeaveRequest,
   type LeaveTypeKey
 } from '../../data/employee-leave.data';
+import { useLeaveRequestStore } from '../../../../store/leaveRequestStore';
+import { employeeCalendarData } from '../../data/employee-calendar.data';
 import { useInbox, INBOX_CURRENT_USER } from '../../../../core/notifications/inbox-context';
+import { LeavePoliciesPage } from '../../../leave/configuration/LeavePoliciesPage';
+import { LeaveTypesPage } from '../../../leave/configuration/LeaveTypesPage';
+import { LeaveEntitlementsPage } from '../../../leave/configuration/LeaveEntitlementsPage';
 import { useEmployeeContext } from '../../context/employee-context';
-
-/* ─── Team leave mock (manager view) ─── */
-interface TeamLeaveEntry {
-  id: string; name: string; initials: string;
-  leaveType: string; startDate: string; endDate: string;
-  days: number; status: 'pending' | 'approved' | 'rejected';
-}
-const TEAM_LEAVE: TeamLeaveEntry[] = [
-  { id: 'tl-1', name: 'Alexander Pierce', initials: 'AP', leaveType: 'Annual', startDate: 'Jun 20', endDate: 'Jun 23', days: 4, status: 'approved' },
-  { id: 'tl-2', name: 'Jordan Kim',       initials: 'JK', leaveType: 'Sick',   startDate: 'Jun 18', endDate: 'Jun 18', days: 1, status: 'pending'  },
-];
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
@@ -47,35 +40,144 @@ interface LeaveFormState {
   startDate: string;
   endDate: string;
   reason: string;
+  attachmentName: string;
 }
 
 const DEFAULT_FORM: LeaveFormState = {
   leaveType: 'Annual',
   startDate: '',
   endDate: '',
-  reason: ''
+  reason: '',
+  attachmentName: ''
 };
 
 export const EmployeeLeave: React.FC = () => {
   const { addInboxItem } = useInbox();
   const { selectedEmployee } = useEmployeeContext();
   const isManager = selectedEmployee.id === 'manager';
+  const [activeView, setActiveView] = useState<'self' | 'team'>('self');
+  const [configurationView, setConfigurationView] = useState<'menu' | 'types' | 'policies' | 'entitlements' | null>(null);
+  const [isConfigDropdownOpen, setIsConfigDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter]           = useState<StatusFilter>('all');
-  const [modalOpen, setModalOpen]     = useState(false);
-  const [requests, setRequests]       = useState<LeaveRequest[]>(SEED_REQUESTS);
-  const [form, setForm]               = useState<LeaveFormState>(DEFAULT_FORM);
+  const [isDragOver, setIsDragOver]   = useState(false);
 
-  const filtered = requests.filter(r => filter === 'all' || r.status === filter);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      patchForm({ attachmentName: file.name });
+    }
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsConfigDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  const [modalOpen, setModalOpen]     = useState(false);
+  const allRequests = useLeaveRequestStore(s => s.requests);
+  const addRequest = useLeaveRequestStore(s => s.addRequest);
+  const approveRequest = useLeaveRequestStore(s => s.approveRequest);
+  const rejectRequest = useLeaveRequestStore(s => s.rejectRequest);
+  const [form, setForm]               = useState<LeaveFormState>(DEFAULT_FORM);
+  const [showSchedulePreview, setShowSchedulePreview] = useState(false);
+
+  const myRequests = allRequests.filter(r => r.employeeName === undefined);
+  const teamRequests = allRequests.filter(r => r.employeeName !== undefined);
+
+  const filtered = myRequests.filter(r => filter === 'all' || r.status === filter);
+
+  useEffect(() => {
+    if (!modalOpen) {
+      setShowSchedulePreview(false);
+    }
+  }, [modalOpen]);
+
+  // Helper to find conflicting events (meetings, reminders/tasks, shifts) within selected dates
+  const conflictingEvents = React.useMemo(() => {
+    if (!form.startDate || !form.endDate) return [];
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+
+    return (employeeCalendarData?.events || []).filter(event => {
+      if (!event.date) return false;
+      const eventDate = new Date(event.date);
+      if (isNaN(eventDate.getTime())) return false;
+      
+      const isWithinRange = eventDate >= start && eventDate <= end;
+      const isConflictType = event.type === 'meeting' || event.type === 'reminder' || event.type === 'shift';
+      
+      return isWithinRange && isConflictType;
+    });
+  }, [form.startDate, form.endDate]);
+
+  const hasConflict = conflictingEvents.length > 0;
 
   const counts: Record<StatusFilter, number> = {
-    all:      requests.length,
-    pending:  requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    rejected: requests.filter(r => r.status === 'rejected').length
+    all:      myRequests.length,
+    pending:  myRequests.filter(r => r.status === 'pending').length,
+    approved: myRequests.filter(r => r.status === 'approved').length,
+    rejected: myRequests.filter(r => r.status === 'rejected').length
   };
 
   const patchForm = (patch: Partial<LeaveFormState>) =>
     setForm(f => ({ ...f, ...patch }));
+
+  if (configurationView) {
+    if (configurationView === 'menu') {
+      return (
+        <div className="content-card">
+          <div className="elp-config-menu">
+            <div className="elp-config-menu__header">
+              <div>
+                <h2>Time Off Configuration</h2>
+                <p>Select a section to configure.</p>
+              </div>
+              <button type="button" className="era-btn era-btn--ghost" onClick={() => setConfigurationView(null)}>Back</button>
+            </div>
+            <div className="elp-config-menu__card">
+              <button type="button" onClick={() => setConfigurationView('types')}>
+                <span>Time Off Type</span><small>Manage available time off types</small>
+              </button>
+              <button type="button" onClick={() => setConfigurationView('policies')}>
+                <span>Time Off Policy</span><small>Manage time off rules and policies</small>
+              </button>
+              <button type="button" onClick={() => setConfigurationView('entitlements')}>
+                <span>Entitlement</span><small>Manage employee entitlements</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="elp-config-page">
+        <button type="button" className="era-btn era-btn--ghost elp-config-page__back" onClick={() => setConfigurationView(null)}>
+          Back to Time Off
+        </button>
+        {configurationView === 'types' && <LeaveTypesPage />}
+        {configurationView === 'policies' && <LeavePoliciesPage />}
+        {configurationView === 'entitlements' && <LeaveEntitlementsPage />}
+      </div>
+    );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +191,10 @@ export const EmployeeLeave: React.FC = () => {
       status:        'pending',
       submittedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
       reason:        form.reason,
-      approver:      'Manager'
+      approver:      'Manager',
+      attachmentName: form.attachmentName || undefined
     };
-    setRequests(prev => [newReq, ...prev]);
+    addRequest(newReq);
     addInboxItem({
       id:          `leave-${id}`,
       recipientId: INBOX_CURRENT_USER,
@@ -114,20 +217,70 @@ export const EmployeeLeave: React.FC = () => {
         {/* ── Header ── */}
         <div className="elp-header">
           <div className="elp-header__title">
-            <h2 className="elp-page-title">My Leave</h2>
+            <h2 className="elp-page-title">Time Off</h2>
             <span className="elp-header__sub">2026 leave year</span>
           </div>
-          <button
-            type="button"
-            className="era-btn era-btn--primary"
-            onClick={() => setModalOpen(true)}
-          >
-            <Plus size={13} />
-            Apply Leave
-          </button>
+          <div className="elp-header__actions">
+            <div className="elp-view-toggle" role="group" aria-label="Time off view">
+              <button type="button" className={`elp-view-toggle__button${activeView === 'self' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('self')}>Self</button>
+              {isManager && (
+                <button type="button" className={`elp-view-toggle__button${activeView === 'team' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('team')}>Team</button>
+              )}
+            </div>
+            <div className="elp-config-dropdown-container" ref={dropdownRef}>
+              <button
+                type="button"
+                className={`elp-config-button${isConfigDropdownOpen ? ' elp-config-button--active' : ''}`}
+                onClick={() => setIsConfigDropdownOpen(!isConfigDropdownOpen)}
+              >
+                <Settings size={13} /> Configuration
+              </button>
+              {isConfigDropdownOpen && (
+                <div className="elp-config-dropdown">
+                  <button
+                    type="button"
+                    className="elp-config-dropdown-item"
+                    onClick={() => {
+                      setConfigurationView('types');
+                      setIsConfigDropdownOpen(false);
+                    }}
+                  >
+                    Time off Type
+                  </button>
+                  <button
+                    type="button"
+                    className="elp-config-dropdown-item"
+                    onClick={() => {
+                      setConfigurationView('policies');
+                      setIsConfigDropdownOpen(false);
+                    }}
+                  >
+                    Time off Policy
+                  </button>
+                  <button
+                    type="button"
+                    className="elp-config-dropdown-item"
+                    onClick={() => {
+                      setConfigurationView('entitlements');
+                      setIsConfigDropdownOpen(false);
+                    }}
+                  >
+                    Entitlement
+                  </button>
+                </div>
+              )}
+            </div>
+            {activeView === 'self' && (
+              <button type="button" className="era-btn era-btn--primary" onClick={() => setModalOpen(true)}>
+                <Plus size={13} /> Apply Leave
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Balance strip ── */}
+        {activeView === 'self' ? (
+          <>
         <div className="elp-balance-strip">
           {employeeLeaveBalance.items.map(item => {
             const remaining = item.total - item.used;
@@ -208,6 +361,15 @@ export const EmployeeLeave: React.FC = () => {
                           <span className="elp-dot" />
                           <Info size={11} />
                           {req.rejectionNote}
+                        </>
+                      )}
+                      {req.attachmentName && (
+                        <>
+                          <span className="elp-dot" />
+                          <Paperclip size={11} />
+                          <span title={req.attachmentName} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100px' }}>
+                            {req.attachmentName}
+                          </span>
                         </>
                       )}
                     </div>
@@ -314,7 +476,17 @@ export const EmployeeLeave: React.FC = () => {
         </div>
 
         {/* ── Team leave (manager only) ── */}
-        {isManager && (
+          </>
+        ) : (
+          <div className="elp-team-dashboard">
+            <div className="elp-team-summary">
+              <div className="era-panel elp-team-summary__item"><span>Away today</span><strong>1</strong></div>
+              <div className="era-panel elp-team-summary__item"><span>Upcoming</span><strong>2</strong></div>
+              <div className="era-panel elp-team-summary__item">
+                <span>Pending requests</span>
+                <strong>{teamRequests.filter(r => r.status === 'pending').length}</strong>
+              </div>
+            </div>
           <div className="elp-history-panel era-panel">
             <div className="elp-section-head">
               <span className="elp-section-title">
@@ -331,11 +503,12 @@ export const EmployeeLeave: React.FC = () => {
                   <th>Dates</th>
                   <th>Days</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {TEAM_LEAVE.map(entry => (
-                  <tr key={entry.id}>
+                {teamRequests.map(req => (
+                  <tr key={req.id}>
                     <td>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{
@@ -344,22 +517,35 @@ export const EmployeeLeave: React.FC = () => {
                           fontSize: '0.65rem', fontWeight: 600,
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0
-                        }}>{entry.initials}</span>
-                        {entry.name}
+                        }}>{(req.employeeName ?? '??').split(' ').map(p => p[0]).slice(0, 2).join('')}</span>
+                        {req.employeeName}
                       </span>
                     </td>
-                    <td>{entry.leaveType}</td>
-                    <td>{entry.startDate === entry.endDate ? entry.startDate : `${entry.startDate} – ${entry.endDate}`}</td>
-                    <td>{entry.days}d</td>
+                    <td>{req.leaveType}</td>
+                    <td>{req.startDate === req.endDate ? req.startDate : `${req.startDate} – ${req.endDate}`}</td>
+                    <td>{req.days}d</td>
                     <td>
-                      <span className={`era-status-badge era-status-badge--${entry.status}`}>
-                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                      <span className={`era-status-badge era-status-badge--${req.status}`}>
+                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </span>
+                    </td>
+                    <td>
+                      {req.status === 'pending' && (
+                        <span style={{ display: 'inline-flex', gap: '0.375rem' }}>
+                          <button type="button" className="era-btn era-btn--ghost" onClick={() => approveRequest(req.id)}>
+                            Approve
+                          </button>
+                          <button type="button" className="era-btn era-btn--ghost" onClick={() => rejectRequest(req.id)}>
+                            Reject
+                          </button>
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         )}
 
@@ -394,28 +580,113 @@ export const EmployeeLeave: React.FC = () => {
                   <option value="Other">Other</option>
                 </select>
               </label>
-              <div className="elp-field-row">
-                <label className="elp-field">
+              <div className="elp-field-row" style={{ alignItems: 'flex-end', position: 'relative', gap: '0.75rem' }}>
+                <label className="elp-field" style={{ flex: 1 }}>
                   <span className="elp-field__label">From</span>
                   <input
                     type="date"
                     className="elp-field__input"
                     value={form.startDate}
-                    onChange={e => patchForm({ startDate: e.target.value })}
+                    onChange={e => {
+                      patchForm({ startDate: e.target.value });
+                      setShowSchedulePreview(false);
+                    }}
                     required
                   />
                 </label>
-                <label className="elp-field">
+                <label className="elp-field" style={{ flex: 1 }}>
                   <span className="elp-field__label">To</span>
                   <input
                     type="date"
                     className="elp-field__input"
                     value={form.endDate}
-                    onChange={e => patchForm({ endDate: e.target.value })}
+                    onChange={e => {
+                      patchForm({ endDate: e.target.value });
+                      setShowSchedulePreview(false);
+                    }}
                     required
                   />
                 </label>
+                {hasConflict && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSchedulePreview(!showSchedulePreview)}
+                    className={`elp-schedule-alert-btn ${showSchedulePreview ? 'active' : ''}`}
+                    title="You have meetings/tasks scheduled during this period. Click to view."
+                    style={{
+                      height: '42px',
+                      width: '42px',
+                      borderRadius: '8px',
+                      border: '1px solid #fee2e2',
+                      background: showSchedulePreview ? '#fee2e2' : '#fef2f2',
+                      color: '#ef4444',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Calendar size={18} />
+                  </button>
+                )}
               </div>
+              {hasConflict && showSchedulePreview && (
+                <div 
+                  className="elp-schedule-preview" 
+                  style={{
+                    marginTop: '0.25rem',
+                    marginBottom: '0.75rem',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: 'var(--surface-muted, #f8fafc)',
+                    border: '1px solid var(--border, #e2e8f0)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary, #64748b)' }}>
+                      Schedule for Selected Dates
+                    </span>
+                    <span style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: '#fee2e2', color: '#ef4444', fontWeight: 500 }}>
+                      {conflictingEvents.length} {conflictingEvents.length === 1 ? 'event' : 'events'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {conflictingEvents.map(event => (
+                      <div key={event.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 10px',
+                        background: '#ffffff',
+                        borderLeft: `3px solid ${event.type === 'meeting' ? '#3b82f6' : event.type === 'shift' ? '#10b981' : '#f59e0b'}`,
+                        borderRadius: '4px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#1e293b' }}>{event.title}</span>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            {event.date} {event.start && `| ${event.start}${event.end ? ` - ${event.end}` : ''}`}
+                          </span>
+                        </div>
+                        <span style={{
+                          fontSize: '0.65rem',
+                          textTransform: 'uppercase',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: event.type === 'meeting' ? '#dbeafe' : event.type === 'shift' ? '#d1fae5' : '#fef3c7',
+                          color: event.type === 'meeting' ? '#1e40af' : event.type === 'shift' ? '#065f46' : '#92400e',
+                        }}>
+                          {event.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <label className="elp-field">
                 <span className="elp-field__label">Reason (optional)</span>
                 <textarea
@@ -425,6 +696,59 @@ export const EmployeeLeave: React.FC = () => {
                   placeholder="Brief reason for this leave request…"
                   rows={3}
                 />
+              </label>
+              <label className="elp-field">
+                <span className="elp-field__label">Attachment (optional)</span>
+                <div 
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  style={{
+                    border: isDragOver ? '2px dashed var(--accent)' : '2px dashed var(--border)',
+                    borderRadius: '12px',
+                    padding: '24px 16px',
+                    textAlign: 'center',
+                    backgroundColor: isDragOver ? 'rgba(99, 102, 241, 0.05)' : 'var(--surface-muted)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                    marginTop: '0.5rem'
+                  }}
+                  onClick={() => document.getElementById('elp-leave-file-input')?.click()}
+                >
+                  <input
+                    type="file"
+                    id="elp-leave-file-input"
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        patchForm({ attachmentName: file.name });
+                      }
+                    }}
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  />
+                  <UploadCloud size={24} style={{ color: 'var(--text-m)', opacity: 0.7, marginBottom: '8px', pointerEvents: 'none' }} />
+                  {form.attachmentName ? (
+                    <div>
+                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--accent)' }}>
+                        {form.attachmentName}
+                      </span>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.6875rem', color: 'var(--nexus-text-muted)' }}>
+                        Click or drag new file to change
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.8125rem', color: 'var(--text-h)', fontWeight: 600, pointerEvents: 'none' }}>
+                        Drag & drop file here
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '0.6875rem', color: 'var(--nexus-text-muted)', pointerEvents: 'none' }}>
+                        Supports PDF, PNG, JPG, DOC (Max 5MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
               </label>
               <div className="elp-modal__actions">
                 <button

@@ -24,6 +24,34 @@
   max-width: 320px;
 }
 
+.emc-dragconflict {
+  position: fixed;
+  z-index: 50;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.625rem 0.75rem;
+  max-width: 260px;
+}
+
+.emc-dragconflict__text {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.emc-dragconflict__actions {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: flex-end;
+}
+
+.emc-dragconflict__btn {
+  font-size: 0.6875rem;
+  padding: 3px 9px;
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
 .emc-header {
@@ -909,6 +937,15 @@
   background: color-mix(in srgb, var(--error, #ef4444) 10%, transparent);
 }
 
+.emc-iconbtn--tentative {
+  color: #d97706;
+  border-color: color-mix(in srgb, #d97706 30%, var(--border));
+}
+
+.emc-iconbtn--tentative:hover {
+  background: color-mix(in srgb, #d97706 10%, transparent);
+}
+
 /* ── Calendar sync ───────────────────────────────────────────────────────── */
 
 .emc-sync {
@@ -962,6 +999,96 @@
   margin-top: 0.4375rem;
   font-size: 0.6875rem;
   color: var(--nexus-text-muted);
+}
+
+.emc-archived__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+}
+
+.emc-archived__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emc-archived__title {
+  font-size: 0.75rem;
+  color: var(--text);
+  flex: 1;
+}
+
+.emc-archived__date {
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+}
+
+.emc-syncbadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: #fff;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
+.emc-syncbadge--google  { background: #4285f4; }
+.emc-syncbadge--outlook { background: #0078d4; }
+
+.emc-modal__synced-label {
+  font-size: 0.6875rem;
+  color: var(--nexus-text-muted);
+  margin-left: 0.5rem;
+}
+
+.emc-sync__btn {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  padding: 3px 9px;
+  gap: 0.25rem;
+}
+
+.emc-sync__spin {
+  animation: emc-sync-spin 1s linear infinite;
+}
+
+@keyframes emc-sync-spin {
+  to { transform: rotate(360deg); }
+}
+
+.emc-sync__actions {
+  display: flex;
+  gap: 0.375rem;
+  margin-left: auto;
+}
+
+.emc-modal--conflict {
+  max-width: 360px;
+}
+
+.emc-conflict__title {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  margin: 0.5rem 0 0.375rem;
+}
+
+.emc-conflict__row {
+  display: flex;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.emc-conflict__label {
+  font-weight: 500;
+  width: 3.5rem;
+  flex-shrink: 0;
 }
 
 /* ── Clickable event pills ──────────────────────────────────────────────── */
@@ -1385,6 +1512,12 @@
 
 .emc-modal__action--danger:hover {
   background: color-mix(in srgb, #dc2626 18%, transparent);
+}
+
+.emc-modal__series-prompt {
+  font-size: 0.78rem;
+  color: var(--nexus-text-muted);
+  margin-right: auto;
 }
 
 .emc-modal__field {
@@ -1816,6 +1949,32 @@
   color: #dc2626;
 }
 
+.emc-modal__tentative-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #d97706;
+}
+
+.emc-modal__history-label {
+  margin: 0.5rem 0 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.emc-modal__history-list {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+}
+
 /* Pending / rejected event pills */
 .emc-month__evpill.emc-evpill--pending-status,
 .emc-week__evpill.emc-evpill--pending-status,
@@ -1828,5 +1987,11 @@
 .emc-evpill--rejected-status {
   --ev-color: #dc2626;
   --ev-bg: color-mix(in srgb, #dc2626 10%, transparent);
+  border-style: dashed;
+}
+
+.emc-evpill--tentative-status {
+  --ev-color: #d97706;
+  --ev-bg: color-mix(in srgb, #d97706 10%, transparent);
   border-style: dashed;
 }
