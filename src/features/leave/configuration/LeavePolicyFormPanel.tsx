@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import { useOrganizationStore } from '../../../store/organizationStore';
-import type { AccrualMethod, LeaveStatus, PolicyScope } from './leaveConfigTypes';
+import type { AccrualMethod, LeaveStatus, PolicyScope, LeaveLimitUnit, LeaveLimitPeriod } from './leaveConfigTypes';
 import { POLICY_ADVANCED_DEFAULTS } from './leaveConfigUtils';
 import { LeaveScopeMultiSelect } from './LeaveScopeMultiSelect';
 
@@ -21,18 +21,20 @@ interface PolicyFormState {
   appliesTo: PolicyScope;
   departmentIds: string[];
   positionIds: string[];
-  daysPerYear: number;
+  limitValue: number;
+  limitUnit: LeaveLimitUnit;
+  limitPeriod: LeaveLimitPeriod;
   accrualMethod: FormAccrual;
   proRataNewJoiners: boolean;
   carryForwardAllowed: boolean;
-  maxCarryForwardDays: number;
+  maxCarryForwardValue: number;
   carryForwardExpiryMonths: number;
   minNoticeDays: number;
   maxConsecutiveDays: string;
-  minDaysPerRequest: number;
+  minRequestValue: number;
   blackoutPeriods: string;
   requiresDocument: boolean;
-  documentRequiredAfterDays: string;
+  documentRequiredAfterValue: string;
 }
 
 const defaultPolicy = (): PolicyFormState => ({
@@ -44,11 +46,20 @@ const defaultPolicy = (): PolicyFormState => ({
   appliesTo: 'company',
   departmentIds: [],
   positionIds: [],
-  daysPerYear: 14,
+  limitValue: 112,
+  limitUnit: 'hours',
+  limitPeriod: 'yearly',
   accrualMethod: 'yearly',
-  ...POLICY_ADVANCED_DEFAULTS,
+  proRataNewJoiners: POLICY_ADVANCED_DEFAULTS.proRataNewJoiners,
+  carryForwardAllowed: POLICY_ADVANCED_DEFAULTS.carryForwardAllowed,
+  maxCarryForwardValue: POLICY_ADVANCED_DEFAULTS.maxCarryForwardValue,
+  carryForwardExpiryMonths: POLICY_ADVANCED_DEFAULTS.carryForwardExpiryMonths,
+  minNoticeDays: POLICY_ADVANCED_DEFAULTS.minNoticeDays,
   maxConsecutiveDays: '',
-  documentRequiredAfterDays: ''
+  minRequestValue: POLICY_ADVANCED_DEFAULTS.minRequestValue,
+  blackoutPeriods: '',
+  requiresDocument: POLICY_ADVANCED_DEFAULTS.requiresDocument,
+  documentRequiredAfterValue: ''
 });
 
 function toFormAccrual(method: AccrualMethod): FormAccrual {
@@ -76,18 +87,20 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
         appliesTo: existing.appliesTo,
         departmentIds: [...existing.departmentIds],
         positionIds: [...existing.positionIds],
-        daysPerYear: existing.daysPerYear,
+        limitValue: existing.limitValue,
+        limitUnit: existing.limitUnit,
+        limitPeriod: existing.limitPeriod,
         accrualMethod: toFormAccrual(existing.accrualMethod),
         proRataNewJoiners: existing.proRataNewJoiners,
         carryForwardAllowed: existing.carryForwardAllowed,
-        maxCarryForwardDays: existing.maxCarryForwardDays,
+        maxCarryForwardValue: existing.maxCarryForwardValue,
         carryForwardExpiryMonths: existing.carryForwardExpiryMonths,
         minNoticeDays: existing.minNoticeDays,
         maxConsecutiveDays: existing.maxConsecutiveDays?.toString() ?? '',
-        minDaysPerRequest: existing.minDaysPerRequest,
+        minRequestValue: existing.minRequestValue,
         blackoutPeriods: existing.blackoutPeriods,
         requiresDocument: existing.requiresDocument,
-        documentRequiredAfterDays: existing.documentRequiredAfterDays?.toString() ?? ''
+        documentRequiredAfterValue: existing.documentRequiredAfterValue?.toString() ?? ''
       });
     } else {
       setForm(defaultPolicy());
@@ -114,25 +127,32 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
   const resolveAdvancedFields = () => {
     if (!advancedOpen && !isEdit) {
       return {
-        ...POLICY_ADVANCED_DEFAULTS,
-        maxConsecutiveDays: POLICY_ADVANCED_DEFAULTS.maxConsecutiveDays,
-        documentRequiredAfterDays: POLICY_ADVANCED_DEFAULTS.documentRequiredAfterDays
+        proRataNewJoiners: POLICY_ADVANCED_DEFAULTS.proRataNewJoiners,
+        carryForwardAllowed: POLICY_ADVANCED_DEFAULTS.carryForwardAllowed,
+        maxCarryForwardValue: POLICY_ADVANCED_DEFAULTS.maxCarryForwardValue,
+        carryForwardExpiryMonths: POLICY_ADVANCED_DEFAULTS.carryForwardExpiryMonths,
+        minNoticeDays: POLICY_ADVANCED_DEFAULTS.minNoticeDays,
+        maxConsecutiveDays: null,
+        minRequestValue: POLICY_ADVANCED_DEFAULTS.minRequestValue,
+        blackoutPeriods: '',
+        requiresDocument: POLICY_ADVANCED_DEFAULTS.requiresDocument,
+        documentRequiredAfterValue: null
       };
     }
 
     return {
       proRataNewJoiners: form.proRataNewJoiners,
       carryForwardAllowed: form.carryForwardAllowed,
-      maxCarryForwardDays: form.carryForwardAllowed ? form.maxCarryForwardDays : 0,
+      maxCarryForwardValue: form.carryForwardAllowed ? form.maxCarryForwardValue : 0,
       carryForwardExpiryMonths: form.carryForwardAllowed ? form.carryForwardExpiryMonths : 0,
       minNoticeDays: form.minNoticeDays,
       maxConsecutiveDays: form.maxConsecutiveDays ? Number(form.maxConsecutiveDays) : null,
-      minDaysPerRequest: form.minDaysPerRequest,
+      minRequestValue: form.minRequestValue,
       blackoutPeriods: form.blackoutPeriods,
       requiresDocument: form.requiresDocument,
-      documentRequiredAfterDays:
-        form.requiresDocument && form.documentRequiredAfterDays
-          ? Number(form.documentRequiredAfterDays)
+      documentRequiredAfterValue:
+        form.requiresDocument && form.documentRequiredAfterValue
+          ? Number(form.documentRequiredAfterValue)
           : null
     };
   };
@@ -159,7 +179,9 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
       appliesTo: form.appliesTo,
       departmentIds: form.appliesTo === 'department' ? form.departmentIds : [],
       positionIds: form.appliesTo === 'position' ? form.positionIds : [],
-      daysPerYear: Number(form.daysPerYear),
+      limitValue: Number(form.limitValue),
+      limitUnit: form.limitUnit,
+      limitPeriod: form.limitPeriod,
       accrualMethod: form.accrualMethod,
       ...advanced
     });
@@ -267,17 +289,31 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
           <section className="leave-cfg-section">
             <h3>Entitlement</h3>
             <div className="leave-cfg-form-row">
-              <div className="org-form-field">
-                <label>Days Per Year</label>
-                <input type="number" min={0} value={form.daysPerYear} onChange={e => set('daysPerYear', Number(e.target.value))} />
+              <div className="org-form-field" style={{ flex: '2 1 0%' }}>
+                <label>Limit Value</label>
+                <input type="number" min={0} value={form.limitValue} onChange={e => set('limitValue', Number(e.target.value))} />
               </div>
               <div className="org-form-field">
-                <label>Accrual Method</label>
-                <select value={form.accrualMethod} onChange={e => set('accrualMethod', e.target.value as FormAccrual)}>
-                  <option value="yearly">Yearly</option>
-                  <option value="monthly">Monthly</option>
+                <label>Unit</label>
+                <select value={form.limitUnit} onChange={e => set('limitUnit', e.target.value as any)}>
+                  <option value="hours">Hours</option>
+                  <option value="minutes">Minutes</option>
                 </select>
               </div>
+              <div className="org-form-field">
+                <label>Period</label>
+                <select value={form.limitPeriod} onChange={e => set('limitPeriod', e.target.value as any)}>
+                  <option value="yearly">Per Year</option>
+                  <option value="monthly">Per Month</option>
+                </select>
+              </div>
+            </div>
+            <div className="org-form-field">
+              <label>Accrual Method</label>
+              <select value={form.accrualMethod} onChange={e => set('accrualMethod', e.target.value as FormAccrual)}>
+                <option value="yearly">Yearly</option>
+                <option value="monthly">Monthly</option>
+              </select>
             </div>
           </section>
 
@@ -307,8 +343,8 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
                 {form.carryForwardAllowed && (
                   <div className="leave-cfg-form-row">
                     <div className="org-form-field">
-                      <label>Max Carry Forward Days</label>
-                      <input type="number" min={0} value={form.maxCarryForwardDays} onChange={e => set('maxCarryForwardDays', Number(e.target.value))} />
+                      <label>Max Carry Forward ({form.limitUnit})</label>
+                      <input type="number" min={0} value={form.maxCarryForwardValue} onChange={e => set('maxCarryForwardValue', Number(e.target.value))} />
                     </div>
                     <div className="org-form-field">
                       <label>Carry Forward Expiry Months</label>
@@ -322,13 +358,13 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
                     <input type="number" min={0} value={form.minNoticeDays} onChange={e => set('minNoticeDays', Number(e.target.value))} />
                   </div>
                   <div className="org-form-field">
-                    <label>Maximum Consecutive Days</label>
+                    <label>Maximum Consecutive ({form.limitUnit})</label>
                     <input value={form.maxConsecutiveDays} onChange={e => set('maxConsecutiveDays', e.target.value)} placeholder="Unlimited" />
                   </div>
                 </div>
                 <div className="org-form-field">
-                  <label>Minimum Days Per Request</label>
-                  <input type="number" min={0} step={0.5} value={form.minDaysPerRequest} onChange={e => set('minDaysPerRequest', Number(e.target.value))} />
+                  <label>Minimum Per Request ({form.limitUnit})</label>
+                  <input type="number" min={0} step={0.5} value={form.minRequestValue} onChange={e => set('minRequestValue', Number(e.target.value))} />
                 </div>
                 <div className="org-form-field">
                   <label>Blackout Periods</label>
@@ -340,12 +376,12 @@ export const LeavePolicyFormPanel: React.FC<LeavePolicyFormPanelProps> = ({ onCl
                 </label>
                 {form.requiresDocument && (
                   <div className="org-form-field">
-                    <label>Document Required After Days</label>
+                    <label>Document Required After ({form.limitUnit})</label>
                     <input
                       type="number"
                       min={1}
-                      value={form.documentRequiredAfterDays}
-                      onChange={e => set('documentRequiredAfterDays', e.target.value)}
+                      value={form.documentRequiredAfterValue}
+                      onChange={e => set('documentRequiredAfterValue', e.target.value)}
                     />
                     <p className="leave-cfg-hint">
                       Employee must attach a document when the request is longer than this.

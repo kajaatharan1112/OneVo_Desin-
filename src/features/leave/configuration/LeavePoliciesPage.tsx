@@ -48,7 +48,7 @@ export const LeavePoliciesPage: React.FC = () => {
                 <th>Policy Name</th>
                 <th>Leave Type</th>
                 <th>Applies To</th>
-                <th>Days Per Year</th>
+                <th>Limit</th>
                 <th>Accrual</th>
                 <th>Effective From</th>
                 <th>Status</th>
@@ -64,7 +64,7 @@ export const LeavePoliciesPage: React.FC = () => {
                   </td>
                   <td>{typeName(p.leaveTypeId)}</td>
                   <td>{formatAppliesTo(p, departments, positions)}</td>
-                  <td>{p.daysPerYear}</td>
+                  <td>{p.limitValue} {p.limitUnit} / {p.limitPeriod === 'yearly' ? 'yr' : 'mo'}</td>
                   <td>{accrualLabel(p.accrualMethod)}</td>
                   <td>{p.effectiveFrom}</td>
                   <td><span className={`cfg-badge cfg-badge--${p.status}`}>{p.status}</span></td>

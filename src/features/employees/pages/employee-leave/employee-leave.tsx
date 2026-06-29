@@ -129,6 +129,33 @@ export const EmployeeLeave: React.FC = () => {
 
   const hasConflict = conflictingEvents.length > 0;
 
+  useEffect(() => {
+    if (!modalOpen) {
+      setShowSchedulePreview(false);
+    }
+  }, [modalOpen]);
+
+  // Helper to find conflicting events (meetings, reminders/tasks, shifts) within selected dates
+  const conflictingEvents = React.useMemo(() => {
+    if (!form.startDate || !form.endDate) return [];
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+
+    return (employeeCalendarData?.events || []).filter(event => {
+      if (!event.date) return false;
+      const eventDate = new Date(event.date);
+      if (isNaN(eventDate.getTime())) return false;
+      
+      const isWithinRange = eventDate >= start && eventDate <= end;
+      const isConflictType = event.type === 'meeting' || event.type === 'reminder' || event.type === 'shift';
+      
+      return isWithinRange && isConflictType;
+    });
+  }, [form.startDate, form.endDate]);
+
+  const hasConflict = conflictingEvents.length > 0;
+
   const counts: Record<StatusFilter, number> = {
     all:      myRequests.length,
     pending:  myRequests.filter(r => r.status === 'pending').length,
@@ -484,6 +511,7 @@ export const EmployeeLeave: React.FC = () => {
               <div className="era-panel elp-team-summary__item"><span>Upcoming</span><strong>2</strong></div>
               <div className="era-panel elp-team-summary__item">
                 <span>Pending requests</span>
+                <strong>{TEAM_LEAVE.filter(item => item.status === 'pending').length}</strong>
                 <strong>{teamRequests.filter(r => r.status === 'pending').length}</strong>
               </div>
             </div>
