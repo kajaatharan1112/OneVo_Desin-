@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock, ShieldCheck, MoreHorizontal,
+  Plus, Search, Edit, Ban, X, Lock, ShieldCheck,
 } from 'lucide-react';
 import { ConfigShellHeader } from '../../shared/components/config-shell-header/ConfigShellHeader';
 import {
@@ -16,7 +16,7 @@ import {
 import { useRoleStore } from '../../store/roleStore';
 import { useActorAccess } from '../access/useActorAccess';
 
-type DrawerMode = 'create' | 'edit' | 'assign' | 'view-users' | null;
+type DrawerMode = 'create' | 'edit' | 'details' | null;
 
 const groupedPermissions = permissionsByModule(ENABLED_MODULES);
 
@@ -26,18 +26,15 @@ export const RolesPermissionsPage: React.FC = () => {
   const canCreate = hasPermission('roles:create');
   const canEdit = hasPermission('roles:edit');
   const canDelete = hasPermission('roles:delete');
-  const canAssign = hasPermission('roles:assign');
   const roles = useRoleStore(s => s.roles);
   const createRole = useRoleStore(s => s.createRole);
   const updateRole = useRoleStore(s => s.updateRole);
   const deactivateStoredRole = useRoleStore(s => s.deactivateRole);
   const assignRoleToUsers = useRoleStore(s => s.assignRoleToUsers);
-  const roleAssignments = useRoleStore(s => s.userAssignments);
   const [search, setSearch] = useState('');
   const [drawer, setDrawer] = useState<DrawerMode>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [permSearch, setPermSearch] = useState('');
-  const [openActionId, setOpenActionId] = useState<string | null>(null);
 
   const [roleForm, setRoleForm] = useState({
     name: '',
@@ -68,7 +65,7 @@ export const RolesPermissionsPage: React.FC = () => {
 
   const selectedRole = selectedRoleId ? roles.find(r => r.id === selectedRoleId) : null;
   const editingRole = drawer === 'edit' ? selectedRole : null;
-  const isSystemEdit = editingRole?.type === 'system';
+  const isProtectedEdit = editingRole?.id === 'role-owner';
 
   const openCreate = () => {
     setSelectedRoleId(null);
@@ -79,7 +76,7 @@ export const RolesPermissionsPage: React.FC = () => {
 
   const openEdit = (roleId: string) => {
     const role = roles.find(r => r.id === roleId);
-    if (!role || role.type === 'system') return;
+    if (!role || role.id === 'role-owner') return;
     setSelectedRoleId(roleId);
     setRoleForm({
       name: role.name,
@@ -90,35 +87,9 @@ export const RolesPermissionsPage: React.FC = () => {
     setDrawer('edit');
   };
 
-  const openClone = (roleId: string) => {
-    const role = roles.find(r => r.id === roleId);
-    if (!role) return;
-    setSelectedRoleId(null);
-    setRoleForm({
-      name: `${role.name} (Copy)`,
-      description: role.description,
-      permissionIds: [...role.permissionIds],
-    });
-    setPermSearch('');
-    setDrawer('create');
-  };
-
-  const openAssign = (roleId: string) => {
+  const openRoleDetails = (roleId: string) => {
     setSelectedRoleId(roleId);
-    setAssignForm({
-      userIds: [],
-      accessScope: 'reporting_structure',
-      departmentId: '',
-      effectiveFrom: new Date().toISOString().slice(0, 10),
-      expiresAt: '',
-      reason: '',
-    });
-    setDrawer('assign');
-  };
-
-  const openViewUsers = (roleId: string) => {
-    setSelectedRoleId(roleId);
-    setDrawer('view-users');
+    setDrawer('details');
   };
 
   const closeDrawer = () => {
@@ -161,6 +132,9 @@ export const RolesPermissionsPage: React.FC = () => {
         description: roleForm.description,
         permissionIds: roleForm.permissionIds
       });
+      setDrawer('details');
+      setPermSearch('');
+      return;
     } else {
       createRole({
         name: roleForm.name.trim(),
@@ -224,14 +198,9 @@ export const RolesPermissionsPage: React.FC = () => {
   const canSaveRole =
     roleForm.name.trim().length > 0 &&
     roleForm.permissionIds.length > 0 &&
-    !isSystemEdit;
+    !isProtectedEdit;
 
-  const usersForRole = selectedRoleId
-    ? MOCK_USERS.filter(u =>
-        u.roleIds.includes(selectedRoleId) ||
-        (roleAssignments[selectedRoleId] ?? []).includes(u.id)
-      )
-    : [];
+  const legacyAssignOpen = drawer === null && selectedRoleId === '__legacy-assign-disabled__';
 
   const assignableUsers = MOCK_USERS.filter(u => u.accountStatus !== 'disabled');
 
@@ -302,12 +271,24 @@ export const RolesPermissionsPage: React.FC = () => {
                 <th>Permissions</th>
                 <th>Users</th>
                 <th>Updated</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(r => (
-                <tr key={r.id} style={{ opacity: r.active ? 1 : 0.55 }}>
+                <tr
+                  key={r.id}
+                  className="admin-role-row"
+                  style={{ opacity: r.active ? 1 : 0.55 }}
+                  tabIndex={0}
+                  aria-label={`View details for ${r.name}`}
+                  onClick={() => openRoleDetails(r.id)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openRoleDetails(r.id);
+                    }
+                  }}
+                >
                   <td>
                     <div className="cfg-table__name">
                       {r.type === 'system' && <Lock size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />}
@@ -324,34 +305,6 @@ export const RolesPermissionsPage: React.FC = () => {
                   <td>{r.permissionIds.length}</td>
                   <td>{r.userCount}</td>
                   <td>{formatRelativeTime(r.updatedAt)}</td>
-                  <td>
-                    <div className="dept-table__actions">
-                      <button type="button" className="dept-table__menu-btn" aria-label={`Actions for ${r.name}`} onClick={() => setOpenActionId(id => id === r.id ? null : r.id)}><MoreHorizontal size={16} /></button>
-                      {openActionId === r.id && <div className="dept-table__menu" role="menu">
-                      {canEdit && r.type === 'custom' && r.active && (
-                        <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openEdit(r.id); }}>
-                          <Edit size={13} /> Edit
-                        </button>
-                      )}
-                      {canCreate && <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openClone(r.id); }}>
-                        <Copy size={13} /> Duplicate
-                      </button>}
-                      {canAssign && r.active && (
-                        <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openAssign(r.id); }}>
-                          <Users size={13} /> Assign
-                        </button>
-                      )}
-                      <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openViewUsers(r.id); }}>
-                        <Eye size={13} /> View
-                      </button>
-                      {canDelete && r.type === 'custom' && r.active && (
-                        <button type="button" role="menuitem" className="is-danger" onClick={() => { setOpenActionId(null); deactivateRole(r.id); }}>
-                          <Ban size={13} /> Deactivate
-                        </button>
-                      )}
-                      </div>}
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -387,7 +340,7 @@ export const RolesPermissionsPage: React.FC = () => {
                       required
                       value={roleForm.name}
                       onChange={e => setRoleForm(f => ({ ...f, name: e.target.value }))}
-                      disabled={isSystemEdit}
+                      disabled={isProtectedEdit}
                       placeholder="e.g. People Administrator"
                     />
                   </div>
@@ -398,7 +351,7 @@ export const RolesPermissionsPage: React.FC = () => {
                       type="text"
                       value={roleForm.description}
                       onChange={e => setRoleForm(f => ({ ...f, description: e.target.value }))}
-                      disabled={isSystemEdit}
+                      disabled={isProtectedEdit}
                       placeholder="Short description"
                     />
                   </div>
@@ -414,7 +367,7 @@ export const RolesPermissionsPage: React.FC = () => {
                       placeholder="Search permissions…"
                       value={permSearch}
                       onChange={e => setPermSearch(e.target.value)}
-                      disabled={isSystemEdit}
+                      disabled={isProtectedEdit}
                     />
                   </div>
                   <span className="admin-selected-count admin-selected-count--inline">
@@ -427,7 +380,7 @@ export const RolesPermissionsPage: React.FC = () => {
                     {selectedPermissions.map(p => (
                       <span key={p.id} className="admin-review-chip">
                         {p.code}
-                        {!isSystemEdit && (
+                        {!isProtectedEdit && (
                           <button
                             type="button"
                             className="admin-review-chip__remove"
@@ -451,7 +404,7 @@ export const RolesPermissionsPage: React.FC = () => {
                         <span className="admin-perm-module__title">{mod}</span>
                         <div className="admin-perm-module__actions">
                           <span className="admin-perm-module__count">{selectedInModule}/{perms.length}</span>
-                          {!isSystemEdit && (
+                          {!isProtectedEdit && (
                             <>
                               <button
                                 type="button"
@@ -479,7 +432,7 @@ export const RolesPermissionsPage: React.FC = () => {
                               type="checkbox"
                               checked={roleForm.permissionIds.includes(p.id)}
                               onChange={() => togglePermission(p.id)}
-                              disabled={isSystemEdit}
+                              disabled={isProtectedEdit}
                             />
                             <div className="admin-perm-item__content">
                               <div className="admin-perm-item__row">
@@ -524,7 +477,7 @@ export const RolesPermissionsPage: React.FC = () => {
         </div>
       )}
 
-      {drawer === 'assign' && selectedRole && (
+      {legacyAssignOpen && selectedRole && (
         <div className="org-slideover-backdrop" onClick={closeDrawer}>
           <div
             className="org-slideover org-slideover--narrow"
@@ -542,7 +495,7 @@ export const RolesPermissionsPage: React.FC = () => {
             <div className="org-slideover__body">
               <div className="org-form-field">
                 <label>Role</label>
-                <input value={selectedRole.name} readOnly />
+                <input value={selectedRole?.name ?? ''} readOnly />
               </div>
 
               <div className="admin-section">
@@ -637,38 +590,77 @@ export const RolesPermissionsPage: React.FC = () => {
         </div>
       )}
 
-      {drawer === 'view-users' && selectedRole && (
+      {drawer === 'details' && selectedRole && (
         <div className="org-slideover-backdrop" onClick={closeDrawer}>
           <div
-            className="org-slideover org-slideover--narrow"
+            className="org-slideover org-slideover--role-details"
             role="dialog"
             aria-modal="true"
-            aria-label="View users"
+            aria-label={`Role details for ${selectedRole.name}`}
             onClick={e => e.stopPropagation()}
           >
             <header className="org-slideover__header">
-              <h2>Users — {selectedRole.name}</h2>
+              <div>
+                <h2>{selectedRole.name}</h2>
+                <div className="admin-role-details__badges">
+                  <span className={`cfg-badge cfg-badge--${selectedRole.type === 'system' ? 'open' : 'active'}`}>
+                    {selectedRole.type === 'system' ? 'System' : 'Custom'}
+                  </span>
+                  <span className={`cfg-badge cfg-badge--${selectedRole.active ? 'active' : 'inactive'}`}>
+                    {selectedRole.active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
               <button type="button" className="org-slideover__close" onClick={closeDrawer} aria-label="Close">
                 <X size={18} />
               </button>
             </header>
-            <div className="org-slideover__body">
-              {usersForRole.length === 0 ? (
-                <p className="cfg-table__meta">No users assigned to this role</p>
-              ) : (
-                usersForRole.map(u => (
-                  <div key={u.id} className="admin-access-item">
-                    <div className="admin-perm-item__code">{u.firstName} {u.lastName}</div>
-                    <div className="admin-perm-item__desc">{u.email}</div>
-                    <span className={`cfg-badge cfg-badge--${u.accountStatus === 'active' ? 'active' : u.accountStatus}`}>
-                      {u.accountStatus === 'no_login_access' ? 'No Login Access' : u.accountStatus}
-                    </span>
-                  </div>
-                ))
-              )}
+            <div className="org-slideover__body admin-role-details">
+              <section className="admin-role-details__summary">
+                <div className="admin-role-details__description">
+                  <span>Description</span>
+                  <p>{selectedRole.description || 'No description provided.'}</p>
+                </div>
+                <div className="admin-role-details__stat"><strong>{selectedRole.permissionIds.length}</strong><span>Permissions</span></div>
+                <div className="admin-role-details__stat"><strong>{selectedRole.userCount}</strong><span>Assigned users</span></div>
+                <div className="admin-role-details__stat"><strong>{formatRelativeTime(selectedRole.updatedAt)}</strong><span>Last updated</span></div>
+              </section>
+              <section className="admin-section">
+                <h3>Permissions</h3>
+                {ENABLED_MODULES.map(module => {
+                  const permissions = (groupedPermissions[module] ?? []).filter(permission => selectedRole.permissionIds.includes(permission.id));
+                  if (permissions.length === 0) return null;
+                  return (
+                    <div key={module} className="admin-perm-module admin-perm-module--readonly">
+                      <div className="admin-perm-module__header">
+                        <span className="admin-perm-module__title">{module}</span>
+                        <span className="admin-perm-module__count">{permissions.length}</span>
+                      </div>
+                      <div className="admin-perm-list">
+                        {permissions.map(permission => (
+                          <div key={permission.id} className="admin-role-details__permission">
+                            <span className="admin-perm-item__code">{permission.code}</span>
+                            <span className="admin-perm-item__desc">{permission.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
             </div>
             <footer className="org-slideover__footer">
               <button type="button" className="org-btn org-btn--secondary" onClick={closeDrawer}>Close</button>
+              {canDelete && selectedRole.type === 'custom' && selectedRole.active && (
+                <button type="button" className="org-btn admin-role-details__deactivate" onClick={() => deactivateRole(selectedRole.id)}>
+                  <Ban size={14} /> Deactivate
+                </button>
+              )}
+              {canEdit && selectedRole.id !== 'role-owner' && selectedRole.active && (
+                <button type="button" className="org-btn org-btn--primary" onClick={() => openEdit(selectedRole.id)}>
+                  <Edit size={14} /> Edit Role
+                </button>
+              )}
             </footer>
           </div>
         </div>
