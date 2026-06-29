@@ -66,7 +66,9 @@ export function buildSettingsNavItem(): NavItem {
 }
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
-export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem();
+export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
+export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
+export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
 export const WORK_NAV_ITEM: NavItem = {

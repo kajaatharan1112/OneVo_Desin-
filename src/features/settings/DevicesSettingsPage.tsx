@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Eye, Ban, Activity, X, Monitor } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
+import { BiometricDevicesPage } from '../biometric-devices/BiometricDevicesPage';
 import {
   MOCK_DEVICES,
   formatDateTime,
@@ -22,7 +23,7 @@ function statusBadgeClass(status: TenantDevice['status']): string {
   return 'failed';
 }
 
-export const DevicesSettingsPage: React.FC = () => {
+const EmployeeDevicesPage: React.FC = () => {
   const [devices, setDevices] = useState(MOCK_DEVICES);
   const [detail, setDetail] = useState<TenantDevice | null>(null);
 
@@ -194,6 +195,38 @@ export const DevicesSettingsPage: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+interface DevicesSettingsPageProps {
+  biometricEnabled?: boolean;
+}
+
+export const DevicesSettingsPage: React.FC<DevicesSettingsPageProps> = ({ biometricEnabled = true }) => {
+  const [deviceType, setDeviceType] = useState<'biometric' | 'employee'>(biometricEnabled ? 'biometric' : 'employee');
+
+  if (!biometricEnabled) return <EmployeeDevicesPage />;
+
+  return (
+    <div className="devices-workspace">
+      <nav className="devices-workspace__nav" aria-label="Device categories">
+        <button
+          type="button"
+          className={deviceType === 'biometric' ? 'is-active' : ''}
+          onClick={() => setDeviceType('biometric')}
+        >
+          Biometric Devices
+        </button>
+        <button
+          type="button"
+          className={deviceType === 'employee' ? 'is-active' : ''}
+          onClick={() => setDeviceType('employee')}
+        >
+          Employee Devices
+        </button>
+      </nav>
+      {deviceType === 'biometric' ? <BiometricDevicesPage /> : <EmployeeDevicesPage />}
     </div>
   );
 };
