@@ -1,12 +1,9 @@
 import React, { useEffect } from 'react';
-import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { SettingsPageHeader } from '../../settings/components/SettingsPageHeader';
 import { useClockInPolicyStore } from './clockInPolicyStore';
 import { ExemptionFormModal } from './ExemptionFormModal';
 import { OutageFallbackFormModal } from './OutageFallbackFormModal';
-import { LateAttendancePolicyFormModal } from './LateAttendancePolicyFormModal';
-import { useEmployeeContext } from '../../../features/employees/context/employee-context';
-import { useLeaveConfigStore } from '../../../store/leaveConfigStore';
 import {
   chipStateLabel,
   clockInRequirementSummary,
@@ -68,7 +65,7 @@ const MethodChip: React.FC<MethodChipProps> = ({ label, state, active, onClick }
 const WorkTypeRuleRow: React.FC<{
   rule: WorkTypeRule;
   onUpdate: (patch: Partial<WorkTypeRule>) => void;
- }> = ({ rule, onUpdate }) => (
+}> = ({ rule, onUpdate }) => (
   <div className="cip-policy-row">
     <div className="cip-policy-row__main">
       <div className="cip-policy-row__title">{rule.workType}</div>
@@ -103,7 +100,7 @@ const WorkTypeRuleRow: React.FC<{
   </div>
 );
 
-export const ClockInPolicyPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const ClockInPolicyPage: React.FC = () => {
   const {
     defaultRequirement,
     workTypeRules,
@@ -113,8 +110,6 @@ export const ClockInPolicyPage: React.FC<{ onBack?: () => void }> = ({ onBack })
     outageForm,
     outageFallbacks,
     manualCorrection,
-    lateAttendancePolicy,
-    lateAttendanceForm,
     setDefaultRequirement,
     updateWorkTypeRule,
     setOutageFallbackEnabled,
@@ -124,24 +119,8 @@ export const ClockInPolicyPage: React.FC<{ onBack?: () => void }> = ({ onBack })
     openCreateExemption,
     openEditExemption,
     deleteExemption,
-    openLateAttendanceForm,
-    deleteLateAttendancePolicy,
     savePolicy
   } = useClockInPolicyStore();
-
-  const { selectedEmployee } = useEmployeeContext();
-  const isManagerOrCeo = selectedEmployee.role === 'Chief Executive Officer' || selectedEmployee.role === 'Manager';
-
-  const leaveTypes = useLeaveConfigStore(s => s.leaveTypes);
-  const deductFromLeaveType = leaveTypes.find(t => t.id === lateAttendancePolicy.deductFromLeaveTypeId);
-  const leaveTypeName = deductFromLeaveType ? deductFromLeaveType.name : 'Annual Leave';
-
-  const getCalculationRuleLabel = (method: string) => {
-    if (method === 'actual_minutes') return 'Actual Minutes';
-    if (method === 'double_minutes') return 'Double Late Minutes';
-    if (method === 'triple_minutes') return 'Triple Late Minutes';
-    return 'Actual Minutes';
-  };
 
   return (
     <div className="cfg-page cip-page">
@@ -149,16 +128,9 @@ export const ClockInPolicyPage: React.FC<{ onBack?: () => void }> = ({ onBack })
         title="Clock-in Policy"
         description="Configure attendance capture rules, clock-in methods, and exemptions."
         actions={
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {onBack && (
-              <button type="button" className="org-btn org-btn--secondary" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ArrowLeft size={14} /> Back
-              </button>
-            )}
-            <button type="button" className="org-btn org-btn--primary" onClick={savePolicy}>
-              Save Changes
-            </button>
-          </div>
+          <button type="button" className="org-btn org-btn--primary" onClick={savePolicy}>
+            Save Changes
+          </button>
         }
       />
 
@@ -298,76 +270,6 @@ export const ClockInPolicyPage: React.FC<{ onBack?: () => void }> = ({ onBack })
             </>
           )}
         </section>
-        <section className="cip-section">
-          <h2 className="cip-section__title">Late Attendance Policy</h2>
-          <p className="cip-hint cip-hint--inline">
-            Define deduction rules for employees arriving late relative to their shift start times.
-          </p>
-          <div className="cip-exemption-list">
-            {lateAttendancePolicy.active ? (
-              <div className="cip-exemption-row">
-                <div className="cip-exemption-row__content">
-                  <div className="cip-exemption-row__name">Late Attendance Policy</div>
-                  <div className="cip-exemption-row__meta">
-                    Grace Period: {lateAttendancePolicy.gracePeriod} {lateAttendancePolicy.gracePeriodUnit}
-                  </div>
-                  <div className="cip-exemption-row__meta">
-                    Deduct From: {leaveTypeName}
-                  </div>
-                  <div className="cip-exemption-row__meta">
-                    Calculation Rule: {getCalculationRuleLabel(lateAttendancePolicy.deductionCalculationMethod)}
-                  </div>
-                </div>
-                <div className="cip-exemption-row__aside">
-                  <span className="cfg-badge cfg-badge--active">Active</span>
-                  {isManagerOrCeo && (
-                    <div className="cip-exemption-row__actions">
-                      <button
-                        type="button"
-                        className="cip-icon-btn"
-                        onClick={openLateAttendanceForm}
-                        aria-label="Edit Late Attendance Policy"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="cip-icon-btn cip-icon-btn--danger"
-                        onClick={() => {
-                          if (window.confirm('Deactivate late attendance policy?')) {
-                            deleteLateAttendancePolicy();
-                          }
-                        }}
-                        aria-label="Delete Late Attendance Policy"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="cip-exemption-row">
-                <div className="cip-exemption-row__content">
-                  <div className="cip-exemption-row__name" style={{ color: 'var(--nexus-text-muted)' }}>
-                    No active late attendance policy configured.
-                  </div>
-                </div>
-                {isManagerOrCeo && (
-                  <div className="cip-exemption-row__aside">
-                    <button
-                      type="button"
-                      className="org-btn org-btn--secondary org-btn--sm"
-                      onClick={openLateAttendanceForm}
-                    >
-                      Configure Policy
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
 
         <section className="cip-section">
           <h2 className="cip-section__title">Manual Correction Policy</h2>
@@ -413,7 +315,6 @@ export const ClockInPolicyPage: React.FC<{ onBack?: () => void }> = ({ onBack })
 
       {exemptionForm.open && <ExemptionFormModal />}
       {outageForm.open && <OutageFallbackFormModal />}
-      {lateAttendanceForm.open && <LateAttendancePolicyFormModal />}
       <ClockInPolicyToast />
     </div>
   );

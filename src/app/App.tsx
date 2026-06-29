@@ -86,15 +86,6 @@ function App() {
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    const handleNavigate = () => {
-      setActiveTab('Settings');
-      setActiveSubItemId('clock-in-policy');
-    };
-    window.addEventListener('navigate-to-clock-in-policy', handleNavigate);
-    return () => window.removeEventListener('navigate-to-clock-in-policy', handleNavigate);
-  }, []);
-
   const handleSubItemSelect = (id: string) => {
     setActiveSubItemId(id);
     if (activeTab === 'People' && id === 'employees') {

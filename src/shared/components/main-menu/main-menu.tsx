@@ -49,29 +49,19 @@ const SETTINGS_OTHER_ITEMS = [
   { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
 ] as const;
 
-export function buildSettingsNavItem(isEmployee = false): NavItem {
+export function buildSettingsNavItem(): NavItem {
   const otherItems = SETTINGS_OTHER_ITEMS.filter(
     item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
   );
-  const subSections: SubNavSection[] = [
-    { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
-  ];
-  if (!isEmployee) {
-    subSections.push({
-      id: 'policy',
-      label: 'Policy',
-      collapsible: true,
-      defaultOpen: true,
-      items: [...SETTINGS_POLICY_ITEMS],
-    });
-  }
-  subSections.push({ id: 'other', items: otherItems });
-
   return {
     id: 'settings',
     label: 'Settings',
     icon: railIcon(Settings),
-    subSections,
+    subSections: [
+      { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
+      { id: 'policy', label: 'Policy', collapsible: true, defaultOpen: true, items: [...SETTINGS_POLICY_ITEMS] },
+      { id: 'other', items: otherItems },
+    ],
   };
 }
 
@@ -144,7 +134,7 @@ export const EMPLOYEE_ITEMS: NavItem[] = [
   { id: 'calendar',        label: 'Calendar',                                         icon: railIcon(CalendarDays),    subSections: [] },
   { id: 'people',          label: 'People',                                           icon: railIcon(UsersRound),      subSections: [] },
   { id: 'reports',         label: 'Reports',                                          icon: railIcon(PieChart),        subSections: [] },
-  EMPLOYEE_SETTINGS_NAV_ITEM,
+  SETTINGS_NAV_ITEM,
 ];
 
 interface MainMenuProps {
