@@ -5,6 +5,7 @@ import {
   Users, Search, AlertTriangle, KeyRound, UserX,
 } from 'lucide-react';
 import { ConfigShellHeader } from '../../shared/components/config-shell-header/ConfigShellHeader';
+import { recordHistory } from '../../store/historyStore';
 import {
   MOCK_USERS,
   MOCK_ROLES,
@@ -69,9 +70,7 @@ export const AdminUsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [drawer, setDrawer] = useState<DrawerMode>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [resendUserId, setResendUserId] = useState<string | null>(null);
   const [openActionUserId, setOpenActionUserId] = useState<string | null>(null);
-  const [inviteLink, setInviteLink] = useState('');
 
   const [createForm, setCreateForm] = useState({ employeeId: '', email: '' });
 
@@ -180,15 +179,6 @@ export const AdminUsersPage: React.FC = () => {
 
   const disableLogin = (userId: string) => {
     updateUser(userId, { accountStatus: 'disabled' });
-  };
-
-  const openResendInvite = (userId: string) => {
-    setResendUserId(userId);
-    setInviteLink(`${window.location.origin}/invite/${crypto.randomUUID()}`);
-  };
-
-  const unlockAccount = (userId: string) => {
-    updateUser(userId, { accountStatus: 'active' });
   };
 
   const resendInvite = (userId: string) => {
@@ -470,7 +460,7 @@ export const AdminUsersPage: React.FC = () => {
                       {openActionUserId === u.id && <div className="admin-user-actions__menu" role="menu">
                         <button type="button" onClick={() => { setOpenActionUserId(null); openAccess(u.id); }}><Eye size={14} /><span><strong>View access</strong><small>Review role and permissions</small></span></button>
                         <button type="button" disabled={u.accountStatus === 'disabled'} onClick={() => { disableLogin(u.id); setOpenActionUserId(null); }}><Ban size={14} /><span><strong>Disable login</strong><small>Temporarily stop sign-in</small></span></button>
-                        <button type="button" onClick={() => { setOpenActionUserId(null); openResendInvite(u.id); }}><Send size={14} /><span><strong>Reinvite user</strong><small>Send a new invitation</small></span></button>
+                        <button type="button" onClick={() => { setOpenActionUserId(null); resendInvite(u.id); }}><Send size={14} /><span><strong>Reinvite user</strong><small>Send a new invitation</small></span></button>
                         <button type="button" className="is-danger" onClick={() => openRevokeForUser(u.id)}><UserX size={14} /><span><strong>Revoke access</strong><small>Remove all grantable access</small></span></button>
                         <button type="button" className="is-danger" disabled={u.accountStatus === 'locked'} onClick={() => blockLogin(u.id)}><Unlock size={14} /><span><strong>Block account</strong><small>Lock sign-in and end sessions</small></span></button>
                       </div>}

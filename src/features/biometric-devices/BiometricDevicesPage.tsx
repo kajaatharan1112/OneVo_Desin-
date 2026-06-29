@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Activity, AlertTriangle, Archive, ArrowLeft, Building2, Check, ChevronRight, CircleGauge, Clock3,
-  Edit3, Eye, Fingerprint, HeartPulse, MoreHorizontal, Plus, RefreshCw, Search, Settings2, ShieldCheck,
-  Trash2, Unplug, Wifi, WifiOff, X, Zap,
+  AlertTriangle, Archive, ArrowLeft, Building2, Check, ChevronRight,
+  Eye, Fingerprint, MoreHorizontal, Plus, RefreshCw, Search, ShieldCheck,
+  Trash2, Unplug, Wifi, X, Zap,
 } from 'lucide-react';
 import { BIOMETRIC_BRANDS, INITIAL_BIOMETRIC_DEVICES } from './biometric-device.data';
 import {
