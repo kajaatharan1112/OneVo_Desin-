@@ -317,6 +317,97 @@
   width: min(720px, 96vw);
 }
 
+.org-slideover--role-details {
+  width: min(780px, 96vw);
+}
+
+.admin-role-row {
+  cursor: pointer;
+  transition: background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.admin-role-row:hover {
+  background: var(--surface-muted);
+}
+
+.admin-role-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.admin-role-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-role-details__badges {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.admin-role-details__summary {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(105px, auto));
+  gap: 10px;
+}
+
+.admin-role-details__description,
+.admin-role-details__stat {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.admin-role-details__description > span,
+.admin-role-details__stat span {
+  display: block;
+  color: var(--nexus-text-muted);
+  font-size: 0.68rem;
+  margin-top: 3px;
+}
+
+.admin-role-details__description p {
+  margin: 5px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.admin-role-details__stat strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.admin-role-details__permission {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-role-details__permission:last-child {
+  border-bottom: 0;
+}
+
+.admin-role-details__deactivate {
+  color: var(--danger, #c33b3b);
+  border: 1px solid color-mix(in srgb, var(--danger, #c33b3b) 35%, var(--border));
+  background: transparent;
+}
+
+@media (max-width: 720px) {
+  .admin-role-details__summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-role-details__description {
+    grid-column: 1 / -1;
+  }
+}
+
 .admin-role-form {
   display: flex;
   flex-direction: column;
