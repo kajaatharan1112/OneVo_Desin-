@@ -108,7 +108,7 @@ interface Props {
 const LEAVE_CONFLICT_USER = 'user-2';
 
 export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) => {
-  const { selectedTaskId, closeTaskDetail, updateTask, tasks, workspaces, getProject } = useWork();
+  const { selectedTaskId, closeTaskDetail, updateTask, tasks, workspaces, getProject, milestones, updateMilestone } = useWork();
   const task = useMemo(
     () => (selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : undefined),
     [selectedTaskId, tasks],
@@ -207,6 +207,23 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
   const activity = task.activity ?? [];
 
   const patch = (p: Partial<WorkTask>) => updateTask(task.id, p);
+
+  const currentMs = milestones.find(m => m.linkedWorkItemIds.includes(task.id));
+  const handleMilestoneChange = (newMsId: string) => {
+    if (currentMs) {
+      updateMilestone(currentMs.id, {
+        linkedWorkItemIds: currentMs.linkedWorkItemIds.filter(id => id !== task.id)
+      });
+    }
+    if (newMsId) {
+      const target = milestones.find(m => m.id === newMsId);
+      if (target && !target.linkedWorkItemIds.includes(task.id)) {
+        updateMilestone(newMsId, {
+          linkedWorkItemIds: [...target.linkedWorkItemIds, task.id]
+        });
+      }
+    }
+  };
 
   const toggleAssignee = (id: string) => {
     const next = assigneeIds.includes(id)
@@ -477,6 +494,33 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                 </div>
               )}
             </div>
+
+            <div className="settings-form-grid">
+              <div className="org-form-field">
+                <label htmlFor="wid-milestone">Allocated Milestone</label>
+                <select
+                  id="wid-milestone"
+                  value={currentMs?.id ?? ''}
+                  onChange={e => handleMilestoneChange(e.target.value)}
+                >
+                  <option value="">None</option>
+                  {milestones.filter(m => m.projectId === project.id).map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="org-form-field">
+                <label htmlFor="wid-estimate">Allocated Hours</label>
+                <input
+                  id="wid-estimate"
+                  type="number"
+                  min={0}
+                  value={task.estimate ?? ''}
+                  onChange={e => patch({ estimate: e.target.value ? Number(e.target.value) : undefined })}
+                  placeholder="e.g. 8"
+                />
+              </div>
+            </div>
             <div className="org-form-field">
               <label>Assignees</label>
               <div className="work-checkbox-list">
@@ -588,6 +632,65 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
               </div>
             </section>
           )}
+
+          {/* Files & Attachments Section */}
+          <section className="work-settings-section">
+            <h3 className="work-settings-section__title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>📎 Files & Attachments</span>
+              <button
+                type="button"
+                className="org-btn org-btn--secondary org-btn--sm"
+                onClick={() => {
+                  const fname = window.prompt("Enter file name to attach (e.g. mockup.png):");
+                  if (fname && fname.trim()) {
+                    const currentFiles = task.customFieldValues?.files ? String(task.customFieldValues.files).split(',') : [];
+                    const nextFiles = [...currentFiles, fname.trim()].filter(Boolean).join(',');
+                    patch({
+                      customFieldValues: {
+                        ...task.customFieldValues,
+                        files: nextFiles
+                      }
+                    });
+                  }
+                }}
+              >
+                + Add files
+              </button>
+            </h3>
+            
+            <div style={{ marginTop: '10px' }}>
+              {(() => {
+                const files = task.customFieldValues?.files ? String(task.customFieldValues.files).split(',').filter(Boolean) : [];
+                if (files.length === 0) {
+                  return <p className="work-panel__desc" style={{ fontStyle: 'italic', fontSize: '12px', color: '#64748b' }}>No attachments yet.</p>;
+                }
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {files.map((file, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
+                        <span style={{ color: 'var(--text-h)', fontWeight: 500 }}>📄 {file}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextFiles = files.filter((_, i) => i !== idx).join(',');
+                            patch({
+                              customFieldValues: {
+                                ...task.customFieldValues,
+                                files: nextFiles
+                              }
+                            });
+                          }}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '11px', fontWeight: 600 }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </section>
 
           <section className="work-settings-section">
             <h3 className="work-settings-section__title">Watchers</h3>

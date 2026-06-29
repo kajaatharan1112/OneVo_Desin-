@@ -28,8 +28,7 @@ export interface NavItem {
 
 const SETTINGS_SUB_ITEMS = [
   { id: 'general',       label: 'General',      icon: <Settings size={13} />  },
-  { id: 'users',         label: 'User Access',   icon: <Users size={13} />     },
-  { id: 'roles-permissions', label: 'Roles & Permissions', icon: <ShieldCheck size={13} /> },
+  { id: 'users',         label: 'User',          icon: <Users size={13} />     },
   { id: 'billing',       label: 'Billing',       icon: <CreditCard size={13} /> },
   { id: 'notifications', label: 'Notification', icon: <Bell size={13} />      },
 ] as const;
@@ -47,7 +46,7 @@ const SETTINGS_POLICY_ITEMS = [
 const SETTINGS_OTHER_ITEMS = [
   { id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} />         },
   { id: 'devices',         label: 'Device',          icon: <Monitor size={13} />       },
-  { id: 'audit-log',       label: 'History',         icon: <ClipboardList size={13} /> },
+  { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
 ] as const;
 
 export function buildSettingsNavItem(isEmployee = false): NavItem {
@@ -78,6 +77,7 @@ export function buildSettingsNavItem(isEmployee = false): NavItem {
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
 export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
+export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
 export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
@@ -116,8 +116,8 @@ export const TENANT_MAIN_ITEMS: NavItem[] = [
   { id: 'reports', label: 'Reports', icon: railIcon(PieChart), subSections: [] },
   { id: 'organization', label: 'Organization', railLabel: 'Org', icon: railIcon(Building2), subSections: [
     { id: 'main', items: [
-      { id: 'positions',         label: 'Positions',            icon: <Briefcase size={13} />   },
       { id: 'departments',       label: 'Departments',         icon: <Building size={13} />    },
+      { id: 'positions',         label: 'Positions',            icon: <Briefcase size={13} />   },
       { id: 'roles-permissions', label: 'Roles and Permission', icon: <ShieldCheck size={13} /> },
     ]},
   ]},
@@ -187,13 +187,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       return;
     }
     if (currentView === 'tenant' && item.label === 'Organization' && subId) {
-      navigate(
-        subId === 'positions'
-          ? '/organization/positions'
-          : subId === 'roles-permissions'
-            ? '/organization/roles-permissions'
-            : '/organization/departments'
-      );
+      navigate(subId === 'positions' ? '/organization/positions' : '/organization/departments');
       return;
     }
     if (currentView === 'employee' && item.label === 'People') {

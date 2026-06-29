@@ -64,6 +64,7 @@ export const ProjectPlanner: React.FC<Props> = ({ project }) => {
       status: 'upcoming',
       ownerId: CURRENT_USER_ID,
       linkedWorkItemIds: input.linkedWorkItemIds,
+      goalId: input.goalId,
     };
     addMilestone(milestone);
   };

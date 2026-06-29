@@ -1,12 +1,16 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, CalendarDays, ChevronDown,
-  Users, RefreshCw, Filter, Plus, Check, X,
+  Users, RefreshCw, Filter, Plus, Check, X, HelpCircle,
   Sun, Plane, Clock, Bell, CalendarX2, Settings,
-  GraduationCap, LogOut, Building2, Copy
+  GraduationCap, LogOut, Building2, Copy, Archive, ArchiveRestore
 } from 'lucide-react';
-import { employeeCalendarData } from '../../data/employee-calendar.data';
 import type { CalendarEvent, CalendarEventType, CalendarViewMode, CalendarScopeFilter } from '../../types/employee-calendar.types';
+import type { SyncProvider } from '../../types/employee-calendar.types';
+import { pullEvents, detectConflict, type SyncConflict } from './calendar-sync.utils';
+import { useCalendarStore } from '../../../../store/calendarStore';
+import { recordHistory } from '../../../../store/historyStore';
+import { useInbox } from '../../../../core/notifications/inbox-context';
 import { EventDetailsModal } from './EventDetailsModal';
 import { CalendarFilterPanel } from './CalendarFilterPanel';
 import { NewEventWizard } from './NewEventWizard';
@@ -14,10 +18,11 @@ import { addMinutesToTime, eventToFormOverrides, findEventConflicts, type NewEve
 
 const ALL_EVENT_TYPES: CalendarEventType[] = ['shift', 'meeting', 'leave', 'holiday', 'reminder', 'training', 'out-of-office', 'company-event'];
 
-type SettingsTabId = 'sync';
+type SettingsTabId = 'sync' | 'archived';
 
 const SETTINGS_TABS: { id: SettingsTabId; label: string }[] = [
   { id: 'sync', label: 'Calendar Sync' },
+  { id: 'archived', label: 'Archived Events' },
 ];
 
 const SCOPE_OPTIONS: { value: CalendarScopeFilter; label: string }[] = [
@@ -70,6 +75,12 @@ function formatTime(t: string): string {
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+const SyncBadge: React.FC<{ provider: SyncProvider }> = ({ provider }) => (
+  <span className={`emc-syncbadge emc-syncbadge--${provider}`} title={provider === 'google' ? 'Synced from Google' : 'Synced from Outlook'}>
+    {provider === 'google' ? 'G' : 'O'}
+  </span>
+);
+
 interface DragPointInfo {
   dayKey: string;
   minutes: number;
@@ -97,10 +108,18 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
-  const { syncStatus } = employeeCalendarData;
-
-  // Local mutable copy of the one events table — Edit/Delete write back here.
-  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(employeeCalendarData.events);
+  const localEvents = useCalendarStore(s => s.events);
+  const syncStatus = useCalendarStore(s => s.syncStatus);
+  const lastConnectedProvider = useCalendarStore(s => s.lastConnectedProvider);
+  const addEvents = useCalendarStore(s => s.addEvents);
+  const updateEvent = useCalendarStore(s => s.updateEvent);
+  const deleteEventInStore = useCalendarStore(s => s.deleteEvent);
+  const restoreEventInStore = useCalendarStore(s => s.restoreEvent);
+  const zoomConnected = useCalendarStore(s => s.zoomConnected);
+  const setZoomConnected = useCalendarStore(s => s.setZoomConnected);
+  const { addInboxItem } = useInbox();
+  const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
+  const [connectingZoom, setConnectingZoom] = useState(false);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 
@@ -129,6 +148,8 @@ export const MyCalendarTab: React.FC = () => {
     if (scope === 'combined') return localEvents;
     return localEvents.filter(ev => ev.scope === scope);
   }, [localEvents, scope]);
+
+  const archivedEvents = useMemo(() => localEvents.filter(ev => ev.archived), [localEvents]);
 
   // Type filter + title search — independent of scope and viewMode, compose together
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_EVENT_TYPES));
@@ -161,7 +182,7 @@ export const MyCalendarTab: React.FC = () => {
   const filteredEvents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return scopedEvents.filter(ev =>
-      enabledTypes.has(ev.type) && (!q || ev.title.toLowerCase().includes(q))
+      !ev.archived && enabledTypes.has(ev.type) && (!q || ev.title.toLowerCase().includes(q))
     );
   }, [scopedEvents, enabledTypes, searchQuery]);
 
@@ -172,14 +193,143 @@ export const MyCalendarTab: React.FC = () => {
   // New event wizard
   const [newEventOpen, setNewEventOpen] = useState(false);
   const [dragPrefill, setDragPrefill] = useState<Partial<NewEventFormState> | null>(null);
+
+  const connectedProviders = (['google', 'outlook'] as const).filter(p => syncStatus[p] === 'connected');
+
   const handleCreateEvents = (events: CalendarEvent[]) => {
-    setLocalEvents(prev => [...prev, ...events]);
+    const provider: SyncProvider | null =
+      connectedProviders.length === 1 ? connectedProviders[0]
+      : connectedProviders.length > 1 ? lastConnectedProvider
+      : null;
+
+    const tagged = provider
+      ? events.map(ev => ({ ...ev, syncProvider: provider, syncOrigin: 'pushed' as const }))
+      : events;
+
+    addEvents(tagged);
+    const titleSample = tagged[0]?.title ?? 'event';
+    recordHistory({
+      category: 'Calendar',
+      title: 'Event created',
+      description: tagged.length > 1
+        ? `Created ${tagged.length} occurrences of "${titleSample}".`
+        : `Created "${titleSample}".`,
+      target: titleSample
+    });
+    addInboxItem({
+      id: `notif-${Date.now()}-created`,
+      category: 'meeting',
+      title: 'Event created',
+      message: tagged.length > 1
+        ? `Created ${tagged.length} occurrences of "${titleSample}".`
+        : `Created "${titleSample}".`,
+      timeLabel: 'Just now',
+      filter: 'new',
+      actions: []
+    });
+    const withAttendees = tagged.find(ev => ev.attendees && ev.attendees.length > 0);
+    if (withAttendees) {
+      addInboxItem({
+        id: `notif-${Date.now()}-invite`,
+        category: 'meeting',
+        title: 'Meeting invitation sent',
+        message: `Invited ${withAttendees.attendees!.length} attendees to "${withAttendees.title}".`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
+      });
+    }
     setScope('my');
     setEnabledTypes(prev => {
       const next = new Set(prev);
-      events.forEach(ev => next.add(ev.type));
+      tagged.forEach(ev => next.add(ev.type));
       return next;
     });
+  };
+
+  const handleConnect = (provider: SyncProvider) => {
+    setConnectingProvider(provider);
+    setTimeout(() => {
+      const store = useCalendarStore.getState();
+      store.setSyncStatus({ ...store.syncStatus, [provider]: 'connected', lastSynced: 'just now' });
+      store.setLastConnectedProvider(provider);
+      store.addEvents(pullEvents(provider));
+      setConnectingProvider(null);
+    }, 800);
+  };
+
+  const [activeConflict, setActiveConflict] = useState<{ provider: SyncProvider; conflict: SyncConflict } | null>(null);
+
+  const finishSync = (_provider: SyncProvider) => {
+    const store = useCalendarStore.getState();
+    store.setSyncStatus({ ...store.syncStatus, lastSynced: 'just now' });
+    setConnectingProvider(null);
+  };
+
+  const handleSyncNow = (provider: SyncProvider) => {
+    setConnectingProvider(provider);
+    setTimeout(() => {
+      const store = useCalendarStore.getState();
+      const existingTitles = new Set(
+        store.events.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pulled').map(ev => ev.title)
+      );
+      const fresh = pullEvents(provider).filter(ev => !existingTitles.has(ev.title));
+      store.addEvents(fresh);
+
+      const next = [...store.events, ...fresh];
+      const conflict = detectConflict(
+        next.filter(ev => ev.syncProvider === provider && ev.syncOrigin === 'pushed'),
+        provider
+      );
+      if (conflict) {
+        setActiveConflict({ provider, conflict });
+      } else {
+        finishSync(provider);
+      }
+    }, 800);
+  };
+
+  const handleZoomToggle = () => {
+    if (zoomConnected) {
+      setZoomConnected(false);
+      return;
+    }
+    setConnectingZoom(true);
+    setTimeout(() => {
+      setZoomConnected(true);
+      setConnectingZoom(false);
+    }, 800);
+  };
+
+  const handleDisconnect = (provider: SyncProvider) => {
+    const store = useCalendarStore.getState();
+    store.setEvents(store.events
+      .filter(ev => !(ev.syncProvider === provider && ev.syncOrigin === 'pulled'))
+      .map(ev => (ev.syncProvider === provider && ev.syncOrigin === 'pushed')
+        ? { ...ev, syncProvider: undefined, syncOrigin: undefined }
+        : ev
+      )
+    );
+    store.setSyncStatus({ ...store.syncStatus, [provider]: 'disconnected' });
+    if (store.lastConnectedProvider === provider) store.setLastConnectedProvider(null);
+  };
+
+  const handleConflictKeepMine = () => {
+    if (!activeConflict) return;
+    finishSync(activeConflict.provider);
+    setActiveConflict(null);
+  };
+
+  const handleConflictKeepTheirs = () => {
+    if (!activeConflict) return;
+    const { provider, conflict } = activeConflict;
+    const store = useCalendarStore.getState();
+    const target = store.events.find(ev => ev.id === conflict.eventId);
+    if (target) {
+      store.updateEvent(target.id, { ...target, start: conflict.theirsStart, end: conflict.theirsEnd });
+    }
+    finishSync(provider);
+    setActiveConflict(null);
   };
 
   // Drag-to-create-event (Week/Day views)
@@ -243,6 +393,7 @@ export const MyCalendarTab: React.FC = () => {
   const [dropTargetCell, setDropTargetCell] = useState<string | null>(null);
   const [dropNotice, setDropNotice] = useState<string | null>(null);
   const dropNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dragConflict, setDragConflict] = useState<{ candidate: CalendarEvent; clashes: CalendarEvent[]; top: number; left: number } | null>(null);
 
   const showDropNotice = (message: string) => {
     setDropNotice(message);
@@ -293,12 +444,21 @@ export const MyCalendarTab: React.FC = () => {
     const candidate: CalendarEvent = { ...original, date: dayKey, start: newStart, end: newEnd };
     const clashes = findEventConflicts(candidate, localEvents.filter(ev => ev.scope === 'my'));
     if (clashes.length > 0) {
-      showDropNotice(`Can't move "${original.title}" — clashes with ${clashes.map(c => c.title).join(', ')}.`);
+      setDragConflict({ candidate, clashes, top: e.clientY, left: e.clientX });
       return;
     }
 
-    setLocalEvents(prev => prev.map(ev => (ev.id === candidate.id ? candidate : ev)));
+    updateEvent(candidate.id, candidate);
     showDropNotice(`Moved "${original.title}" to ${dayKey} · ${formatTime(newStart)}`);
+  };
+
+  const handleDragConflictCancel = () => setDragConflict(null);
+  const handleDragConflictMoveAnyway = () => {
+    if (!dragConflict) return;
+    const { candidate } = dragConflict;
+    updateEvent(candidate.id, candidate);
+    showDropNotice(`Moved "${candidate.title}" to ${candidate.date} · ${formatTime(candidate.start!)}`);
+    setDragConflict(null);
   };
 
   // Event details modal
@@ -308,17 +468,45 @@ export const MyCalendarTab: React.FC = () => {
     setSelectedEvent(ev);
   };
   const handleDeleteEvent = (id: string) => {
-    setLocalEvents(prev => prev.filter(e => e.id !== id));
+    const target = localEvents.find(e => e.id === id);
+    deleteEventInStore(id);
+    if (target) {
+      recordHistory({
+        category: 'Calendar',
+        title: 'Event deleted',
+        description: `"${target.title}" was deleted.`,
+        target: target.title
+      });
+      addInboxItem({
+        id: `notif-${Date.now()}-cancelled`,
+        category: 'meeting',
+        title: 'Event cancelled',
+        message: `"${target.title}" was cancelled.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: []
+      });
+    }
     setSelectedEvent(null);
   };
   const handleSaveEvent = (updated: CalendarEvent) => {
-    setLocalEvents(prev => prev.map(e => (e.id === updated.id ? updated : e)));
+    updateEvent(updated.id, updated);
     setSelectedEvent(updated);
   };
-  const handleRsvp = (id: string, accepted: boolean) => {
-    setLocalEvents(prev => prev.map(e => (
-      e.id === id ? { ...e, needsResponse: false, status: accepted ? 'confirmed' : 'rejected' } : e
-    )));
+  const handleRestoreEvent = (event: CalendarEvent) => {
+    restoreEventInStore(event.id);
+    recordHistory({
+      category: 'Calendar',
+      title: 'Event restored',
+      description: `"${event.title}" was restored.`,
+      target: event.title
+    });
+  };
+  const handleRsvp = (id: string, response: 'accepted' | 'declined' | 'tentative') => {
+    const target = localEvents.find(e => e.id === id);
+    if (!target) return;
+    const status = response === 'accepted' ? 'confirmed' : response === 'declined' ? 'rejected' : 'tentative';
+    updateEvent(id, { ...target, needsResponse: false, status });
   };
   const handleDuplicateEvent = (event: CalendarEvent) => {
     setSelectedEvent(null);
@@ -445,10 +633,11 @@ export const MyCalendarTab: React.FC = () => {
                   {dayEvts.slice(0, 3).map(ev => (
                     <div
                       key={ev.id}
-                      className={`emc-month__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}
+                      className={`emc-month__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`}
                       onClick={e => openEvent(e, ev)}
                       onContextMenu={e => handleEventContextMenu(e, ev)}
                     >
+                      {ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}
                       {ev.title}
                     </div>
                   ))}
@@ -511,7 +700,7 @@ export const MyCalendarTab: React.FC = () => {
             {days.map((d, i) => (
               <div key={toDateKey(d)} className="emc-week__alldaycell">
                 {allDayRows[i].map(ev => (
-                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.title}</div>
+                  <div key={ev.id} className={`emc-week__evpill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
                 ))}
               </div>
             ))}
@@ -543,7 +732,7 @@ export const MyCalendarTab: React.FC = () => {
                     {hourEvts.map(ev => (
                       <div
                         key={ev.id}
-                        className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-week__ev--dragging' : ''}`}
+                        className={`emc-week__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}${draggedEventId === ev.id ? ' emc-week__ev--dragging' : ''}`}
                         onClick={e => openEvent(e, ev)}
                         onContextMenu={e => handleEventContextMenu(e, ev)}
                         draggable
@@ -551,7 +740,7 @@ export const MyCalendarTab: React.FC = () => {
                         onDragEnd={handleEventDragEnd}
                       >
                         <span className="emc-week__ev-time">{formatTime(ev.start!)}</span>
-                        <span className="emc-week__ev-title">{ev.title}</span>
+                        <span className="emc-week__ev-title">{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</span>
                       </div>
                     ))}
                   </div>
@@ -577,7 +766,7 @@ export const MyCalendarTab: React.FC = () => {
           <div className="emc-day__allday">
             <span className="emc-day__allday-label">All day</span>
             {allDay.map(ev => (
-              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.title}</div>
+              <div key={ev.id} className={`emc-day__alldaypill emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`} onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
             ))}
           </div>
         )}
@@ -603,14 +792,14 @@ export const MyCalendarTab: React.FC = () => {
                   {hourEvts.map(ev => (
                     <div
                       key={ev.id}
-                      className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}${draggedEventId === ev.id ? ' emc-day__ev--dragging' : ''}`}
+                      className={`emc-day__ev emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}${draggedEventId === ev.id ? ' emc-day__ev--dragging' : ''}`}
                       onClick={e => openEvent(e, ev)}
                       onContextMenu={e => handleEventContextMenu(e, ev)}
                       draggable
                       onDragStart={e => handleEventDragStart(e, ev)}
                       onDragEnd={handleEventDragEnd}
                     >
-                      <div className="emc-day__ev-title">{ev.title}</div>
+                      <div className="emc-day__ev-title">{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</div>
                       <div className="emc-day__ev-time">
                         {formatTime(ev.start!)}{ev.end ? ` – ${formatTime(ev.end)}` : ''}
                         {ev.note ? ` · ${ev.note}` : ''}
@@ -663,13 +852,13 @@ export const MyCalendarTab: React.FC = () => {
                   const Icon = AGENDA_TYPE_ICON[ev.type];
                   return (
                     <div key={ev.id} className="emc-agenda__ev" onClick={e => openEvent(e, ev)} onContextMenu={e => handleEventContextMenu(e, ev)}>
-                      <div className={`emc-agenda__icon emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ''}`}>
+                      <div className={`emc-agenda__icon emc-evpill--${ev.type}${ev.status === 'pending' ? ' emc-evpill--pending-status' : ev.status === 'rejected' ? ' emc-evpill--rejected-status' : ev.status === 'tentative' ? ' emc-evpill--tentative-status' : ''}`}>
                         <Icon size={13} />
                       </div>
                       <span className="emc-agenda__ev-time">
                         {ev.allDay ? 'All day' : ev.start ? `${formatTime(ev.start)}${ev.end ? ` – ${formatTime(ev.end)}` : ''}` : ''}
                       </span>
-                      <span className="emc-agenda__ev-title">{ev.title}</span>
+                      <span className="emc-agenda__ev-title">{ev.syncProvider && <SyncBadge provider={ev.syncProvider} />}{ev.title}</span>
                       {ev.ownerName && <span className="emc-agenda__ev-owner">{ev.ownerName}</span>}
                     </div>
                   );
@@ -702,8 +891,9 @@ export const MyCalendarTab: React.FC = () => {
         </div>
         {ev.needsResponse && (
           <div className="emc-rail__ev-actions">
-            <button type="button" className="emc-iconbtn emc-iconbtn--accept" aria-label="Accept" onClick={() => handleRsvp(ev.id, true)}><Check size={10} /></button>
-            <button type="button" className="emc-iconbtn emc-iconbtn--decline" aria-label="Decline" onClick={() => handleRsvp(ev.id, false)}><X size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--accept" aria-label="Accept" onClick={() => handleRsvp(ev.id, 'accepted')}><Check size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--tentative" aria-label="Tentative" onClick={() => handleRsvp(ev.id, 'tentative')}><HelpCircle size={10} /></button>
+            <button type="button" className="emc-iconbtn emc-iconbtn--decline" aria-label="Decline" onClick={() => handleRsvp(ev.id, 'declined')}><X size={10} /></button>
           </div>
         )}
       </div>
@@ -715,6 +905,25 @@ export const MyCalendarTab: React.FC = () => {
     <div className="emc-root">
 
       {dropNotice && <div className="emc-dropnotice">{dropNotice}</div>}
+
+      {dragConflict && (
+        <div
+          className="emc-dragconflict"
+          style={{ top: dragConflict.top, left: dragConflict.left }}
+        >
+          <p className="emc-dragconflict__text">
+            Clashes with {dragConflict.clashes.map(c => c.title).join(', ')}
+          </p>
+          <div className="emc-dragconflict__actions">
+            <button type="button" className="era-btn era-btn--ghost emc-dragconflict__btn" onClick={handleDragConflictCancel}>
+              Cancel
+            </button>
+            <button type="button" className="era-btn emc-dragconflict__btn" onClick={handleDragConflictMoveAnyway}>
+              Move anyway
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="emc-header">
@@ -974,12 +1183,118 @@ export const MyCalendarTab: React.FC = () => {
                         <span className={`emc-sync__badge emc-sync__badge--${s.status}`}>
                           {s.status === 'connected' ? 'Connected' : 'Not connected'}
                         </span>
+                        {s.status === 'disconnected' ? (
+                          <button
+                            type="button"
+                            className="era-btn era-btn--ghost emc-sync__btn"
+                            disabled={connectingProvider === s.key}
+                            onClick={() => handleConnect(s.key)}
+                          >
+                            <RefreshCw size={12} className={connectingProvider === s.key ? 'emc-sync__spin' : ''} />
+                            {connectingProvider === s.key ? 'Connecting…' : 'Connect'}
+                          </button>
+                        ) : (
+                          <div className="emc-sync__actions">
+                            <button
+                              type="button"
+                              className="era-btn era-btn--ghost emc-sync__btn"
+                              disabled={connectingProvider === s.key}
+                              onClick={() => handleSyncNow(s.key)}
+                            >
+                              <RefreshCw size={12} className={connectingProvider === s.key ? 'emc-sync__spin' : ''} />
+                              {connectingProvider === s.key ? 'Syncing…' : 'Sync Now'}
+                            </button>
+                            <button
+                              type="button"
+                              className="era-btn era-btn--ghost emc-sync__btn"
+                              onClick={() => handleDisconnect(s.key)}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
+                    <div className="emc-sync__row">
+                      <div className={`emc-sync__dot emc-sync__dot--${zoomConnected ? 'connected' : 'disconnected'}`} />
+                      <span className="emc-sync__label">Zoom</span>
+                      <span className={`emc-sync__badge emc-sync__badge--${zoomConnected ? 'connected' : 'disconnected'}`}>
+                        {zoomConnected ? 'Connected' : 'Not connected'}
+                      </span>
+                      <button
+                        type="button"
+                        className="era-btn era-btn--ghost emc-sync__btn"
+                        disabled={connectingZoom}
+                        onClick={handleZoomToggle}
+                      >
+                        <RefreshCw size={12} className={connectingZoom ? 'emc-sync__spin' : ''} />
+                        {connectingZoom ? 'Connecting…' : zoomConnected ? 'Disconnect' : 'Connect'}
+                      </button>
+                    </div>
                   </div>
                   <div className="emc-sync__meta">Synced {syncStatus.lastSynced}</div>
                 </div>
               )}
+              {settingsTab === 'archived' && (
+                <div className="emc-settings__panel">
+                  <div className="emc-rail__head">
+                    <Archive size={13} />
+                    <span className="emc-rail__title">Archived Events</span>
+                  </div>
+                  {archivedEvents.length === 0 ? (
+                    <p className="emc-rail__empty">No archived events</p>
+                  ) : (
+                    <div className="emc-archived__list">
+                      {archivedEvents.map(ev => (
+                        <div key={ev.id} className="emc-archived__row">
+                          <span className="emc-archived__title">{ev.title}</span>
+                          <span className="emc-archived__date">{ev.date}</span>
+                          <button
+                            type="button"
+                            className="era-btn era-btn--ghost emc-sync__btn"
+                            onClick={() => handleRestoreEvent(ev)}
+                          >
+                            <ArchiveRestore size={12} />
+                            Restore
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeConflict && (
+        <div className="emc-modal-overlay" onClick={handleConflictKeepMine}>
+          <div className="emc-modal emc-modal--conflict" role="dialog" aria-modal="true" aria-label="Sync conflict" onClick={e => e.stopPropagation()}>
+            <header className="emc-modal__header">
+              <h3 className="emc-modal__title">Sync conflict</h3>
+            </header>
+            <div className="emc-modal__body">
+              <p>
+                This event's time was also changed in {activeConflict.provider === 'google' ? 'Google' : 'Outlook'}.
+              </p>
+              <p className="emc-conflict__title">{activeConflict.conflict.eventTitle}</p>
+              <div className="emc-conflict__row">
+                <span className="emc-conflict__label">Mine:</span>
+                <span>{formatTime(activeConflict.conflict.mineStart)} – {formatTime(activeConflict.conflict.mineEnd)}</span>
+              </div>
+              <div className="emc-conflict__row">
+                <span className="emc-conflict__label">Theirs:</span>
+                <span>{formatTime(activeConflict.conflict.theirsStart)} – {formatTime(activeConflict.conflict.theirsEnd)}</span>
+              </div>
+              <div className="emc-modal__actions">
+                <button type="button" className="era-btn era-btn--ghost emc-modal__action" onClick={handleConflictKeepMine}>
+                  Keep mine
+                </button>
+                <button type="button" className="era-btn emc-modal__action" onClick={handleConflictKeepTheirs}>
+                  Keep theirs
+                </button>
+              </div>
             </div>
           </div>
         </div>

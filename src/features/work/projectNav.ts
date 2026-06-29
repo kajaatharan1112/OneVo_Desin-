@@ -12,15 +12,15 @@ export type ProjectNavId =
   | 'status'
   | 'completion'
   | 'budget'
-  | 'risks';
+  | 'risks'
+  | 'goal';
 
 export const PROJECT_NAV_TOOLS: { id: ProjectNavId; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'work-items', label: 'Work items' },
-  { id: 'members', label: 'Members' },
+  { id: 'overview', label: 'Overall view' },
+  { id: 'work-items', label: 'Task board' },
   { id: 'progress', label: 'Analytics' },
-  { id: 'milestones', label: 'Milestones' },
-  { id: 'files', label: 'Files' },
+  { id: 'goal', label: 'Goal' },
+  { id: 'members', label: 'Members' },
 ];
 
 export function projectNavLabel(id: ProjectNavId): string {
