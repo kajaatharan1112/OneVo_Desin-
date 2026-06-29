@@ -530,3 +530,94 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* User access workspace */
+.admin-access-workspace { width: min(880px, 96vw); }
+.admin-user-actions { position: relative; display: flex; justify-content: flex-end; }
+.admin-user-actions__trigger { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.admin-user-actions__trigger:hover, .admin-user-actions__trigger[aria-expanded='true'] { border-color: var(--border); background: var(--surface-muted); color: var(--accent); }
+.admin-user-actions__menu { position: absolute; top: calc(100% + 5px); right: 0; z-index: 120; width: 238px; padding: 5px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-panel); box-shadow: 0 16px 42px #0f172a24; }
+.admin-user-actions__menu > button { display: flex; width: 100%; gap: 9px; align-items: flex-start; padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.admin-user-actions__menu > button:hover { background: var(--surface-muted); }
+.admin-user-actions__menu > button:disabled { opacity: .42; cursor: not-allowed; }
+.admin-user-actions__menu > button.is-danger { color: #b91c1c; }
+.admin-user-actions__menu > button svg { flex: 0 0 auto; margin-top: 2px; }
+.admin-user-actions__menu > button span { display: flex; flex-direction: column; gap: 2px; }
+.admin-user-actions__menu > button strong { font-size: .67rem; font-weight: 700; }
+.admin-user-actions__menu > button small { color: var(--text-muted); font-size: .58rem; line-height: 1.35; }
+.cfg-table-wrap:has(.admin-user-actions__menu) { overflow: visible; }
+.cfg-table tr:has(.admin-user-actions__menu) { position: relative; z-index: 100; }
+.admin-access-workspace .org-slideover__header { padding: 18px 22px; }
+.admin-access-eyebrow { display: block; margin-bottom: 3px; color: var(--accent); font-size: .64rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.admin-access-profile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px 16px; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--surface-muted) 68%, var(--surface-panel)); }
+.admin-access-profile__avatar { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 13px; background: var(--accent); color: #fff; font-size: .86rem; font-weight: 750; }
+.admin-access-profile__identity { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.admin-access-profile__identity strong { font-size: .88rem; }
+.admin-access-profile__identity span, .admin-access-profile__identity small { overflow: hidden; color: var(--text-muted); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-access-profile__status { display: flex; gap: 6px; align-items: center; }
+.admin-access-profile__actions { grid-column: 2 / -1; display: flex; gap: 8px; justify-content: flex-end; }
+.admin-access-tabs { display: flex; gap: 4px; padding: 0 22px; overflow-x: auto; border-bottom: 1px solid var(--border); background: var(--surface-panel); }
+.admin-access-tabs button { display: inline-flex; gap: 6px; align-items: center; padding: 12px 13px 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); font-size: .72rem; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.admin-access-tabs button:hover { color: var(--text); }
+.admin-access-tabs button.is-active { border-bottom-color: var(--accent); color: var(--accent); }
+.admin-access-body { padding: 18px 22px 30px; background: var(--surface-muted); }
+.admin-access-overview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.admin-access-panel { padding: 16px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-panel); box-shadow: 0 1px 2px #0f172a08; }
+.admin-access-panel > p { min-height: 34px; margin: 9px 0 13px; color: var(--text-muted); font-size: .68rem; line-height: 1.55; }
+.admin-access-panel__heading { display: flex; justify-content: space-between; gap: 10px; color: var(--accent); }
+.admin-access-panel__heading div { display: flex; flex-direction: column; gap: 4px; color: var(--text); }
+.admin-access-panel__heading span { color: var(--text-muted); font-size: .64rem; font-weight: 650; text-transform: uppercase; }
+.admin-access-panel__heading h3 { margin: 0; font-size: .9rem; }
+.admin-access-panel--details { grid-column: 1 / -1; }
+.admin-access-panel--details h3 { margin: 0 0 12px; font-size: .8rem; }
+.admin-access-panel--details dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.admin-access-panel--details dl div { padding: 10px; border-radius: 8px; background: var(--surface-muted); }
+.admin-access-panel--details dt { color: var(--text-muted); font-size: .61rem; font-weight: 650; text-transform: uppercase; }
+.admin-access-panel--details dd { margin: 5px 0 0; font-size: .7rem; font-weight: 600; text-transform: capitalize; }
+.admin-access-stack { display: flex; flex-direction: column; gap: 14px; }
+.admin-access-section-heading { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; margin-bottom: 13px; }
+.admin-access-section-heading h3, .admin-current-overrides h4 { margin: 0; font-size: .8rem; }
+.admin-access-section-heading p { margin: 4px 0 0; color: var(--text-muted); font-size: .66rem; }
+.admin-unsaved-badge, .admin-selected-pill { padding: 4px 8px; border-radius: 999px; background: #fff7ed; color: #c2410c; font-size: .62rem; font-weight: 700; }
+.admin-selected-pill { background: var(--accent-bg); color: var(--accent); }
+.admin-role-editor { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.admin-role-editor select, .admin-override-form--batch input, .admin-override-form--batch select { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-panel); color: var(--text); font-size: .72rem; }
+.admin-role-description { min-height: 0 !important; margin-bottom: 0 !important; }
+.admin-effective-permissions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; max-height: 300px; overflow-y: auto; }
+.admin-effective-permission { display: flex; gap: 9px; align-items: center; justify-content: space-between; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.admin-effective-permission div { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.admin-effective-permission strong { font-size: .67rem; }
+.admin-effective-permission span { overflow: hidden; color: var(--text-muted); font-family: monospace; font-size: .59rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-effective-permission em { padding: 3px 6px; border-radius: 999px; background: var(--surface-muted); color: var(--text-muted); font-size: .57rem; font-style: normal; font-weight: 700; }
+.admin-permission-search { display: flex; gap: 8px; align-items: center; margin-bottom: 9px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.admin-permission-search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: .7rem; }
+.admin-permission-picker, .admin-revoke-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; max-height: 260px; padding: 2px; overflow-y: auto; }
+.admin-permission-picker label, .admin-revoke-picker label { display: flex; gap: 9px; align-items: flex-start; padding: 9px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.admin-permission-picker label.is-selected, .admin-revoke-picker label.is-selected { border-color: var(--accent); background: var(--accent-bg); }
+.admin-permission-picker label span, .admin-revoke-picker label span { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.admin-permission-picker strong, .admin-revoke-picker strong { font-size: .65rem; }
+.admin-permission-picker small, .admin-revoke-picker small { color: var(--text-muted); font-size: .57rem; }
+.admin-override-form--batch { grid-template-columns: 1fr 1fr; align-items: end; margin-top: 13px; }
+.admin-override-form--batch label { display: flex; flex-direction: column; gap: 5px; color: var(--text-muted); font-size: .62rem; font-weight: 650; }
+.admin-override-form--batch .admin-override-reason { grid-column: 1 / -1; }
+.admin-override-form--batch button { grid-column: 1 / -1; justify-self: end; }
+.admin-current-overrides { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.admin-current-overrides h4 { margin-bottom: 8px; }
+.admin-current-overrides > div { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 9px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+.admin-current-overrides > div span { display: flex; flex-direction: column; gap: 3px; }
+.admin-current-overrides strong, .admin-current-overrides small { font-size: .62rem; }
+.admin-current-overrides small { color: var(--text-muted); }.admin-current-overrides em { font-size: .6rem; font-style: normal; font-weight: 700; text-transform: capitalize; }.admin-current-overrides em.grant { color: #15803d; }.admin-current-overrides em.revoke { color: #b91c1c; }.admin-current-overrides button { border: 0; background: transparent; color: #b91c1c; font-size: .62rem; cursor: pointer; }
+.admin-session-list > div, .admin-activity-list > div { display: flex; gap: 11px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+.admin-session-list > div:first-child, .admin-activity-list > div:first-child { border-top: 0; }
+.admin-session-list > div > div, .admin-activity-list > div > div { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.admin-session-list strong, .admin-activity-list strong { font-size: .7rem; }.admin-session-list span, .admin-session-list small, .admin-activity-list span, .admin-activity-list small { color: var(--text-muted); font-size: .61rem; }
+.admin-session-icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: var(--accent-bg); color: var(--accent); }
+.admin-activity-dot { width: 8px; height: 8px; flex: 0 0 auto; border: 2px solid var(--surface-panel); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--accent-border); }
+.admin-access-empty { display: flex !important; padding: 34px !important; flex-direction: column; justify-content: center; color: var(--text-muted); text-align: center; }
+.admin-revoke-warning { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 15px; padding: 12px; border: 1px solid #fecaca; border-radius: 9px; background: #fef2f2; color: #991b1b; }.admin-revoke-warning div { display: flex; flex-direction: column; gap: 4px; }.admin-revoke-warning strong { font-size: .72rem; }.admin-revoke-warning span { font-size: .63rem; }
+.admin-revoke-modal textarea { resize: vertical; }
+
+@media (max-width: 720px) {
+  .admin-access-profile { grid-template-columns: auto minmax(0, 1fr); }.admin-access-profile__status { grid-column: 1 / -1; }.admin-access-profile__actions { grid-column: 1 / -1; justify-content: stretch; }.admin-access-profile__actions button { flex: 1; }
+  .admin-access-overview-grid, .admin-effective-permissions, .admin-permission-picker, .admin-revoke-picker { grid-template-columns: 1fr; }.admin-access-panel--details dl { grid-template-columns: repeat(2, 1fr); }
+}

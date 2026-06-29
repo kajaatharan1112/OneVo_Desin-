@@ -54,9 +54,6 @@ export interface PermissionDef {
   code: string;
   description: string;
   module: string;
-  group?: string;
-  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
-  allowedScopes?: string[];
   universal?: boolean;
 }
 
@@ -103,19 +100,15 @@ export const ENABLED_MODULES = [
   'Organization',
   'Leave',
   'Attendance',
-  'Calendar',
-  'Requests',
-  'Workspaces',
-  'Projects',
-  'Tasks',
-  'Milestones',
-  'Goals',
-  'Billing',
   'Documents',
+  'Payroll',
+  'Performance',
   'Monitoring',
+  'Analytics',
   'Settings',
   'Users',
   'Roles',
+  'Automations',
 ] as const;
 
 export const ACCESS_SCOPE_OPTIONS: { value: AccessScope; label: string }[] = [
@@ -146,7 +139,7 @@ export const UNIVERSAL_PERMISSIONS: PermissionDef[] = [
   { id: 'u6', code: 'calendar:read', description: 'View calendar', module: 'Universal', universal: true },
 ];
 
-const ALL_GRANTABLE_PERMISSIONS: PermissionDef[] = [
+export const GRANTABLE_PERMISSIONS: PermissionDef[] = [
   { id: 'p1', code: 'employees:read', description: 'View employee records', module: 'Employees' },
   { id: 'p2', code: 'employees:manage', description: 'Create and manage employees', module: 'Employees' },
   { id: 'p2b', code: 'employees:write', description: 'Create and edit employees', module: 'Employees' },
@@ -177,77 +170,9 @@ const ALL_GRANTABLE_PERMISSIONS: PermissionDef[] = [
   { id: 'p27', code: 'automations:read', description: 'View automations', module: 'Automations' },
   { id: 'p28', code: 'automations:manage', description: 'Create and edit automations', module: 'Automations' },
   { id: 'p29', code: 'access:approve', description: 'Approve position access changes', module: 'Roles' },
-  { id: 'p30', code: 'leave:policy:view', description: 'View leave policies and types', module: 'Leave', group: 'Policy' },
-  { id: 'p31', code: 'leave:policy:create', description: 'Create leave policies and types', module: 'Leave', group: 'Policy', riskLevel: 'high' },
-  { id: 'p32', code: 'leave:policy:edit', description: 'Edit leave policies and types', module: 'Leave', group: 'Policy', riskLevel: 'high' },
-  { id: 'p33', code: 'leave:policy:delete', description: 'Delete leave policies and types', module: 'Leave', group: 'Policy', riskLevel: 'critical' },
-  { id: 'p34', code: 'leave:request:view', description: 'View leave requests within assigned scope', module: 'Leave', group: 'Requests' },
-  { id: 'p35', code: 'leave:request:create', description: 'Create leave requests', module: 'Leave', group: 'Requests' },
-  { id: 'p36', code: 'leave:request:approve', description: 'Approve or reject leave requests', module: 'Leave', group: 'Requests', riskLevel: 'high' },
-  { id: 'p37', code: 'attendance:view', description: 'View attendance within assigned scope', module: 'Attendance', allowedScopes: ['own', 'reporting_structure', 'selected_departments', 'organization'] },
-  { id: 'p38', code: 'attendance:edit', description: 'Correct attendance records', module: 'Attendance', riskLevel: 'high' },
-  { id: 'p39', code: 'attendance:policy:configure', description: 'Configure attendance policies', module: 'Attendance', riskLevel: 'critical' },
-  { id: 'p40', code: 'monitoring:view', description: 'View monitoring results within assigned scope', module: 'Monitoring' },
-  { id: 'p41', code: 'roles:view', description: 'View roles and permissions', module: 'Roles' },
-  { id: 'p42', code: 'roles:create', description: 'Create roles', module: 'Roles', riskLevel: 'high' },
-  { id: 'p43', code: 'roles:edit', description: 'Edit roles', module: 'Roles', riskLevel: 'high' },
-  { id: 'p44', code: 'roles:delete', description: 'Deactivate custom roles', module: 'Roles', riskLevel: 'critical' },
-  { id: 'p45', code: 'roles:assign', description: 'Assign roles to positions and employees', module: 'Roles', riskLevel: 'critical' },
-  { id: 'p46', code: 'positions:view', description: 'View positions and organization chart', module: 'Organization' },
-  { id: 'p47', code: 'positions:create', description: 'Create positions', module: 'Organization', riskLevel: 'high' },
-  { id: 'p48', code: 'positions:edit', description: 'Edit positions and reporting lines', module: 'Organization', riskLevel: 'high' },
-  { id: 'p49', code: 'positions:delete', description: 'Delete positions (future workflow)', module: 'Organization', riskLevel: 'critical' },
-  { id: 'p50', code: 'departments:view', description: 'View departments', module: 'Organization' },
-  { id: 'p51', code: 'departments:create', description: 'Create departments', module: 'Organization', riskLevel: 'high' },
-  { id: 'p52', code: 'departments:edit', description: 'Edit departments', module: 'Organization', riskLevel: 'high' },
-  { id: 'p53', code: 'departments:delete', description: 'Delete departments (future workflow)', module: 'Organization', riskLevel: 'critical' },
-  { id: 'p54', code: 'calendar:event:create', description: 'Create calendar events', module: 'Calendar' },
-  { id: 'p55', code: 'calendar:schedule:view', description: 'View employee schedules within assigned scope', module: 'Calendar' },
-  { id: 'p56', code: 'calendar:schedule:create', description: 'Create employee schedules', module: 'Calendar', riskLevel: 'high' },
-  { id: 'p57', code: 'calendar:meeting:create', description: 'Create meetings and invite employees', module: 'Calendar' },
-  { id: 'p58', code: 'requests:view', description: 'View employee requests', module: 'Requests' },
-  { id: 'p59', code: 'requests:create', description: 'Create employee requests', module: 'Requests' },
-  { id: 'p60', code: 'requests:approve', description: 'Approve or reject employee requests', module: 'Requests', riskLevel: 'high' },
-  { id: 'p61', code: 'employees:onboard', description: 'Onboard employees', module: 'Employees', riskLevel: 'high' },
-  { id: 'p62', code: 'employees:offboard', description: 'Offboard employees', module: 'Employees', riskLevel: 'critical' },
-  { id: 'p63', code: 'employees:promote', description: 'Promote employees', module: 'Employees', riskLevel: 'high' },
-  { id: 'p64', code: 'employees:transfer', description: 'Transfer employees', module: 'Employees', riskLevel: 'high' },
-  { id: 'p65', code: 'employees:permission:change', description: 'Change direct employee access', module: 'Employees', riskLevel: 'critical' },
-  { id: 'p66', code: 'workspaces:create', description: 'Create workspaces', module: 'Workspaces' },
-  { id: 'p67', code: 'workspaces:edit', description: 'Edit workspaces', module: 'Workspaces' },
-  { id: 'p68', code: 'workspaces:delete', description: 'Delete workspaces', module: 'Workspaces', riskLevel: 'high' },
-  { id: 'p69', code: 'projects:create', description: 'Create projects', module: 'Projects' },
-  { id: 'p70', code: 'projects:edit', description: 'Edit projects', module: 'Projects' },
-  { id: 'p71', code: 'projects:delete', description: 'Delete projects', module: 'Projects', riskLevel: 'high' },
-  { id: 'p72', code: 'tasks:create', description: 'Create tasks', module: 'Tasks' },
-  { id: 'p73', code: 'tasks:edit', description: 'Edit tasks', module: 'Tasks' },
-  { id: 'p74', code: 'tasks:delete', description: 'Delete tasks', module: 'Tasks', riskLevel: 'high' },
-  { id: 'p75', code: 'tasks:approve', description: 'Approve task requests', module: 'Tasks', riskLevel: 'high' },
-  { id: 'p76', code: 'milestones:create', description: 'Create milestones', module: 'Milestones' },
-  { id: 'p77', code: 'goals:create', description: 'Set employee goals', module: 'Goals' },
-  { id: 'p78', code: 'goals:edit', description: 'Edit employee goals', module: 'Goals' },
-  { id: 'p79', code: 'billing:view', description: 'View billing details and plan', module: 'Billing', riskLevel: 'high' },
-  { id: 'p80', code: 'billing:contact:edit', description: 'Edit billing contact details', module: 'Billing', riskLevel: 'critical' },
-  { id: 'p81', code: 'billing:payment-method:edit', description: 'Add or replace payment cards', module: 'Billing', riskLevel: 'critical' },
-  { id: 'p82', code: 'billing:plan:change', description: 'Upgrade or change subscription plan', module: 'Billing', riskLevel: 'critical' },
 ];
 
-const PHASE_TWO_MODULES = new Set(['Payroll', 'Performance', 'Analytics', 'Automations']);
-export const GRANTABLE_PERMISSIONS: PermissionDef[] = ALL_GRANTABLE_PERMISSIONS.filter(
-  permission => !PHASE_TWO_MODULES.has(permission.module)
-);
-
 export const MOCK_ROLES: AdminRole[] = [
-  {
-    id: 'role-employee',
-    name: 'Employee',
-    description: 'Standard access to personal profile, attendance, leave requests, calendar and assigned work',
-    type: 'system',
-    permissionIds: ['p35', 'p37', 'p54', 'p58', 'p59'],
-    userCount: 0,
-    updatedAt: '2026-06-01T10:00:00Z',
-    active: true,
-  },
   {
     id: 'role-owner',
     name: 'Tenant Owner',

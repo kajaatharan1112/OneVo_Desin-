@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { employeeLeaveBalance } from '../../data/employee-requests.data';
 import {
-  leaveRequests as SEED_REQUESTS,
   leaveHistory,
   upcomingLeaves,
   leaveCompanyHolidays,
@@ -13,23 +12,14 @@ import {
   type LeaveRequest,
   type LeaveTypeKey
 } from '../../data/employee-leave.data';
+import { useLeaveRequestStore } from '../../../../store/leaveRequestStore';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import { useInbox, INBOX_CURRENT_USER } from '../../../../core/notifications/inbox-context';
 import { useEmployeeContext } from '../../context/employee-context';
 import { LeavePoliciesPage } from '../../../leave/configuration/LeavePoliciesPage';
 import { LeaveTypesPage } from '../../../leave/configuration/LeaveTypesPage';
 import { LeaveEntitlementsPage } from '../../../leave/configuration/LeaveEntitlementsPage';
-
-/* ─── Team leave mock (manager view) ─── */
-interface TeamLeaveEntry {
-  id: string; name: string; initials: string;
-  leaveType: string; startDate: string; endDate: string;
-  days: number; status: 'pending' | 'approved' | 'rejected';
-}
-const TEAM_LEAVE: TeamLeaveEntry[] = [
-  { id: 'tl-1', name: 'Alexander Pierce', initials: 'AP', leaveType: 'Annual', startDate: 'Jun 20', endDate: 'Jun 23', days: 4, status: 'approved' },
-  { id: 'tl-2', name: 'Jordan Kim',       initials: 'JK', leaveType: 'Sick',   startDate: 'Jun 18', endDate: 'Jun 18', days: 1, status: 'pending'  },
-];
+import { useEmployeeContext } from '../../context/employee-context';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
@@ -206,10 +196,10 @@ export const EmployeeLeave: React.FC = () => {
   const hasConflict = conflictingEvents.length > 0;
 
   const counts: Record<StatusFilter, number> = {
-    all:      requests.length,
-    pending:  requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    rejected: requests.filter(r => r.status === 'rejected').length
+    all:      myRequests.length,
+    pending:  myRequests.filter(r => r.status === 'pending').length,
+    approved: myRequests.filter(r => r.status === 'approved').length,
+    rejected: myRequests.filter(r => r.status === 'rejected').length
   };
 
   const patchForm = (patch: Partial<LeaveFormState>) =>
@@ -295,7 +285,7 @@ export const EmployeeLeave: React.FC = () => {
       approver:      'Manager',
       attachmentName: form.attachmentName || undefined
     };
-    setRequests(prev => [newReq, ...prev]);
+    addRequest(newReq);
     addInboxItem({
       id:          `leave-${id}`,
       recipientId: INBOX_CURRENT_USER,

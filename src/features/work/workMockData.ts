@@ -25,6 +25,9 @@ export interface WorkWorkspace {
   memberCount: number;
   linkedProjectCount: number;
   status: WorkspaceStatus;
+  icon?: string;
+  logoUrl?: string;
+  type?: string;
 }
 
 export interface WorkEmployee {
@@ -240,12 +243,14 @@ export interface PlannerMilestone {
   name: string;
   description: string;
   projectId: string;
+  goalId?: string;
   dueDate: string;
   startDate?: string;
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   status: MilestoneStatus;
   ownerId: string;
   linkedWorkItemIds: string[];
+  checklist?: Array<{ id: string; text: string; done: boolean }>;
 }
 
 export interface PlannerRoadmapItem {
@@ -340,9 +345,9 @@ export const MOCK_EMPLOYEES: WorkEmployee[] = [
 ];
 
 export const MOCK_WORKSPACES: WorkWorkspace[] = [
-  { id: 'ws-eng', name: 'Engineering Workspace', description: 'Engineering delivery context', ownerName: 'Priya Sharma', ownerId: 'user-2', memberCount: 18, linkedProjectCount: 3, status: 'active' },
-  { id: 'ws-backend', name: 'Backend Workspace', description: 'Backend squad context', ownerName: 'Maria Lopez', ownerId: 'user-3', memberCount: 9, linkedProjectCount: 2, status: 'active' },
-  { id: 'ws-product', name: 'Product Workspace', description: 'Product initiatives', ownerName: 'James Chen', ownerId: 'user-4', memberCount: 12, linkedProjectCount: 3, status: 'active' },
+  { id: 'ws-eng', name: 'Engineering Workspace', description: 'Engineering delivery context', ownerName: 'Priya Sharma', ownerId: 'user-2', memberCount: 18, linkedProjectCount: 3, status: 'active', icon: '💻', type: 'scrum' },
+  { id: 'ws-backend', name: 'Backend Workspace', description: 'Backend squad context', ownerName: 'Maria Lopez', ownerId: 'user-3', memberCount: 9, linkedProjectCount: 2, status: 'active', icon: '⚡', type: 'kanban' },
+  { id: 'ws-product', name: 'Product Workspace', description: 'Product initiatives', ownerName: 'James Chen', ownerId: 'user-4', memberCount: 12, linkedProjectCount: 3, status: 'active', icon: '🎨', type: 'project' },
 ];
 
 export const MOCK_PROJECTS: WorkProject[] = [
@@ -514,8 +519,8 @@ export const MOCK_TASKS: WorkTask[] = [
 ];
 
 export const MOCK_MILESTONES: PlannerMilestone[] = [
-  { id: 'ms-1', name: 'Work module beta', description: 'Core Work navigation and project views', projectId: 'proj-1', dueDate: '2026-07-15', status: 'upcoming', ownerId: 'current-user', linkedWorkItemIds: ['task-1', 'task-2', 'task-5'] },
-  { id: 'ms-2', name: 'Gateway cutover', description: 'Production gateway migration complete', projectId: 'proj-2', dueDate: '2026-07-20', status: 'upcoming', ownerId: 'user-3', linkedWorkItemIds: ['task-6', 'task-7', 'task-8'] },
+  { id: 'ms-1', name: 'Work module beta', description: 'Core Work navigation and project views', projectId: 'proj-1', goalId: 'goal-1', dueDate: '2026-07-15', status: 'upcoming', ownerId: 'current-user', linkedWorkItemIds: ['task-1', 'task-2', 'task-5'], checklist: [{ id: 'msc-1-1', text: 'Staging environment dry-run', done: true }, { id: 'msc-1-2', text: 'Documentation verification', done: false }] },
+  { id: 'ms-2', name: 'Gateway cutover', description: 'Production gateway migration complete', projectId: 'proj-2', goalId: 'goal-2', dueDate: '2026-07-20', status: 'upcoming', ownerId: 'user-3', linkedWorkItemIds: ['task-6', 'task-7', 'task-8'], checklist: [{ id: 'msc-2-1', text: 'Backup database states', done: false }] },
   { id: 'ms-3', name: 'Mobile beta launch', description: 'Employee mobile app beta release', projectId: 'proj-3', dueDate: '2026-08-01', status: 'upcoming', ownerId: 'user-5', linkedWorkItemIds: ['task-9', 'task-10'] },
   { id: 'ms-4', name: 'Tracing GA', description: 'OpenTelemetry enabled on all services', projectId: 'proj-5', dueDate: '2026-07-05', status: 'upcoming', ownerId: 'user-3', linkedWorkItemIds: ['task-11', 'task-12'] },
 ];
@@ -852,19 +857,26 @@ export function workspaceName(id: string, workspaces = MOCK_WORKSPACES): string 
 
 export function formatWorkDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 export function formatWorkDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
 }
 
 export function formatWorkDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
-  const sameYear = s.getFullYear() === e.getFullYear();
-  const startStr = s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
-  const endStr = e.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return `${start} - ${end}`;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const startStr = `${months[s.getMonth()]} ${s.getDate()}${s.getFullYear() !== e.getFullYear() ? `, ${s.getFullYear()}` : ''}`;
+  const endStr = `${months[e.getMonth()]} ${e.getDate()}, ${e.getFullYear()}`;
   return `${startStr} - ${endStr}`;
 }
 
@@ -911,3 +923,44 @@ export function nextTaskKey(projectKey: string, tasks: WorkTask[]): string {
   const next = nums.length ? Math.max(...nums) + 1 : 1;
   return `${projectKey}-${next}`;
 }
+
+export interface ProjectGoal {
+  id: string;
+  name: string;
+  description: string;
+  projectId: string;
+  durationHours: number;
+  ownerId: string;
+  status: 'active' | 'completed' | 'on_hold';
+  checklist: Array<{ id: string; text: string; done: boolean }>;
+}
+
+export const MOCK_GOALS: ProjectGoal[] = [
+  {
+    id: 'goal-1',
+    name: 'Design System Implementation',
+    description: 'Build and standardize high-fidelity UI components for HRMS navigation.',
+    projectId: 'proj-1',
+    durationHours: 120,
+    ownerId: 'current-user',
+    status: 'active',
+    checklist: [
+      { id: 'gc-1-1', text: 'Define color tokens and type scale', done: true },
+      { id: 'gc-1-2', text: 'Build component playground and preview sandbox', done: false },
+      { id: 'gc-1-3', text: 'Verify accessibility standards', done: false }
+    ]
+  },
+  {
+    id: 'goal-2',
+    name: 'Gateway Security Standard',
+    description: 'Establish secure JWT auth guidelines across all gateway ingress endpoints.',
+    projectId: 'proj-2',
+    durationHours: 80,
+    ownerId: 'user-3',
+    status: 'active',
+    checklist: [
+      { id: 'gc-2-1', text: 'Implement JWT signing and validation filters', done: true },
+      { id: 'gc-2-2', text: 'Setup rate limiting policy parameters', done: false }
+    ]
+  }
+];
