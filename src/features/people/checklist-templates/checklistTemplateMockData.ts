@@ -1,56 +1,44 @@
 import type { ChecklistTemplate } from './checklistTemplateTypes';
 
-const documentTemplate = (id: string, name: string, documents: string[]): ChecklistTemplate => ({
-  id,
-  name,
-  type: 'onboarding',
-  description: 'Required onboarding documents assigned to the Reporting Manager.',
-  status: 'active',
-  appliesTo: 'company',
-  departmentIds: [],
-  positionIds: [],
-  items: documents.map((document, index) => ({
-    id: `${id}-${index + 1}`,
-    title: document,
-    description: `Collect and verify ${document}.`,
-    assigneeType: 'Reporting Manager',
-    assigneePositionId: '',
-    assigneeEmployeeId: '',
-    dueOffsetValue: 3,
-    dueOffsetUnit: 'days',
-    required: true,
-    requiredDocument: document,
-    sortOrder: index
-  })),
-  createdAt: '2026-03-01T10:00:00Z',
-  updatedAt: '2026-06-28T10:00:00Z'
-});
+const ts = (d: string) => d;
 
 export const SEED_CHECKLIST_TEMPLATES: ChecklistTemplate[] = [
-  documentTemplate('ct-onboarding-hr', 'HR Onboarding Checklist', [
-    'NIC', 'Resume', 'Educational Certificates', 'Experience Certificate',
-    'Passport Size Photo', 'Signed Offer Letter', 'Signed NDA'
-  ]),
-  documentTemplate('ct-onboarding-manager', 'Manager Onboarding Checklist', [
-    'NIC', 'Resume', 'Educational Certificates', 'Experience Certificate',
-    'Previous Employment Letter', 'Police Clearance Report', 'Passport Size Photo',
-    'Signed Offer Letter', 'Signed NDA'
-  ]),
-  documentTemplate('ct-onboarding-employee', 'Employee Onboarding Checklist', [
-    'NIC', 'Resume', 'Educational Certificates', 'Passport Size Photo',
-    'Signed Offer Letter', 'Signed NDA'
-  ]),
-  documentTemplate('ct-onboarding-intern', 'Intern Onboarding Checklist', [
-    'NIC', 'Resume', 'University Recommendation Letter', 'Internship Request Letter',
-    'Passport Size Photo'
-  ])
-,
   {
-    ...documentTemplate('ct-offboarding-standard', 'Employee Offboarding Checklist', [
-      'Resignation Letter', 'Knowledge Transfer', 'Equipment Return', 'Access Revocation',
-      'Final Payroll Clearance', 'Exit Interview'
-    ]),
+    id: 'ct-onboarding-standard',
+    name: 'Standard Employee Onboarding',
+    type: 'onboarding',
+    description: 'Default onboarding checklist for new hires.',
+    status: 'active',
+    appliesTo: 'company',
+    departmentIds: [],
+    positionIds: [],
+    items: [
+      { id: 'i1', title: 'Complete employee profile', description: '', assigneeType: 'Employee', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 0, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 0 },
+      { id: 'i2', title: 'Upload ID/passport', description: '', assigneeType: 'Employee', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 24, dueOffsetUnit: 'hours', required: true, requiredDocument: 'Government ID', sortOrder: 1 },
+      { id: 'i3', title: 'Sign employment documents', description: '', assigneeType: 'Employee', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 1, dueOffsetUnit: 'days', required: true, requiredDocument: 'Signed employment contract', sortOrder: 2 },
+      { id: 'i4', title: 'Manager welcome meeting', description: '', assigneeType: 'Reporting Manager', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 2, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 3 },
+      { id: 'i5', title: 'Confirm payroll details', description: '', assigneeType: 'Department Head', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 3, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 4 }
+    ],
+    createdAt: ts('2025-10-01T10:00:00Z'),
+    updatedAt: ts('2026-03-01T10:00:00Z')
+  },
+  {
+    id: 'ct-offboarding-standard',
+    name: 'Standard Employee Offboarding',
     type: 'offboarding',
-    description: 'Required clearance tasks for departing employees.'
+    description: 'Default offboarding checklist for departing employees.',
+    status: 'active',
+    appliesTo: 'company',
+    departmentIds: [],
+    positionIds: [],
+    items: [
+      { id: 'i1', title: 'Confirm final working date', description: '', assigneeType: 'Department Head', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 7, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 0 },
+      { id: 'i2', title: 'Handover work', description: '', assigneeType: 'Reporting Manager', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 5, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 1 },
+      { id: 'i3', title: 'Collect laptop/equipment', description: '', assigneeType: 'Reporting Manager', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 1, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 2 },
+      { id: 'i4', title: 'Final payroll review', description: '', assigneeType: 'Department Head', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 0, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 3 },
+      { id: 'i5', title: 'Exit interview', description: '', assigneeType: 'Department Head', assigneePositionId: '', assigneeEmployeeId: '', dueOffsetValue: 0, dueOffsetUnit: 'days', required: true, requiredDocument: '', sortOrder: 4 }
+    ],
+    createdAt: ts('2025-10-01T10:00:00Z'),
+    updatedAt: ts('2026-03-01T10:00:00Z')
   }
 ];

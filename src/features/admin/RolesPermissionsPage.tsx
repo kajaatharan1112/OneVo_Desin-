@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock, ShieldCheck, MoreHorizontal,
+  Plus, Search, Edit, Copy, Users, Eye, Ban, X, Lock, ShieldCheck,
 } from 'lucide-react';
 import { ConfigShellHeader } from '../../shared/components/config-shell-header/ConfigShellHeader';
 import {
+  MOCK_ROLES,
   MOCK_USERS,
   DEPARTMENTS,
   ACCESS_SCOPE_OPTIONS,
@@ -11,33 +12,20 @@ import {
   GRANTABLE_PERMISSIONS,
   permissionsByModule,
   formatRelativeTime,
+  type AdminRole,
   type AccessScope,
 } from './adminMockData';
-import { useRoleStore } from '../../store/roleStore';
-import { useActorAccess } from '../access/useActorAccess';
 
 type DrawerMode = 'create' | 'edit' | 'assign' | 'view-users' | null;
 
 const groupedPermissions = permissionsByModule(ENABLED_MODULES);
 
 export const RolesPermissionsPage: React.FC = () => {
-  const { hasPermission } = useActorAccess();
-  const canView = hasPermission('roles:view');
-  const canCreate = hasPermission('roles:create');
-  const canEdit = hasPermission('roles:edit');
-  const canDelete = hasPermission('roles:delete');
-  const canAssign = hasPermission('roles:assign');
-  const roles = useRoleStore(s => s.roles);
-  const createRole = useRoleStore(s => s.createRole);
-  const updateRole = useRoleStore(s => s.updateRole);
-  const deactivateStoredRole = useRoleStore(s => s.deactivateRole);
-  const assignRoleToUsers = useRoleStore(s => s.assignRoleToUsers);
-  const roleAssignments = useRoleStore(s => s.userAssignments);
+  const [roles, setRoles] = useState<AdminRole[]>(MOCK_ROLES);
   const [search, setSearch] = useState('');
   const [drawer, setDrawer] = useState<DrawerMode>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [permSearch, setPermSearch] = useState('');
-  const [openActionId, setOpenActionId] = useState<string | null>(null);
 
   const [roleForm, setRoleForm] = useState({
     name: '',
@@ -156,17 +144,31 @@ export const RolesPermissionsPage: React.FC = () => {
   const saveRole = () => {
     if (!roleForm.name.trim() || roleForm.permissionIds.length === 0) return;
     if (drawer === 'edit' && selectedRoleId) {
-      updateRole(selectedRoleId, {
-        name: roleForm.name,
-        description: roleForm.description,
-        permissionIds: roleForm.permissionIds
-      });
+      setRoles(prev =>
+        prev.map(r =>
+          r.id === selectedRoleId
+            ? {
+                ...r,
+                name: roleForm.name.trim(),
+                description: roleForm.description,
+                permissionIds: roleForm.permissionIds,
+                updatedAt: new Date().toISOString(),
+              }
+            : r
+        )
+      );
     } else {
-      createRole({
+      const newRole: AdminRole = {
+        id: `role-${Date.now()}`,
         name: roleForm.name.trim(),
         description: roleForm.description,
-        permissionIds: roleForm.permissionIds
-      });
+        type: 'custom',
+        permissionIds: roleForm.permissionIds,
+        userCount: 0,
+        updatedAt: new Date().toISOString(),
+        active: true,
+      };
+      setRoles(prev => [newRole, ...prev]);
     }
     closeDrawer();
   };
@@ -175,13 +177,19 @@ export const RolesPermissionsPage: React.FC = () => {
     const role = roles.find(r => r.id === roleId);
     if (!role || role.type === 'system') return;
     if (window.confirm(`Deactivate "${role.name}"? Users keep assignments but the role cannot be assigned to new users.`)) {
-      deactivateStoredRole(roleId);
+      setRoles(prev => prev.map(r => (r.id === roleId ? { ...r, active: false } : r)));
     }
   };
 
   const handleAssign = () => {
     if (!selectedRoleId || assignForm.userIds.length === 0) return;
-    assignRoleToUsers(selectedRoleId, assignForm.userIds);
+    setRoles(prev =>
+      prev.map(r =>
+        r.id === selectedRoleId
+          ? { ...r, userCount: r.userCount + assignForm.userIds.length }
+          : r
+      )
+    );
     closeDrawer();
   };
 
@@ -227,25 +235,10 @@ export const RolesPermissionsPage: React.FC = () => {
     !isSystemEdit;
 
   const usersForRole = selectedRoleId
-    ? MOCK_USERS.filter(u =>
-        u.roleIds.includes(selectedRoleId) ||
-        (roleAssignments[selectedRoleId] ?? []).includes(u.id)
-      )
+    ? MOCK_USERS.filter(u => u.roleIds.includes(selectedRoleId))
     : [];
 
   const assignableUsers = MOCK_USERS.filter(u => u.accountStatus !== 'disabled');
-
-  if (!canView) {
-    return (
-      <div className="cfg-page">
-        <div className="cfg-empty-state">
-          <Lock size={24} />
-          <h2>Access restricted</h2>
-          <p>You do not have permission to view roles and permissions.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="cfg-page">
@@ -259,9 +252,9 @@ export const RolesPermissionsPage: React.FC = () => {
           label: 'Search roles'
         }}
         actions={
-        canCreate ? <button type="button" className="org-btn org-btn--primary" onClick={openCreate}>
+        <button type="button" className="org-btn org-btn--primary" onClick={openCreate}>
           <Plus size={14} /> Create Role
-        </button> : null
+        </button>
         }
       />
 
@@ -292,7 +285,7 @@ export const RolesPermissionsPage: React.FC = () => {
       </div>
 
       <div className="cfg-page__body">
-        <div className="cfg-table-wrap role-table-wrap">
+        <div className="cfg-table-wrap">
           <table className="cfg-table">
             <thead>
               <tr>
@@ -302,7 +295,7 @@ export const RolesPermissionsPage: React.FC = () => {
                 <th>Permissions</th>
                 <th>Users</th>
                 <th>Updated</th>
-                <th>Action</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -325,31 +318,28 @@ export const RolesPermissionsPage: React.FC = () => {
                   <td>{r.userCount}</td>
                   <td>{formatRelativeTime(r.updatedAt)}</td>
                   <td>
-                    <div className="dept-table__actions">
-                      <button type="button" className="dept-table__menu-btn" aria-label={`Actions for ${r.name}`} onClick={() => setOpenActionId(id => id === r.id ? null : r.id)}><MoreHorizontal size={16} /></button>
-                      {openActionId === r.id && <div className="dept-table__menu" role="menu">
-                      {canEdit && r.type === 'custom' && r.active && (
-                        <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openEdit(r.id); }}>
+                    <div className="cfg-row-actions cfg-row-actions--labeled">
+                      {r.type === 'custom' && r.active && (
+                        <button type="button" className="cfg-action-btn" onClick={() => openEdit(r.id)}>
                           <Edit size={13} /> Edit
                         </button>
                       )}
-                      {canCreate && <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openClone(r.id); }}>
-                        <Copy size={13} /> Duplicate
-                      </button>}
-                      {canAssign && r.active && (
-                        <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openAssign(r.id); }}>
+                      <button type="button" className="cfg-action-btn" onClick={() => openClone(r.id)}>
+                        <Copy size={13} /> Clone
+                      </button>
+                      {r.active && (
+                        <button type="button" className="cfg-action-btn" onClick={() => openAssign(r.id)}>
                           <Users size={13} /> Assign
                         </button>
                       )}
-                      <button type="button" role="menuitem" onClick={() => { setOpenActionId(null); openViewUsers(r.id); }}>
-                        <Eye size={13} /> View
+                      <button type="button" className="cfg-action-btn" onClick={() => openViewUsers(r.id)}>
+                        <Eye size={13} /> View Users
                       </button>
-                      {canDelete && r.type === 'custom' && r.active && (
-                        <button type="button" role="menuitem" className="is-danger" onClick={() => { setOpenActionId(null); deactivateRole(r.id); }}>
+                      {r.type === 'custom' && r.active && (
+                        <button type="button" className="cfg-action-btn cfg-action-btn--danger" onClick={() => deactivateRole(r.id)}>
                           <Ban size={13} /> Deactivate
                         </button>
                       )}
-                      </div>}
                     </div>
                   </td>
                 </tr>

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useWork } from '../context/work-context';
 import type { WorkWorkspace } from '../workMockData';
-import { CURRENT_USER_ID } from '../workMockData';
+import { CURRENT_USER_ID, MOCK_EMPLOYEES } from '../workMockData';
 import { ProjectIconPicker } from './project/ProjectIconPicker';
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -36,6 +36,8 @@ interface WorkspaceWizardDraft {
   icon: string;
   visibility: 'private' | 'public_workspace';
   defaultPermission: 'full' | 'edit' | 'comment' | 'view';
+  ownerId: string;
+  logoUrl?: string;
   // Step 2
   type: 'scrum' | 'kanban' | 'project' | 'marketing' | 'hr' | 'custom';
   statuses: WorkspaceStatus[];
@@ -65,6 +67,8 @@ const blankDraft = (): WorkspaceWizardDraft => ({
   icon: '🏢',
   visibility: 'private',
   defaultPermission: 'edit',
+  ownerId: CURRENT_USER_ID,
+  logoUrl: '',
   type: 'project',
   statuses: getDefaultStatuses('project'),
 });
@@ -210,15 +214,19 @@ export const CreateWorkspaceDrawer: React.FC = () => {
     if (!validate(step)) return;
     setCreating(true);
 
+    const ownerObj = MOCK_EMPLOYEES.find(e => e.id === draft.ownerId) || { name: 'You', id: CURRENT_USER_ID };
     const ws: WorkWorkspace = {
       id: `ws-${Date.now()}`,
       name: draft.name.trim(),
       description: draft.description,
-      ownerName: 'You',
-      ownerId: CURRENT_USER_ID,
+      ownerName: ownerObj.name,
+      ownerId: ownerObj.id,
       memberCount: 1,
       linkedProjectCount: 0,
       status: 'active',
+      icon: draft.icon,
+      logoUrl: draft.logoUrl || undefined,
+      type: draft.type,
     };
 
     addWorkspace(ws);
@@ -246,8 +254,26 @@ export const CreateWorkspaceDrawer: React.FC = () => {
           <span style={{ fontSize: '28px' }}>{draft.icon}</span>
         </button>
         <div style={{ flex: 1 }}>
-          <label className="cpw-field-label">Workspace Icon</label>
-          <p className="cpw-hint" style={{ marginTop: 2 }}>Click the box to choose an emoji logo for your workspace.</p>
+          <label className="cpw-field-label">Workspace Icon & Picture</label>
+          <p className="cpw-hint" style={{ marginTop: 2 }}>Click the box to choose an emoji logo, or attach a picture.</p>
+          <button
+            type="button"
+            className="org-btn org-btn--secondary org-btn--sm"
+            style={{ marginTop: '6px', fontSize: '11px', padding: '4px 8px' }}
+            onClick={() => {
+              const file = window.prompt("Upload Workspace Logo (preset name/URL, e.g. engineering_shield.png):");
+              if (file && file.trim()) {
+                setDraft(d => ({ ...d, logoUrl: file.trim(), icon: '🖼️' }));
+              }
+            }}
+          >
+            Upload Logo Picture
+          </button>
+          {draft.logoUrl && (
+            <span style={{ fontSize: '11px', color: '#16a34a', marginLeft: '8px', fontWeight: 600 }}>
+              ✓ Attached: {draft.logoUrl}
+            </span>
+          )}
         </div>
       </div>
 
@@ -319,6 +345,20 @@ export const CreateWorkspaceDrawer: React.FC = () => {
             <option value="view">View Only</option>
           </select>
         </div>
+      </div>
+
+      <div className="cpw-field" style={{ marginTop: '1rem' }}>
+        <label className="cpw-field-label" htmlFor="wsw-owner">Member Owner</label>
+        <select
+          id="wsw-owner"
+          className="cpw-input cpw-select"
+          value={draft.ownerId}
+          onChange={e => setDraft(d => ({ ...d, ownerId: e.target.value }))}
+        >
+          {MOCK_EMPLOYEES.map(emp => (
+            <option key={emp.id} value={emp.id}>{emp.name} ({emp.position})</option>
+          ))}
+        </select>
       </div>
     </div>
   );

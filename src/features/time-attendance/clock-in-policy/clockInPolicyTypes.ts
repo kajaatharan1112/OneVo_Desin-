@@ -135,19 +135,6 @@ export const EMPTY_EXEMPTION_FORM = (): ExemptionFormValues => ({
   status: 'active'
 });
 
-export interface LateAttendancePolicy {
-  id: string;
-  active: boolean;
-  gracePeriod: number;
-  gracePeriodUnit: 'minutes' | 'hours';
-  deductFromLeaveTypeId: string;
-  deductionCalculationMethod: 'actual_minutes' | 'double_minutes' | 'triple_minutes';
-}
-
-export interface LateAttendancePolicyFormState {
-  open: boolean;
-}
-
 export interface ClockInPolicyState {
   defaultRequirement: ClockInRequirement;
   workTypeRules: WorkTypeRule[];
@@ -158,7 +145,5 @@ export interface ClockInPolicyState {
   outageForm: OutageFormState;
   manualCorrection: ManualCorrectionPolicy;
   exemptionForm: ExemptionFormState;
-  lateAttendancePolicy: LateAttendancePolicy;
-  lateAttendanceForm: LateAttendancePolicyFormState;
   toast: string | null;
 }
