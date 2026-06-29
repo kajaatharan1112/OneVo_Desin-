@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type {
   AssignmentFormState,
   Department,
@@ -22,6 +23,8 @@ import {
   isPositionCodeUnique,
   suggestDepartmentCode
 } from '../utils/organizationUtils';
+import { useRoleStore } from './roleStore';
+import { recordHistory } from './historyStore';
 
 const SEED_DEPARTMENTS: Department[] = [
   {
@@ -310,11 +313,15 @@ interface OrganizationState {
     id?: string;
     name: string;
     code: string;
+    description?: string;
     departmentId: string;
     reportsToPositionId: string | null;
     type: Position['type'];
     capacity: number;
     status: Position['status'];
+    coverageType?: 'position' | 'department';
+    primaryCoverageId?: string | null;
+    secondaryCoverageIds?: string[];
   }) => { ok: boolean; error?: string };
 
   reparentPosition: (positionId: string, newReportsToPositionId: string) => boolean;
@@ -352,7 +359,9 @@ interface OrganizationState {
   ) => { ok: boolean; error?: string };
 }
 
-export const useOrganizationStore = create<OrganizationState>((set, get) => ({
+export const useOrganizationStore = create<OrganizationState>()(
+  persist(
+    (set, get) => ({
   departments: SEED_DEPARTMENTS,
   positions: SEED_POSITIONS,
   employees: SEED_EMPLOYEES,
@@ -455,6 +464,7 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     }
 
     get().closeDepartmentForm();
+    recordHistory({ title: data.id ? 'Department updated' : 'Department created', description: `${data.name.trim()} was ${data.id ? 'updated' : 'added to the organization structure'}.`, category: 'Organization', target: data.name.trim() });
     return { ok: true };
   },
 
@@ -555,11 +565,15 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
                 ...p,
                 name: data.name.trim(),
                 code: data.code.trim().toUpperCase(),
+                description: data.description?.trim() ?? p.description,
                 departmentId: data.departmentId,
                 reportsToPositionId: data.reportsToPositionId,
                 type: data.type,
                 capacity,
-                status: data.status
+                status: data.status,
+                coverageType: data.coverageType ?? p.coverageType,
+                primaryCoverageId: data.primaryCoverageId ?? p.primaryCoverageId ?? null,
+                secondaryCoverageIds: data.secondaryCoverageIds ?? p.secondaryCoverageIds ?? []
               }
             : p
         )
@@ -569,16 +583,22 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
         id: createId('pos'),
         name: data.name.trim(),
         code: data.code.trim().toUpperCase(),
+        description: data.description?.trim() ?? '',
         departmentId: data.departmentId,
         reportsToPositionId: data.reportsToPositionId,
         type: data.type,
         capacity,
-        status: data.status
+        status: data.status,
+        coverageType: data.coverageType ?? 'department',
+        primaryCoverageId: data.primaryCoverageId ?? null,
+        secondaryCoverageIds: data.secondaryCoverageIds ?? []
       };
       set({ positions: [...positions, newPos] });
     }
 
     get().closePositionForm();
+    const reportingName = data.reportsToPositionId ? positions.find(position => position.id === data.reportsToPositionId)?.name : null;
+    recordHistory({ title: data.id ? 'Position updated' : 'Position created', description: reportingName ? `${data.name.trim()} was ${data.id ? 'updated' : 'placed'} under ${reportingName}.` : `${data.name.trim()} was ${data.id ? 'updated' : 'created as a root position'}.`, category: 'Organization', target: data.name.trim() });
     return { ok: true };
   },
 
@@ -595,6 +615,9 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       ),
       dragError: null
     });
+    const moved = get().positions.find(position => position.id === positionId);
+    const manager = get().positions.find(position => position.id === newReportsToPositionId);
+    if (moved && manager) recordHistory({ title: 'Reporting line changed', description: `${moved.name} now reports to ${manager.name}.`, category: 'Organization', target: moved.name });
     return true;
   },
 
@@ -804,6 +827,8 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       assignments: [...assignments, newAssignment]
     });
 
+    useRoleStore.getState().setEmployeeRoles(employee.id, values.confirmedRoleIds);
+
     get().showToast('Employee added. Invite sent.');
     return { ok: true, employeeId: employee.id };
   },
@@ -897,7 +922,19 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     get().showToast(existing ? 'Employee updated.' : 'Employee added.');
     return { ok: true };
   }
-}));
+    }),
+    {
+      name: 'onevo-organization-store',
+      version: 1,
+      partialize: state => ({
+        departments: state.departments,
+        positions: state.positions,
+        employees: state.employees,
+        assignments: state.assignments
+      })
+    }
+  )
+);
 
 function wouldCreateCycle(
   positionId: string,

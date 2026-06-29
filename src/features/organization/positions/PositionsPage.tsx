@@ -8,6 +8,7 @@ import { PositionList } from './PositionList';
 import { PositionFormPanel } from './PositionFormPanel';
 import { AssignmentFormPanel } from './AssignmentFormPanel';
 import { OrgToast } from '../components/OrgToast';
+import { useActorAccess } from '../../access/useActorAccess';
 
 const TABS: { id: PositionTab; label: string; icon: React.ReactNode }[] = [
   { id: 'org-chart', label: 'Org Chart', icon: <GitBranch size={15} /> },
@@ -15,6 +16,8 @@ const TABS: { id: PositionTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export const PositionsPage: React.FC = () => {
+  const { hasPermission } = useActorAccess();
+  const canCreatePosition = hasPermission('positions:create');
   const [activeTab, setActiveTab] = useState<PositionTab>('org-chart');
   const {
     positionForm,
@@ -51,7 +54,7 @@ export const PositionsPage: React.FC = () => {
               ))}
             </nav>
 
-            <div className="positions-toolbar__actions">
+            {canCreatePosition && <div className="positions-toolbar__actions">
               {activeTab === 'org-chart' ? (
                 <button
                   type="button"
@@ -71,7 +74,7 @@ export const PositionsPage: React.FC = () => {
                   Add Position
                 </button>
               )}
-            </div>
+            </div>}
           </div>
           <div className="positions-toolbar__divider" aria-hidden="true" />
         </div>
