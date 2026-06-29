@@ -1,4 +1,4 @@
-export type EmployeeId = 'alex' | 'marcus' | 'manager';
+export type EmployeeId = string;
 
 export interface EmployeeProfile {
   id: EmployeeId;

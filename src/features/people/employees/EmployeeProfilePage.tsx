@@ -122,8 +122,6 @@ export const EmployeeProfilePage: React.FC = () => {
                     {employeeStatusLabel(employee.status)}
                   </span>
                   <span>{employment?.positionName}</span>
-                  <span className="emp-record-hero__sep">·</span>
-                  <span>{employment?.departmentName}</span>
                   {employee.workMode && (
                     <>
                       <span className="emp-record-hero__sep">·</span>
@@ -134,17 +132,6 @@ export const EmployeeProfilePage: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
-            <div className="emp-record-hero__actions">
-              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('promotion')}>
-                Promote
-              </button>
-              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('transfer')}>
-                Transfer
-              </button>
-              <button type="button" className="org-btn org-btn--secondary" onClick={() => openModal('offboarding')}>
-                Start Offboarding
-              </button>
             </div>
           </div>
         </div>
@@ -173,10 +160,8 @@ export const EmployeeProfilePage: React.FC = () => {
         )}
         {activeTab === 'employment' && (
           <EmploymentTab
+            key={employee.id}
             employee={employee}
-            onPromote={() => openModal('promotion')}
-            onTransfer={() => openModal('transfer')}
-            onOffboarding={() => openModal('offboarding')}
           />
         )}
         {activeTab === 'overrides' && (
