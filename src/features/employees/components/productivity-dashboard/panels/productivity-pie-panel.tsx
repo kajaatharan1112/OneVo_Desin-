@@ -34,7 +34,7 @@ export const ProductivityPiePanel: React.FC<ProductivityPiePanelProps> = ({ stat
       </div>
 
       <div className="pd-pie-wrap" role="img" aria-label={`Productivity ${stats.productivityPct}% — task hours ${taskHours}h of ${clockInHours}h clock-in`}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
             <Pie
               data={segments}

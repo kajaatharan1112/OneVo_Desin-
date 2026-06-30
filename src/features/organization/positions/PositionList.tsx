@@ -1,33 +1,45 @@
-import React, { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, MoreHorizontal, Pencil, Search, UserPlus, X } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
-import { useRoleStore } from '../../../store/roleStore';
-import { getDepartmentName } from '../../../utils/organizationUtils';
-import type { CoverageTarget } from '../../../types/organization';
+import {
+  formatAssignedEmployeeLabel,
+  getDepartmentName,
+  getPositionAssignBlockReason,
+  getPositionOccupancy,
+  getReportingManagerPreviewForPosition
+} from '../../../utils/organizationUtils';
 
 export const PositionList: React.FC = () => {
-  const { positions, departments, openEditPosition, deactivatePosition } = useOrganizationStore();
-  const roles = useRoleStore(state => state.roles);
+  const {
+    positions,
+    departments,
+    assignments,
+    employees,
+    openEditPosition,
+    openAssignEmployee
+  } = useOrganizationStore();
+
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
   const [viewPositionId, setViewPositionId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return positions.filter(position => {
-      if (deptFilter && position.departmentId !== deptFilter) return false;
+    return positions.filter(p => {
+      if (deptFilter && p.departmentId !== deptFilter) return false;
       if (!q) return true;
       return (
-        position.name.toLowerCase().includes(q) ||
-        position.code.toLowerCase().includes(q) ||
-        getDepartmentName(position.departmentId, departments).toLowerCase().includes(q)
+        p.name.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q) ||
+        getDepartmentName(p.departmentId, departments).toLowerCase().includes(q)
       );
     });
   }, [positions, departments, search, deptFilter]);
 
-  const viewPosition = viewPositionId ? positions.find(position => position.id === viewPositionId) ?? null : null;
-
-  const roleNameFor = (roleId: string) => roles.find(role => role.id === roleId)?.name ?? 'Employee Role';
+  const viewPosition = viewPositionId
+    ? positions.find(p => p.id === viewPositionId) ?? null
+    : null;
 
   return (
     <>
@@ -40,7 +52,7 @@ export const PositionList: React.FC = () => {
                 type="search"
                 placeholder="Search positions..."
                 value={search}
-                onChange={event => setSearch(event.target.value)}
+                onChange={e => setSearch(e.target.value)}
               />
             </div>
           </div>
@@ -49,14 +61,12 @@ export const PositionList: React.FC = () => {
             <select
               className="dept-table__filter"
               value={deptFilter}
-              onChange={event => setDeptFilter(event.target.value)}
+              onChange={e => setDeptFilter(e.target.value)}
               aria-label="Filter by department"
             >
               <option value="">All departments</option>
-              {departments.map(department => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
           </div>
@@ -67,48 +77,39 @@ export const PositionList: React.FC = () => {
             <thead>
               <tr>
                 <th>Position</th>
+                <th>Code</th>
                 <th>Department</th>
-                <th>Reporting Manager</th>
-                <th>Role</th>
-                <th>Primary Coverage Area</th>
+                <th>Reports To</th>
+                <th>Type</th>
+                <th>Capacity</th>
+                <th>Assigned Employee</th>
                 <th>Status</th>
+                <th className="dept-table__th-actions" aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="dept-table__empty">
+                  <td colSpan={9} className="dept-table__empty">
                     No positions match the current filters.
                   </td>
                 </tr>
               ) : (
-                filtered.map(position => {
-                  const reportsTo = position.reportsToPositionId
-                    ? positions.find(item => item.id === position.reportsToPositionId)?.name ?? '—'
-                    : '—';
-                  const primaryCoverage = resolveCoverageLabel(position.primaryCoverage, positions, departments);
-
-                  return (
-                    <tr
-                      key={position.id}
-                      className="position-table__row position-table__row--clickable"
-                      onClick={() => setViewPositionId(position.id)}
-                    >
-                      <td className="dept-table__cell">
-                        <div className="cfg-table__name">{position.name}</div>
-                      </td>
-                      <td className="dept-table__cell">{getDepartmentName(position.departmentId, departments)}</td>
-                      <td className="dept-table__cell">{reportsTo}</td>
-                      <td className="dept-table__cell">{roleNameFor(position.roleId || 'role-employee')}</td>
-                      <td className="dept-table__cell">{primaryCoverage}</td>
-                      <td className="dept-table__cell">
-                        <span className={`dept-table__status dept-table__status--${position.status}`}>
-                          {position.status === 'active' ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
+                filtered.map(position => (
+                  <PositionRow
+                    key={position.id}
+                    position={position}
+                    positions={positions}
+                    departments={departments}
+                    assignments={assignments}
+                    employees={employees}
+                    openMenuId={openMenuId}
+                    onToggleMenu={setOpenMenuId}
+                    onView={() => setViewPositionId(position.id)}
+                    onEdit={() => openEditPosition(position.id)}
+                    onAssign={() => openAssignEmployee(position.id)}
+                  />
+                ))
               )}
             </tbody>
           </table>
@@ -124,21 +125,18 @@ export const PositionList: React.FC = () => {
       {viewPosition && (
         <PositionViewPanel
           position={viewPosition}
-          departments={departments}
           positions={positions}
-          roleName={roleNameFor(viewPosition.roleId || 'role-employee')}
+          departments={departments}
+          assignments={assignments}
+          employees={employees}
           onClose={() => setViewPositionId(null)}
           onEdit={() => {
             setViewPositionId(null);
             openEditPosition(viewPosition.id);
           }}
-          onDeactivate={() => {
-            const result = deactivatePosition(viewPosition.id);
-            if (result.ok) {
-              setViewPositionId(null);
-            } else if (result.error) {
-              window.alert(result.error);
-            }
+          onAssign={() => {
+            setViewPositionId(null);
+            openAssignEmployee(viewPosition.id);
           }}
         />
       )}
@@ -146,30 +144,213 @@ export const PositionList: React.FC = () => {
   );
 };
 
-function PositionViewPanel({
+function PositionRow({
   position,
-  departments,
   positions,
-  roleName,
-  onClose,
+  departments,
+  assignments,
+  employees,
+  openMenuId,
+  onToggleMenu,
+  onView,
   onEdit,
-  onDeactivate,
+  onAssign
 }: {
   position: ReturnType<typeof useOrganizationStore.getState>['positions'][0];
-  departments: ReturnType<typeof useOrganizationStore.getState>['departments'];
   positions: ReturnType<typeof useOrganizationStore.getState>['positions'];
-  roleName: string;
+  departments: ReturnType<typeof useOrganizationStore.getState>['departments'];
+  assignments: ReturnType<typeof useOrganizationStore.getState>['assignments'];
+  employees: ReturnType<typeof useOrganizationStore.getState>['employees'];
+  openMenuId: string | null;
+  onToggleMenu: (id: string | null) => void;
+  onView: () => void;
+  onEdit: () => void;
+  onAssign: () => void;
+}) {
+  const occupancy = getPositionOccupancy(position.id, position, assignments);
+  const assignedLabel = formatAssignedEmployeeLabel(position, assignments, employees);
+  const reportsTo = position.reportsToPositionId
+    ? positions.find(p => p.id === position.reportsToPositionId)
+    : null;
+  const assignBlockReason = getPositionAssignBlockReason(position, assignments);
+  const isVacant = position.type === 'unique' && assignedLabel === 'Vacant';
+  const menuOpen = openMenuId === position.id;
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onToggleMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen, onToggleMenu]);
+
+  const handleAssign = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    onToggleMenu(null);
+    onAssign();
+  };
+
+  return (
+    <tr className={`dept-table__row position-table__row${menuOpen ? ' position-table__row--menu-open' : ''}`}>
+      <td className="dept-table__cell position-table__cell--name">{position.name}</td>
+      <td className="dept-table__cell">
+        <span className="position-table__code-pill">{position.code}</span>
+      </td>
+      <td className="dept-table__cell">{getDepartmentName(position.departmentId, departments)}</td>
+      <td className="dept-table__cell dept-table__cell--person">
+        {reportsTo?.name ?? '—'}
+      </td>
+      <td className="dept-table__cell">
+        <span className={`position-list__type position-list__type--${position.type}`}>
+          {position.type === 'unique' ? 'Unique' : 'Pooled'}
+        </span>
+      </td>
+      <td className="dept-table__cell dept-table__cell--num">
+        {occupancy.count} / {occupancy.capacity}
+      </td>
+      <td
+        className={[
+          'dept-table__cell',
+          'position-table__cell--assigned',
+          isVacant && 'position-table__cell--vacant'
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {assignedLabel}
+      </td>
+      <td className="dept-table__cell">
+        <span className={`dept-table__status dept-table__status--${position.status}`}>
+          {position.status === 'active' ? 'Active' : 'Inactive'}
+        </span>
+      </td>
+      <td className="dept-table__cell dept-table__cell--actions">
+        <div className="position-table__actions">
+          <button
+            type="button"
+            className={`position-table__action-btn${assignBlockReason ? ' position-table__action-btn--blocked' : ''}`}
+            onClick={handleAssign}
+            title={assignBlockReason ?? 'Assign employee'}
+            aria-label="Assign"
+          >
+            <UserPlus size={14} />
+          </button>
+          <button
+            type="button"
+            className="position-table__action-btn"
+            onClick={e => {
+              e.stopPropagation();
+              onView();
+            }}
+            title="View position"
+            aria-label="View"
+          >
+            <Eye size={14} />
+          </button>
+          <button
+            type="button"
+            className="position-table__action-btn"
+            onClick={e => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            title="Edit position"
+            aria-label="Edit"
+          >
+            <Pencil size={14} />
+          </button>
+          <div className="dept-table__menu-wrap position-table__menu-wrap" ref={menuRef}>
+            <button
+              type="button"
+              className="dept-table__menu-trigger"
+              onClick={e => {
+                e.stopPropagation();
+                onToggleMenu(menuOpen ? null : position.id);
+              }}
+              aria-expanded={menuOpen}
+              aria-label="More actions"
+            >
+              <MoreHorizontal size={15} />
+            </button>
+            {menuOpen && (
+              <div className="dept-table__menu" role="menu">
+                <button
+                  type="button"
+                  className="dept-table__menu-item"
+                  role="menuitem"
+                  onClick={handleAssign}
+                  title={assignBlockReason ?? undefined}
+                >
+                  <UserPlus size={14} />
+                  Assign
+                </button>
+                <button
+                  type="button"
+                  className="dept-table__menu-item"
+                  role="menuitem"
+                  onClick={e => {
+                    e.stopPropagation();
+                    onToggleMenu(null);
+                    onView();
+                  }}
+                >
+                  <Eye size={14} />
+                  View
+                </button>
+                <button
+                  type="button"
+                  className="dept-table__menu-item"
+                  role="menuitem"
+                  onClick={e => {
+                    e.stopPropagation();
+                    onToggleMenu(null);
+                    onEdit();
+                  }}
+                >
+                  <Pencil size={14} />
+                  Edit
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function PositionViewPanel({
+  position,
+  positions,
+  departments,
+  assignments,
+  employees,
+  onClose,
+  onEdit,
+  onAssign
+}: {
+  position: ReturnType<typeof useOrganizationStore.getState>['positions'][0];
+  positions: ReturnType<typeof useOrganizationStore.getState>['positions'];
+  departments: ReturnType<typeof useOrganizationStore.getState>['departments'];
+  assignments: ReturnType<typeof useOrganizationStore.getState>['assignments'];
+  employees: ReturnType<typeof useOrganizationStore.getState>['employees'];
   onClose: () => void;
   onEdit: () => void;
-  onDeactivate: () => void;
+  onAssign: () => void;
 }) {
   const reportsTo = position.reportsToPositionId
-    ? positions.find(item => item.id === position.reportsToPositionId)?.name ?? '—'
-    : '—';
-  const primaryCoverage = resolveCoverageLabel(position.primaryCoverage, positions, departments);
-  const backupCoverage = position.secondaryCoverage
-    .map(target => resolveCoverageLabel(target, positions, departments))
-    .filter(value => value !== '—');
+    ? positions.find(p => p.id === position.reportsToPositionId)
+    : null;
+  const occupancy = getPositionOccupancy(position.id, position, assignments);
+  const assignedLabel = formatAssignedEmployeeLabel(position, assignments, employees);
+  const rmPreview = getReportingManagerPreviewForPosition(position, positions, assignments, employees);
+  const assignBlockReason = getPositionAssignBlockReason(position, assignments);
 
   return (
     <>
@@ -183,65 +364,68 @@ function PositionViewPanel({
         </header>
 
         <div className="org-slideover__body">
-          <div className="admin-detail-grid">
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Position</span>
-              <span className="admin-detail-row__value">{position.name}</span>
-            </div>
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Department</span>
-              <span className="admin-detail-row__value">{getDepartmentName(position.departmentId, departments)}</span>
-            </div>
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Reporting Manager</span>
-              <span className="admin-detail-row__value">{reportsTo}</span>
-            </div>
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Role</span>
-              <span className="admin-detail-row__value">{roleName}</span>
-            </div>
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Primary Coverage Area</span>
-              <span className="admin-detail-row__value">{primaryCoverage}</span>
-            </div>
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Backup Coverage Area</span>
-              <span className="admin-detail-row__value">{backupCoverage.length ? backupCoverage.join(', ') : '—'}</span>
-            </div>
-            <div className="admin-detail-row">
-              <span className="admin-detail-row__label">Status</span>
-              <span className="admin-detail-row__value">{position.status === 'active' ? 'Active' : 'Inactive'}</span>
-            </div>
+          <div className="org-form-field">
+            <label>Code</label>
+            <span className="org-form-readonly">{position.code}</span>
           </div>
-        </div>
+          <div className="org-form-field">
+            <label>Department</label>
+            <span className="org-form-readonly">
+              {getDepartmentName(position.departmentId, departments)}
+            </span>
+          </div>
+          <div className="org-form-field">
+            <label>Reports To</label>
+            <span className="org-form-readonly">{reportsTo?.name ?? '—'}</span>
+          </div>
+          <div className="org-form-field">
+            <label>Type</label>
+            <span className="org-form-readonly">
+              {position.type === 'unique' ? 'Unique' : 'Pooled'}
+            </span>
+          </div>
+          <div className="org-form-field">
+            <label>Capacity</label>
+            <span className="org-form-readonly">
+              {occupancy.count} / {occupancy.capacity}
+            </span>
+          </div>
+          <div className="org-form-field">
+            <label>Assigned Employee</label>
+            <span className="org-form-readonly">{assignedLabel}</span>
+          </div>
+          <div className="org-form-field">
+            <label>Reporting Manager</label>
+            <span className="org-form-readonly">{rmPreview.label}</span>
+            {rmPreview.warning && (
+              <p className="org-form-hint org-form-hint--warning">{rmPreview.warning}</p>
+            )}
+          </div>
+          <div className="org-form-field">
+            <label>Status</label>
+            <span className="org-form-readonly">
+              {position.status === 'active' ? 'Active' : 'Inactive'}
+            </span>
+          </div>
 
-        <footer className="org-slideover__footer">
-          <button type="button" className="org-btn org-btn--ghost" onClick={onClose}>
-            Close
-          </button>
-          <button type="button" className="org-btn org-btn--secondary" onClick={onEdit}>
-            Edit
-          </button>
-          <button type="button" className="org-btn org-btn--primary" onClick={onDeactivate}>
-            Deactivate
-          </button>
-        </footer>
+          <footer className="org-slideover__footer">
+            <button type="button" className="org-btn org-btn--ghost" onClick={onClose}>
+              Close
+            </button>
+            <button type="button" className="org-btn org-btn--secondary" onClick={onEdit}>
+              Edit
+            </button>
+            <button
+              type="button"
+              className="org-btn org-btn--primary"
+              onClick={onAssign}
+              title={assignBlockReason ?? undefined}
+            >
+              Assign
+            </button>
+          </footer>
+        </div>
       </aside>
     </>
   );
-}
-
-function resolveCoverageLabel(
-  target: CoverageTarget | null | undefined,
-  positions: ReturnType<typeof useOrganizationStore.getState>['positions'],
-  departments: ReturnType<typeof useOrganizationStore.getState>['departments'],
-): string {
-  if (!target) return '—';
-  if (target.type === 'department') {
-    return departments.find(item => item.id === target.id)?.name ?? '—';
-  }
-  if (target.type === 'position') {
-    return positions.find(item => item.id === target.id)?.name ?? '—';
-  }
-  return '—';
 }

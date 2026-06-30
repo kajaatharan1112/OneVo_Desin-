@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import {
   buildDepartmentTree,
   canSetDepartmentParent,
+  getValidHeadPositions,
   isDepartmentCodeUnique,
   suggestDepartmentCode
 } from '../../../utils/organizationUtils';
@@ -14,29 +15,57 @@ interface DepartmentFormPanelProps {
 }
 
 export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClose }) => {
-  const { departmentForm, departments, saveDepartment } = useOrganizationStore();
+  const { departmentForm, departments, positions, saveDepartment } = useOrganizationStore();
 
   const existing = departmentForm.departmentId
     ? departments.find(d => d.id === departmentForm.departmentId)
     : null;
-  const initialName = existing?.name ?? '';
-  const initialCode = existing?.code ?? '';
-  const initialParentId = existing?.parentDepartmentId ?? departmentForm.parentDepartmentId;
-  const initialDescription = existing?.description ?? '';
-  const initialStatus = existing?.status ?? 'active';
 
-  const [name, setName] = useState(initialName);
-  const [code, setCode] = useState(initialCode);
-  const [codeTouched, setCodeTouched] = useState(Boolean(existing));
-  const [parentId, setParentId] = useState<string | null>(initialParentId);
-  const [description, setDescription] = useState(initialDescription);
-  const [status, setStatus] = useState<EntityStatus>(initialStatus);
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [codeTouched, setCodeTouched] = useState(false);
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [headPositionId, setHeadPositionId] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<EntityStatus>('active');
   const [error, setError] = useState<string | null>(null);
 
   const isEdit = departmentForm.mode === 'edit';
-  const isFirstDepartment = !isEdit && departments.length === 0;
+
+  useEffect(() => {
+    if (isEdit && existing) {
+      setName(existing.name);
+      setCode(existing.code);
+      setCodeTouched(true);
+      setParentId(existing.parentDepartmentId);
+      setHeadPositionId(existing.headPositionId);
+      setDescription(existing.description);
+      setStatus(existing.status);
+    } else {
+      setName('');
+      setCode('');
+      setCodeTouched(false);
+      setParentId(departmentForm.parentDepartmentId);
+      setHeadPositionId(null);
+      setDescription('');
+      setStatus('active');
+    }
+    setError(null);
+  }, [departmentForm, existing, isEdit]);
+
+  useEffect(() => {
+    if (!codeTouched && name) {
+      setCode(suggestDepartmentCode(name));
+    }
+  }, [name, codeTouched]);
 
   const tree = useMemo(() => buildDepartmentTree(departments), [departments]);
+
+  const headPositions = useMemo(() => {
+    if (!isEdit || !departmentForm.departmentId) return [];
+    return getValidHeadPositions(departmentForm.departmentId, positions);
+  }, [isEdit, departmentForm.departmentId, positions]);
+
   const parentOptions = useMemo(() => {
     const excludeId = departmentForm.departmentId;
     const flat: { id: string; name: string; depth: number }[] = [];
@@ -69,10 +98,6 @@ export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClos
       setError('Department code must be unique.');
       return;
     }
-    if (!isFirstDepartment && !isEdit && !parentId) {
-      setError('Head Department is required after the first department.');
-      return;
-    }
 
     const parentCheck = canSetDepartmentParent(
       departmentForm.departmentId,
@@ -89,6 +114,7 @@ export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClos
       name,
       code,
       parentDepartmentId: parentId,
+      headPositionId: isEdit ? headPositionId : undefined,
       description,
       status
     });
@@ -120,13 +146,7 @@ export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClos
               id="dept-name"
               type="text"
               value={name}
-              onChange={e => {
-                const nextName = e.target.value;
-                setName(nextName);
-                if (!codeTouched) {
-                  setCode(suggestDepartmentCode(nextName));
-                }
-              }}
+              onChange={e => setName(e.target.value)}
               placeholder="e.g. Engineering"
               required
             />
@@ -148,23 +168,41 @@ export const DepartmentFormPanel: React.FC<DepartmentFormPanelProps> = ({ onClos
           </div>
 
           <div className="org-form-field">
-            <label htmlFor="dept-parent">Head Department{!isFirstDepartment && !isEdit ? ' *' : ''}</label>
+            <label htmlFor="dept-parent">Parent Department</label>
             <select
               id="dept-parent"
               value={parentId ?? ''}
               onChange={e => setParentId(e.target.value || null)}
-              disabled={isFirstDepartment}
-              required={!isFirstDepartment && !isEdit}
             >
-              <option value="">{isFirstDepartment ? 'First / top-level department' : 'Select head department'}</option>
+              <option value="">None (root department)</option>
               {parentOptions.map(opt => (
                 <option key={opt.id} value={opt.id}>
                   {'—'.repeat(opt.depth)}{opt.depth > 0 ? ' ' : ''}{opt.name}
                 </option>
               ))}
             </select>
-            {isFirstDepartment && <p className="org-form-hint">This is the first department, so it has no head department.</p>}
           </div>
+
+          {isEdit && (
+            <div className="org-form-field">
+              <label htmlFor="dept-head">Head Position</label>
+              <select
+                id="dept-head"
+                value={headPositionId ?? ''}
+                onChange={e => setHeadPositionId(e.target.value || null)}
+              >
+                <option value="">No head position</option>
+                {headPositions.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                ))}
+              </select>
+              {headPositions.length === 0 && (
+                <p className="org-form-hint">
+                  Create a unique position in this department before assigning a department head.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="org-form-field">
             <label htmlFor="dept-desc">Description</label>

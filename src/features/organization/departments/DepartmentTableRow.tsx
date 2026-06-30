@@ -5,10 +5,14 @@ import {
   ChevronDown,
   ChevronRight,
   MoreVertical,
-  Plus,
+  Pencil,
+  Plus
 } from 'lucide-react';
 import type { DepartmentTreeNode } from '../../../types/organization';
-import { getDepartmentHeadEmployee, getDepartmentPositionCount } from '../../../utils/organizationUtils';
+import {
+  getDepartmentHeadEmployee,
+  getDepartmentPositionCount
+} from '../../../utils/organizationUtils';
 import { useOrganizationStore } from '../../../store/organizationStore';
 
 interface DepartmentTableRowProps {
@@ -24,12 +28,10 @@ interface DepartmentTableRowProps {
 
 function getDepartmentIssue(
   headPosition: ReturnType<typeof getDepartmentHeadEmployee>['headPosition'],
-  headEmployee: ReturnType<typeof getDepartmentHeadEmployee>['headEmployee'],
-  positionCount: number,
+  headEmployee: ReturnType<typeof getDepartmentHeadEmployee>['headEmployee']
 ): string | null {
   if (headPosition && !headEmployee) return 'Head vacant';
   if (!headPosition) return 'No head position';
-  if (positionCount === 0) return 'No positions';
   return null;
 }
 
@@ -41,7 +43,7 @@ export const DepartmentTableRow: React.FC<DepartmentTableRowProps> = ({
   isCollapsed,
   isParent,
   openMenuId,
-  onToggleMenu,
+  onToggleMenu
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const {
@@ -51,7 +53,7 @@ export const DepartmentTableRow: React.FC<DepartmentTableRowProps> = ({
     employees,
     toggleDeptCollapse,
     openCreateDepartment,
-    deactivateDepartment,
+    openEditDepartment
   } = useOrganizationStore();
 
   const positionCount = getDepartmentPositionCount(node.id, positions);
@@ -60,16 +62,19 @@ export const DepartmentTableRow: React.FC<DepartmentTableRowProps> = ({
     departments,
     positions,
     assignments,
-    employees,
+    employees
   );
-  const issue = getDepartmentIssue(headPosition, headEmployee, positionCount);
+  const issue = getDepartmentIssue(headPosition, headEmployee);
   const menuOpen = openMenuId === node.id;
-  const parentDepartment = node.parentDepartmentId
-    ? departments.find(department => department.id === node.parentDepartmentId)?.name ?? '—'
+
+  const headRole = headPosition?.name ?? '—';
+  const headPerson = headEmployee
+    ? `${headEmployee.firstName} ${headEmployee.lastName}`
     : '—';
 
   useEffect(() => {
     if (!menuOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         onToggleMenu(null);
@@ -109,18 +114,15 @@ export const DepartmentTableRow: React.FC<DepartmentTableRowProps> = ({
           )}
 
           <Building2 size={14} className="dept-table__building-icon" aria-hidden />
-          <div>
-            <span className="dept-table__name">{node.name}</span>
-            <div className="cfg-table__meta">{node.code}</div>
-          </div>
+          <span className="dept-table__name">{node.name}</span>
         </div>
       </td>
-      <td className="dept-table__cell">{parentDepartment}</td>
       <td className="dept-table__cell">
-        <span className={`dept-table__status dept-table__status--${node.status}`}>
-          {node.status === 'active' ? 'Active' : 'Inactive'}
-        </span>
+        <code className="dept-table__code">{node.code}</code>
       </td>
+      <td className="dept-table__cell dept-table__cell--num">{positionCount}</td>
+      <td className="dept-table__cell">{headRole}</td>
+      <td className="dept-table__cell dept-table__cell--person">{headPerson}</td>
       <td className="dept-table__cell">
         {issue ? (
           <span className="dept-table__issue">
@@ -130,6 +132,11 @@ export const DepartmentTableRow: React.FC<DepartmentTableRowProps> = ({
         ) : (
           <span className="dept-table__issue-empty">—</span>
         )}
+      </td>
+      <td className="dept-table__cell">
+        <span className={`dept-table__status dept-table__status--${node.status}`}>
+          {node.status === 'active' ? 'Active' : 'Inactive'}
+        </span>
       </td>
       <td className="dept-table__cell dept-table__cell--actions">
         <div className="dept-table__menu-wrap" ref={menuRef}>
@@ -150,26 +157,24 @@ export const DepartmentTableRow: React.FC<DepartmentTableRowProps> = ({
                 className="dept-table__menu-item"
                 onClick={() => {
                   onToggleMenu(null);
+                  openEditDepartment(node.id);
+                }}
+              >
+                <Pencil size={14} />
+                Edit department
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="dept-table__menu-item"
+                onClick={() => {
+                  onToggleMenu(null);
                   openCreateDepartment(node.id);
                 }}
               >
                 <Plus size={14} />
                 Add child department
               </button>
-              {node.status === 'active' && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="dept-table__menu-item is-danger"
-                  onClick={() => {
-                    onToggleMenu(null);
-                    deactivateDepartment(node.id);
-                  }}
-                >
-                  <AlertTriangle size={14} />
-                  Deactivate
-                </button>
-              )}
             </div>
           )}
         </div>

@@ -34,7 +34,7 @@ export const WorkDashboardDonut: React.FC<WorkDashboardDonutProps> = ({
   return (
     <div className="wd-donut-wrap" role="img" aria-label={ariaLabel}>
       <div className="wd-donut">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
             <Pie
               data={segments}

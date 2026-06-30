@@ -33,7 +33,7 @@ export const TaskCastCard: React.FC<TaskCastCardProps> = ({ data, className = ''
     >
       <div className="work-task-cast">
         <div className="work-task-cast__chart-wrap">
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <Pie
                 data={segments}
