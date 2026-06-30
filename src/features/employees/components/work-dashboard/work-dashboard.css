@@ -889,8 +889,11 @@
 
 .wd-donut {
   position: relative;
-  width: min(100cqw, 100cqh);
-  height: min(100cqw, 100cqh);
+  width: min(100%, 160px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  min-width: 1px;
+  min-height: 1px;
   max-width: 100%;
   max-height: 100%;
   flex-shrink: 0;

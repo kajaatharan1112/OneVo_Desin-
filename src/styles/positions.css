@@ -326,6 +326,14 @@
   box-shadow: var(--shadow);
 }
 
+.position-table__row--clickable {
+  cursor: pointer;
+}
+
+.position-table__row--clickable:hover {
+  background: var(--surface-muted);
+}
+
 .position-card--pooled {
   border-style: dashed;
 }
@@ -1011,8 +1019,9 @@ body .org-slideover--position-form .position-form-layout {
   grid-template-areas:
     "name description"
     "status description"
-    "role department"
+    "department role"
     "manager manager"
+    "coverage-toggle coverage-toggle"
     "coverage coverage"
     "footer footer";
   gap: 12px 30px;
@@ -1025,8 +1034,17 @@ body .org-slideover--position-form .position-form-layout {
 .position-form-field--role { grid-area: role; }
 .position-form-field--department { grid-area: department; }
 .position-form-field--manager { grid-area: manager; max-width: calc(50% - 15px); }
+.position-coverage-toggle { grid-area: coverage-toggle; }
 .position-coverage-editor { grid-area: coverage; }
 .position-form-layout > .org-slideover__footer { grid-area: footer; }
+
+.position-coverage-toggle > label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-h);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
 
 .position-role-preview {
   margin-top: 9px;
@@ -1081,6 +1099,10 @@ body .org-slideover--position-form .position-form-layout {
 
 .position-form-field--description textarea {
   min-height: 82px;
+}
+
+.position-form-field__counter {
+  text-align: right;
 }
 
 .position-status-options {
@@ -1170,6 +1192,22 @@ body .org-slideover--position-form .position-coverage-editor {
   font-size: 0.62rem;
 }
 
+.position-coverage-row__select {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0;
+  outline: none;
+}
+
+.position-coverage-empty {
+  margin: 0;
+}
+
 .position-coverage-row__badge {
   padding: 3px 8px;
   border-radius: 999px;
@@ -1225,8 +1263,31 @@ body .org-slideover--position-form .org-slideover__footer {
 
   body .org-slideover--position-form .position-form-layout {
     grid-template-columns: 1fr;
-    grid-template-areas: "name" "description" "status" "role" "department" "manager" "coverage" "footer";
+    grid-template-areas: "name" "description" "status" "department" "role" "manager" "coverage-toggle" "coverage" "footer";
   }
 
   .position-form-field--manager { max-width: none; }
 }
+.org-setup-guide {
+  max-width: 860px;
+  margin: 28px auto;
+  padding: 28px;
+  border: 1px solid var(--border-color, #dfe3ea);
+  border-radius: 18px;
+  background: var(--surface-color, #fff);
+}
+
+.org-setup-guide__eyebrow {
+  color: var(--primary-color, #6757d9);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.org-setup-guide h2 { margin: 8px 0; }
+.org-setup-guide p { color: var(--text-secondary, #667085); }
+.org-setup-guide__steps { display: grid; gap: 12px; margin: 24px 0 0; padding: 0; list-style: none; }
+.org-setup-guide__steps li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px; }
+.org-setup-guide__steps div { display: grid; gap: 4px; }
+.org-setup-guide__steps span { color: var(--text-secondary, #667085); font-size: 13px; }

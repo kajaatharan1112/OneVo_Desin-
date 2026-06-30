@@ -56,7 +56,7 @@ export const OrganizationSubNavPanel: React.FC<OrganizationSubNavPanelProps> = (
           aria-current={activeId === 'roles-permissions' ? 'page' : undefined}
         >
           <span className="sub-nav-panel__item-icon"><ShieldCheck size={13} /></span>
-          <span className="sub-nav-panel__item-label">Roles and Permission</span>
+          <span className="sub-nav-panel__item-label">Roles & Permissions</span>
         </button>
       </div>
     </div>

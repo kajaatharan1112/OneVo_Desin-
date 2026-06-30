@@ -4,6 +4,7 @@ import { SettingsPageHeader } from './components/SettingsPageHeader';
 import { MOCK_INVOICES, type Invoice } from './settingsMockData';
 import { recordHistory } from '../../store/historyStore';
 import { PaymentFlow } from './components/PaymentFlow';
+import { createSimplePdf, downloadBlob } from '../../shared/utils/exportUtils';
 
 type Drawer = 'plan' | 'seats' | 'storage' | 'history' | null;
 type PlanId = 'starter' | 'business' | 'scale';
@@ -56,11 +57,12 @@ export const BillingSettingsPage: React.FC = () => {
     const blob = format === 'csv'
       ? new Blob([`Invoice,Date,Amount,Status\n${rows}`], { type: 'text/csv' })
       : createSimplePdf(['ONEVO PAYMENT HISTORY', '', ...MOCK_INVOICES.map(invoice => `${invoice.number}   ${invoice.date}   ${invoice.amount}   ${invoice.status.toUpperCase()}`)]);
-    const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `payment-history.${format}`; anchor.click(); URL.revokeObjectURL(url);
+    downloadBlob(blob, `payment-history.${format}`);
+    recordHistory({ title: 'Payment history exported', description: `Payment history was exported as ${format.toUpperCase()}.`, category: 'Billing' });
   };
   const downloadInvoice = (invoice: Invoice) => {
     const blob = createSimplePdf(['ONEVO INVOICE', invoice.number, '', `Billing period: ${invoice.date}`, 'Description: Business Pro subscription, seats and active add-ons', `Status: ${invoice.status.toUpperCase()}`, `Total: ${invoice.amount}`]);
-    const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${invoice.number}.pdf`; anchor.click(); URL.revokeObjectURL(url); setOpenInvoiceMenu(null);
+    downloadBlob(blob, `${invoice.number}.pdf`); setOpenInvoiceMenu(null);
   };
 
   return <div className="cfg-page billing-page"><SettingsPageHeader title="Billing" description="Manage your plan, usage, contact and payments." icon={<CreditCard size={15} />} />
@@ -113,19 +115,3 @@ const CardManager = ({ onClose }: { onClose: () => void }) => {
   return <div className="billing-inner-modal" onClick={onClose}><div className="billing-inner-modal__card" onClick={event => event.stopPropagation()}><header><div><h3>{adding ? 'Add payment card' : 'Manage payment cards'}</h3><p>{adding ? 'Enter the new card details.' : 'Select, switch or add a card.'}</p></div><button onClick={onClose}><X /></button></header>{adding ? <div className="settings-form-grid"><label className="org-form-field settings-form-grid__full"><span>Card number</span><input placeholder="1234 5678 9012 3456" /></label><label className="org-form-field settings-form-grid__full"><span>Cardholder name</span><input /></label><label className="org-form-field"><span>Expiry</span><input placeholder="MM/YY" /></label><label className="org-form-field"><span>Security code</span><input placeholder="CVV" /></label></div> : <div className="saved-card-list"><button className={selected === '4242' ? 'is-selected' : ''} onClick={() => setSelected('4242')}><span className="saved-card-radio">{selected === '4242' && <Check />}</span><CreditCard /><div><strong>Visa •••• 4242</strong><span>Priya Sharma · Exp 09/28</span></div></button><button className={selected === '5678' ? 'is-selected' : ''} onClick={() => setSelected('5678')}><span className="saved-card-radio">{selected === '5678' && <Check />}</span><CreditCard /><div><strong>Mastercard •••• 5678</strong><span>Priya Sharma · Exp 09/27</span></div></button></div>}<footer><button className="org-btn org-btn--secondary" onClick={() => adding ? setAdding(false) : onClose()}>{adding ? 'Back' : 'Close'}</button><button className="org-btn org-btn--primary" onClick={() => adding ? setAdding(false) : setAdding(true)}>{adding ? 'Save card' : '+ Add new card'}</button></footer></div></div>;
 };
 const InvoicePreview = ({ invoice, onClose, onDownload }: { invoice: Invoice; onClose: () => void; onDownload: () => void }) => <div className="billing-inner-modal" onClick={onClose}><div className="billing-inner-modal__card invoice-preview" onClick={event => event.stopPropagation()}><header><div><h3>Invoice {invoice.number}</h3><p>Monthly subscription invoice details.</p></div><button onClick={onClose}><X /></button></header><dl><div><dt>Billing period</dt><dd>{invoice.date}</dd></div><div><dt>Description</dt><dd>Business Pro subscription, seats and active add-ons</dd></div><div><dt>Payment status</dt><dd>{invoice.status}</dd></div><div><dt>Total paid</dt><dd>{invoice.amount}</dd></div></dl><footer><button className="org-btn org-btn--secondary" onClick={onDownload}><Download /> Download invoice</button><button className="org-btn org-btn--primary" onClick={onClose}>Close</button></footer></div></div>;
-
-function createSimplePdf(lines: string[]): Blob {
-  const escape = (value: string) => value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-  const stream = `BT /F1 12 Tf 50 790 Td 16 TL ${lines.map((line, index) => `${index ? 'T* ' : ''}(${escape(line)}) Tj`).join(' ')} ET`;
-  const objects = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
-    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
-  ];
-  let pdf = '%PDF-1.4\n'; const offsets = [0];
-  objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
-  const xref = pdf.length; pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map(offset => `${String(offset).padStart(10, '0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([pdf], { type: 'application/pdf' });
-}

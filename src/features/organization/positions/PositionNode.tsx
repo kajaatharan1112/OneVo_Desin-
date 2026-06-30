@@ -1,15 +1,15 @@
 import React, { useRef, type CSSProperties } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, UserPlus, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, Users } from 'lucide-react';
 import type { Position } from '../../../types/organization';
 import {
-  getChildren,
   getDepartmentName,
   getPositionOccupancy,
   getPositionOccupants
 } from '../../../utils/organizationUtils';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import { useActorAccess } from '../../access/useActorAccess';
+import { DEFAULT_POSITION_CARD_FIELDS, type PositionCardVisibleFields } from './PositionNode.shared';
 
 interface PositionNodeProps {
   position: Position;
@@ -21,24 +21,6 @@ interface PositionNodeProps {
   onSelect?: () => void;
   visibleFields?: PositionCardVisibleFields;
 }
-
-export interface PositionCardVisibleFields {
-  employeeName: boolean;
-  department: boolean;
-  position: boolean;
-  description: boolean;
-  status: boolean;
-  email: boolean;
-}
-
-export const DEFAULT_POSITION_CARD_FIELDS: PositionCardVisibleFields = {
-  employeeName: true,
-  department: true,
-  position: true,
-  description: false,
-  status: false,
-  email: false
-};
 
 export const PositionNode: React.FC<PositionNodeProps> = ({
   position,
@@ -53,7 +35,6 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
   const { hasPermission } = useActorAccess();
   const canCreate = hasPermission('positions:create');
   const canEdit = hasPermission('positions:edit');
-  const canAssign = hasPermission('employees:position:assign') || hasPermission('positions:edit');
   const didDragRef = useRef(false);
   const {
     departments,
@@ -61,8 +42,7 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
     employees,
     togglePositionCollapse,
     openCreateChildPosition,
-    openEditPosition,
-    openAssignEmployee
+    openEditPosition
   } = useOrganizationStore();
 
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
@@ -215,7 +195,7 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
           <div className="position-card__drop-label">Drop to reparent</div>
         )}
 
-        {(canCreate || canEdit || canAssign) && <div className="position-card__toolbar">
+        {(canCreate || canEdit) && <div className="position-card__toolbar">
           {canCreate && <button
             type="button"
             className="position-card__toolbar-btn"
@@ -242,41 +222,8 @@ export const PositionNode: React.FC<PositionNodeProps> = ({
           >
             <Pencil size={13} />
           </button>}
-          {canAssign && <button
-            type="button"
-            className="position-card__toolbar-btn"
-            onPointerDown={e => e.stopPropagation()}
-            onClick={e => {
-              e.stopPropagation();
-              openAssignEmployee(position.id);
-            }}
-            aria-label={`Assign employee to ${position.name}`}
-            title="Assign employee"
-          >
-            <UserPlus size={13} />
-          </button>}
         </div>}
       </div>
     </div>
   );
 };
-
-export function getVisiblePositionIds(
-  positions: Position[],
-  collapsedIds: Set<string>
-): Set<string> {
-  const hidden = new Set<string>();
-
-  function hideDescendants(parentId: string) {
-    for (const child of getChildren(parentId, positions)) {
-      hidden.add(child.id);
-      hideDescendants(child.id);
-    }
-  }
-
-  for (const id of collapsedIds) {
-    hideDescendants(id);
-  }
-
-  return new Set(positions.filter(p => !hidden.has(p.id)).map(p => p.id));
-}

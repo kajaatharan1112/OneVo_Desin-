@@ -15,11 +15,21 @@ import {
 
 const LOAD_DELAY_MS = 350;
 
+function formatElapsedDisplay(totalSeconds: number): string {
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  if (hrs > 0) return `${hrs}h ${mins}m`;
+  if (mins > 0) return `${mins}m ${secs}s`;
+  return `${secs}s`;
+}
+
 export function useAttendanceTab() {
   const [isLoading, setIsLoading] = useState(true);
   const { selectedEmployee } = useEmployeeContext();
   const [isClockedIn, setIsClockedIn] = useState(false);
-  const [clockInTime, setClockInTime] = useState<number | null>(null);
+  const [, setClockInTime] = useState<number | null>(null);
   const [liveHoursStr, setLiveHoursStr] = useState('0s');
   const [livePercent, setLivePercent] = useState(0);
 
@@ -57,21 +67,8 @@ export function useAttendanceTab() {
         setEffectiveClockInTime(parsedTime);
         const diffMs = Date.now() - parsedTime;
         const elapsedSecs = Math.max(0, Math.floor(diffMs / 1000));
-        
-        let displayStr = '';
-        const hrs = Math.floor(elapsedSecs / 3600);
-        const mins = Math.floor((elapsedSecs % 3600) / 60);
-        const secs = elapsedSecs % 60;
 
-        if (hrs > 0) {
-          displayStr = `${hrs}h ${mins}m`;
-        } else if (mins > 0) {
-          displayStr = `${mins}m ${secs}s`;
-        } else {
-          displayStr = `${secs}s`;
-        }
-
-        setLiveHoursStr(displayStr);
+        setLiveHoursStr(formatElapsedDisplay(elapsedSecs));
         const expectedSeconds = 28800; // 8h
         const percent = Math.min(100, Math.round((elapsedSecs / expectedSeconds) * 100));
         setLivePercent(percent);
@@ -87,20 +84,7 @@ export function useAttendanceTab() {
 
         if (lastElapsedVal) {
           const lastElapsedSecs = parseInt(lastElapsedVal, 10);
-          let displayStr = '';
-          const hrs = Math.floor(lastElapsedSecs / 3600);
-          const mins = Math.floor((lastElapsedSecs % 3600) / 60);
-          const secs = lastElapsedSecs % 60;
-
-          if (hrs > 0) {
-            displayStr = `${hrs}h ${mins}m`;
-          } else if (mins > 0) {
-            displayStr = `${mins}m ${secs}s`;
-          } else {
-            displayStr = `${secs}s`;
-          }
-
-          setLiveHoursStr(displayStr);
+          setLiveHoursStr(formatElapsedDisplay(lastElapsedSecs));
           const expectedSeconds = 28800; // 8h
           const percent = Math.min(100, Math.round((lastElapsedSecs / expectedSeconds) * 100));
           setLivePercent(percent);

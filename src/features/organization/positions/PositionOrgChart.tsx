@@ -24,10 +24,8 @@ import { AlertCircle, SlidersHorizontal, X } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import {
   PositionNode,
-  DEFAULT_POSITION_CARD_FIELDS,
-  getVisiblePositionIds,
-  type PositionCardVisibleFields
 } from './PositionNode';
+import { DEFAULT_POSITION_CARD_FIELDS, getVisiblePositionIds, type PositionCardVisibleFields } from './PositionNode.shared';
 import {
   computeTreeLayout,
   getChildren,
@@ -60,6 +58,9 @@ function PositionFlowNode({
 }
 
 const nodeTypes = { positionNode: PositionFlowNode };
+const flowFitViewOptions = { padding: 0.3 } as const;
+const flowProOptions = { hideAttribution: true } as const;
+const flowPanButtons: number[] = [1, 2];
 
 export const PositionOrgChart: React.FC = () => {
   const {
@@ -228,15 +229,15 @@ export const PositionOrgChart: React.FC = () => {
             edges={flowEdges}
             nodeTypes={nodeTypes}
             fitView
-            fitViewOptions={{ padding: 0.3 }}
+            fitViewOptions={flowFitViewOptions}
             minZoom={0.25}
             maxZoom={1.5}
-            proOptions={{ hideAttribution: true }}
+            proOptions={flowProOptions}
             nodesDraggable={false}
             nodesConnectable={false}
             elementsSelectable={false}
             panOnScroll
-            panOnDrag={isGlobalDragging ? false : [1, 2]}
+            panOnDrag={isGlobalDragging ? false : flowPanButtons}
             className="position-flow"
           >
             <Background gap={20} size={1} className="position-flow-bg" />

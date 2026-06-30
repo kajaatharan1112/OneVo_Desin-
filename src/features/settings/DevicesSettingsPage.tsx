@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Eye, Ban, Activity, X, Monitor } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, Ban, Activity, X, Monitor, MoreHorizontal } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import {
   MOCK_DEVICES,
@@ -7,6 +7,8 @@ import {
   formatRelativeTime,
   type TenantDevice,
 } from './settingsMockData';
+import { BiometricDevicesPage, DevicesWorkspaceTabs } from '../biometric-devices/BiometricDevicesPage';
+import { recordHistory } from '../../store/historyStore';
 
 const STATUS_LABELS: Record<TenantDevice['status'], string> = {
   online: 'Online',
@@ -23,8 +25,10 @@ function statusBadgeClass(status: TenantDevice['status']): string {
 }
 
 export const DevicesSettingsPage: React.FC = () => {
+  const [workspace, setWorkspace] = useState<'biometric' | 'employee'>('biometric');
   const [devices, setDevices] = useState(MOCK_DEVICES);
   const [detail, setDetail] = useState<TenantDevice | null>(null);
+  const [openActionId, setOpenActionId] = useState<string | null>(null);
 
   const summary = useMemo(() => ({
     active: devices.filter(d => d.status === 'online').length,
@@ -34,6 +38,7 @@ export const DevicesSettingsPage: React.FC = () => {
   }), [devices]);
 
   const revokeDevice = (id: string) => {
+    const target = devices.find(device => device.id === id);
     setDevices(prev =>
       prev.map(d =>
         d.id === id
@@ -44,10 +49,23 @@ export const DevicesSettingsPage: React.FC = () => {
     if (detail?.id === id) {
       setDetail(prev => (prev ? { ...prev, status: 'revoked', lastHeartbeat: null } : null));
     }
+    if (target) {
+      recordHistory({ title: 'Employee device revoked', description: `${target.name} was revoked.`, category: 'Settings', target: target.name });
+    }
   };
+
+  if (workspace === 'biometric') {
+    return (
+      <div className="cfg-page">
+        <DevicesWorkspaceTabs active={workspace} onChange={setWorkspace} />
+        <BiometricDevicesPage />
+      </div>
+    );
+  }
 
   return (
     <div className="cfg-page">
+      <DevicesWorkspaceTabs active={workspace} onChange={setWorkspace} />
       <SettingsPageHeader
         title="Devices"
         description="Manage registered employee devices, agent status, and monitoring connectivity."
@@ -106,19 +124,19 @@ export const DevicesSettingsPage: React.FC = () => {
                     </span>
                   </td>
                   <td>
-                    <div className="cfg-row-actions cfg-row-actions--labeled">
-                      <button type="button" className="cfg-action-btn" onClick={() => setDetail(d)}>
-                        <Eye size={13} /> View Device
-                      </button>
-                      {d.status !== 'revoked' && (
-                        <button type="button" className="cfg-action-btn" onClick={() => revokeDevice(d.id)}>
-                          <Ban size={13} /> Revoke Device
-                        </button>
-                      )}
-                      <button type="button" className="cfg-action-btn" onClick={() => setDetail(d)}>
-                        <Activity size={13} /> View Health
-                      </button>
-                    </div>
+                    <EmployeeDeviceActions
+                      device={d}
+                      isOpen={openActionId === d.id}
+                      onToggle={() => setOpenActionId(current => (current === d.id ? null : d.id))}
+                      onClose={() => setOpenActionId(null)}
+                      onView={() => { setOpenActionId(null); setDetail(d); }}
+                      onRevoke={() => { setOpenActionId(null); revokeDevice(d.id); }}
+                      onHealthCheck={() => {
+                        setOpenActionId(null);
+                        setDetail(d);
+                        recordHistory({ title: 'Employee device health checked', description: `Health details were opened for ${d.name}.`, category: 'Settings', target: d.name });
+                      }}
+                    />
                   </td>
                 </tr>
               ))}
@@ -192,6 +210,52 @@ export const DevicesSettingsPage: React.FC = () => {
               </button>
             </footer>
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const EmployeeDeviceActions: React.FC<{
+  device: TenantDevice;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onView: () => void;
+  onRevoke: () => void;
+  onHealthCheck: () => void;
+}> = ({ device, isOpen, onToggle, onClose, onView, onRevoke, onHealthCheck }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, onClose]);
+
+  return (
+    <div className="dept-table__actions" ref={menuRef}>
+      <button type="button" className="dept-table__menu-btn" aria-label={`Actions for ${device.name}`} onClick={onToggle}>
+        <MoreHorizontal size={16} />
+      </button>
+      {isOpen && (
+        <div className="dept-table__menu">
+          <button type="button" onClick={onView}>
+            <Eye size={13} /> View
+          </button>
+          {device.status !== 'revoked' && (
+            <button type="button" className="is-danger" onClick={onRevoke}>
+              <Ban size={13} /> Revoke
+            </button>
+          )}
+          <button type="button" onClick={onHealthCheck}>
+            <Activity size={13} /> Health Check
+          </button>
         </div>
       )}
     </div>
