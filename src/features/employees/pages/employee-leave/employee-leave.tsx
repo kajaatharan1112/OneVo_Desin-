@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { employeeLeaveBalance } from '../../data/employee-requests.data';
 import {
-  leaveRequests as SEED_REQUESTS,
   leaveHistory,
   upcomingLeaves,
   leaveCompanyHolidays,
@@ -13,22 +12,13 @@ import {
   type LeaveRequest,
   type LeaveTypeKey
 } from '../../data/employee-leave.data';
+import { useLeaveRequestStore } from '../../../../store/leaveRequestStore';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import { useInbox, INBOX_CURRENT_USER } from '../../../../core/notifications/inbox-context';
 import { LeavePoliciesPage } from '../../../leave/configuration/LeavePoliciesPage';
 import { LeaveTypesPage } from '../../../leave/configuration/LeaveTypesPage';
 import { LeaveEntitlementsPage } from '../../../leave/configuration/LeaveEntitlementsPage';
-
-/* ─── Team leave mock (manager view) ─── */
-interface TeamLeaveEntry {
-  id: string; name: string; initials: string;
-  leaveType: string; startDate: string; endDate: string;
-  days: number; status: 'pending' | 'approved' | 'rejected';
-}
-const TEAM_LEAVE: TeamLeaveEntry[] = [
-  { id: 'tl-1', name: 'Alexander Pierce', initials: 'AP', leaveType: 'Annual', startDate: 'Jun 20', endDate: 'Jun 23', days: 4, status: 'approved' },
-  { id: 'tl-2', name: 'Jordan Kim',       initials: 'JK', leaveType: 'Sick',   startDate: 'Jun 18', endDate: 'Jun 18', days: 1, status: 'pending'  },
-];
+import { useEmployeeContext } from '../../context/employee-context';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
@@ -63,6 +53,8 @@ const DEFAULT_FORM: LeaveFormState = {
 
 export const EmployeeLeave: React.FC = () => {
   const { addInboxItem } = useInbox();
+  const { selectedEmployee } = useEmployeeContext();
+  const isManager = selectedEmployee.id === 'manager';
   const [activeView, setActiveView] = useState<'self' | 'team'>('self');
   const [configurationView, setConfigurationView] = useState<'menu' | 'types' | 'policies' | 'entitlements' | null>(null);
   const [isConfigDropdownOpen, setIsConfigDropdownOpen] = useState(false);
@@ -98,11 +90,17 @@ export const EmployeeLeave: React.FC = () => {
     };
   }, []);
   const [modalOpen, setModalOpen]     = useState(false);
-  const [requests, setRequests]       = useState<LeaveRequest[]>(SEED_REQUESTS);
+  const allRequests = useLeaveRequestStore(s => s.requests);
+  const addRequest = useLeaveRequestStore(s => s.addRequest);
+  const approveRequest = useLeaveRequestStore(s => s.approveRequest);
+  const rejectRequest = useLeaveRequestStore(s => s.rejectRequest);
   const [form, setForm]               = useState<LeaveFormState>(DEFAULT_FORM);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
 
-  const filtered = requests.filter(r => filter === 'all' || r.status === filter);
+  const myRequests = allRequests.filter(r => r.employeeName === undefined);
+  const teamRequests = allRequests.filter(r => r.employeeName !== undefined);
+
+  const filtered = myRequests.filter(r => filter === 'all' || r.status === filter);
 
   useEffect(() => {
     if (!modalOpen) {
@@ -132,10 +130,10 @@ export const EmployeeLeave: React.FC = () => {
   const hasConflict = conflictingEvents.length > 0;
 
   const counts: Record<StatusFilter, number> = {
-    all:      requests.length,
-    pending:  requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    rejected: requests.filter(r => r.status === 'rejected').length
+    all:      myRequests.length,
+    pending:  myRequests.filter(r => r.status === 'pending').length,
+    approved: myRequests.filter(r => r.status === 'approved').length,
+    rejected: myRequests.filter(r => r.status === 'rejected').length
   };
 
   const patchForm = (patch: Partial<LeaveFormState>) =>
@@ -196,7 +194,7 @@ export const EmployeeLeave: React.FC = () => {
       approver:      'Manager',
       attachmentName: form.attachmentName || undefined
     };
-    setRequests(prev => [newReq, ...prev]);
+    addRequest(newReq);
     addInboxItem({
       id:          `leave-${id}`,
       recipientId: INBOX_CURRENT_USER,
@@ -225,7 +223,9 @@ export const EmployeeLeave: React.FC = () => {
           <div className="elp-header__actions">
             <div className="elp-view-toggle" role="group" aria-label="Time off view">
               <button type="button" className={`elp-view-toggle__button${activeView === 'self' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('self')}>Self</button>
-              <button type="button" className={`elp-view-toggle__button${activeView === 'team' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('team')}>Team</button>
+              {isManager && (
+                <button type="button" className={`elp-view-toggle__button${activeView === 'team' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('team')}>Team</button>
+              )}
             </div>
             <div className="elp-config-dropdown-container" ref={dropdownRef}>
               <button
@@ -484,7 +484,7 @@ export const EmployeeLeave: React.FC = () => {
               <div className="era-panel elp-team-summary__item"><span>Upcoming</span><strong>2</strong></div>
               <div className="era-panel elp-team-summary__item">
                 <span>Pending requests</span>
-                <strong>{TEAM_LEAVE.filter(item => item.status === 'pending').length}</strong>
+                <strong>{teamRequests.filter(r => r.status === 'pending').length}</strong>
               </div>
             </div>
           <div className="elp-history-panel era-panel">
@@ -503,11 +503,12 @@ export const EmployeeLeave: React.FC = () => {
                   <th>Dates</th>
                   <th>Days</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {TEAM_LEAVE.map(entry => (
-                  <tr key={entry.id}>
+                {teamRequests.map(req => (
+                  <tr key={req.id}>
                     <td>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{
@@ -516,17 +517,29 @@ export const EmployeeLeave: React.FC = () => {
                           fontSize: '0.65rem', fontWeight: 600,
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0
-                        }}>{entry.initials}</span>
-                        {entry.name}
+                        }}>{(req.employeeName ?? '??').split(' ').map(p => p[0]).slice(0, 2).join('')}</span>
+                        {req.employeeName}
                       </span>
                     </td>
-                    <td>{entry.leaveType}</td>
-                    <td>{entry.startDate === entry.endDate ? entry.startDate : `${entry.startDate} – ${entry.endDate}`}</td>
-                    <td>{entry.days}d</td>
+                    <td>{req.leaveType}</td>
+                    <td>{req.startDate === req.endDate ? req.startDate : `${req.startDate} – ${req.endDate}`}</td>
+                    <td>{req.days}d</td>
                     <td>
-                      <span className={`era-status-badge era-status-badge--${entry.status}`}>
-                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                      <span className={`era-status-badge era-status-badge--${req.status}`}>
+                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </span>
+                    </td>
+                    <td>
+                      {req.status === 'pending' && (
+                        <span style={{ display: 'inline-flex', gap: '0.375rem' }}>
+                          <button type="button" className="era-btn era-btn--ghost" onClick={() => approveRequest(req.id)}>
+                            Approve
+                          </button>
+                          <button type="button" className="era-btn era-btn--ghost" onClick={() => rejectRequest(req.id)}>
+                            Reject
+                          </button>
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

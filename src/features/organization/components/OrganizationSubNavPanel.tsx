@@ -1,6 +1,5 @@
 import React from 'react';
 import { Briefcase, Building, PanelLeftClose, ShieldCheck } from 'lucide-react';
-import { useActorAccess } from '../../access/useActorAccess';
 
 interface OrganizationSubNavPanelProps {
   activeId: string;
@@ -13,13 +12,11 @@ export const OrganizationSubNavPanel: React.FC<OrganizationSubNavPanelProps> = (
   onSelect,
   onCollapse
 }) => {
-  const { hasPermission } = useActorAccess();
-  const canViewRoles = hasPermission('roles:view');
   return (
     <div className="sub-nav-panel org-sub-nav">
       <div className="sub-nav-panel__toolbar">
         <p className="sub-nav-panel__header">Organization</p>
-        {canViewRoles && <button
+        <button
           type="button"
           className="sub-nav-panel__collapse"
           onClick={onCollapse}
@@ -27,19 +24,10 @@ export const OrganizationSubNavPanel: React.FC<OrganizationSubNavPanelProps> = (
           title="Collapse section menu"
         >
           <PanelLeftClose size={16} strokeWidth={2} aria-hidden />
-        </button>}
+        </button>
       </div>
 
       <div className="sub-nav-section">
-        <button
-          type="button"
-          className={`sub-nav-panel__item${activeId === 'positions' ? ' sub-nav-panel__item--active' : ''}`}
-          onClick={() => onSelect('positions')}
-          aria-current={activeId === 'positions' ? 'page' : undefined}
-        >
-          <span className="sub-nav-panel__item-icon"><Briefcase size={13} /></span>
-          <span className="sub-nav-panel__item-label">Positions</span>
-        </button>
         <button
           type="button"
           className={`sub-nav-panel__item${activeId === 'departments' ? ' sub-nav-panel__item--active' : ''}`}
@@ -48,6 +36,15 @@ export const OrganizationSubNavPanel: React.FC<OrganizationSubNavPanelProps> = (
         >
           <span className="sub-nav-panel__item-icon"><Building size={13} /></span>
           <span className="sub-nav-panel__item-label">Departments</span>
+        </button>
+        <button
+          type="button"
+          className={`sub-nav-panel__item${activeId === 'positions' ? ' sub-nav-panel__item--active' : ''}`}
+          onClick={() => onSelect('positions')}
+          aria-current={activeId === 'positions' ? 'page' : undefined}
+        >
+          <span className="sub-nav-panel__item-icon"><Briefcase size={13} /></span>
+          <span className="sub-nav-panel__item-label">Positions</span>
         </button>
         <button
           type="button"

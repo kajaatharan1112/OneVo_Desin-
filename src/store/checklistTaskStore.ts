@@ -15,12 +15,9 @@ interface ChecklistTaskState {
   generateTasksForEmployee: (
     employeeId: string,
     templateType: 'onboarding' | 'offboarding',
-    baseDateISO: string,
-    templateId?: string,
-    assignment?: { managerId: string; managerName: string; dueDate: string; dueTime: string; employeeName: string; employeeNumber: string }
+    baseDateISO: string
   ) => void;
   toggleTaskStatus: (id: string) => void;
-  setTaskStatus: (id: string, status: ChecklistTaskInstance['status']) => void;
 }
 
 function addOffsetDays(dateISO: string, days: number): string {
@@ -82,7 +79,7 @@ function resolveAssigneeLabel(item: ChecklistTemplateItem, employeeId: string): 
       return emp ? employeeFullName(emp) : 'Specific Employee';
     }
     default:
-      return '--';
+      return '—';
   }
 }
 
@@ -91,11 +88,8 @@ export const useChecklistTaskStore = create<ChecklistTaskState>((set, get) => ({
 
   getTasksForEmployee: employeeId => get().tasks.filter(t => t.employeeId === employeeId),
 
-  generateTasksForEmployee: (employeeId, templateType, baseDateISO, templateId, assignment) => {
-    const requestedTemplate = templateId
-      ? useChecklistTemplateStore.getState().templates.find(t => t.id === templateId && t.type === templateType && t.status === 'active')
-      : undefined;
-    const template = requestedTemplate ?? findMatchingTemplate(employeeId, templateType);
+  generateTasksForEmployee: (employeeId, templateType, baseDateISO) => {
+    const template = findMatchingTemplate(employeeId, templateType);
     if (!template) return;
 
     const sign = templateType === 'offboarding' ? -1 : 1;
@@ -106,29 +100,21 @@ export const useChecklistTaskStore = create<ChecklistTaskState>((set, get) => ({
       templateType,
       title: item.title,
       description: item.description,
-      assigneeLabel: assignment?.managerName || resolveAssigneeLabel(item, employeeId),
-      assigneeEmployeeId: assignment?.managerId,
-      employeeName: assignment?.employeeName,
-      employeeNumber: assignment?.employeeNumber,
-      dueDate: assignment?.dueDate || addOffsetDays(baseDateISO, sign * offsetInDays(item)),
-      dueTime: assignment?.dueTime,
+      assigneeLabel: resolveAssigneeLabel(item, employeeId),
+      dueDate: addOffsetDays(baseDateISO, sign * offsetInDays(item)),
       required: item.required,
       requiredDocument: item.requiredDocument,
-      status: 'todo',
+      status: 'pending',
       createdAt: new Date().toISOString()
     }));
 
     set({ tasks: [...get().tasks, ...newTasks] });
   },
 
-  setTaskStatus: (id, status) => set({
-    tasks: get().tasks.map(task => task.id === id ? { ...task, status } : task)
-  }),
-
   toggleTaskStatus: id => {
     set({
       tasks: get().tasks.map(t =>
-        t.id === id ? { ...t, status: t.status === 'completed' ? 'todo' : 'completed' } : t
+        t.id === id ? { ...t, status: t.status === 'pending' ? 'completed' : 'pending' } : t
       )
     });
   }

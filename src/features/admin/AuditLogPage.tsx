@@ -63,7 +63,7 @@ export const AuditLogPage: React.FC = () => {
         .toLowerCase()
         .includes(query);
     });
-  }, [entries, search, category]);
+  }, [search, dateFrom, dateTo, actorFilter, actionFilter, allEntries]);
 
   const summary = useMemo(
     () => ({
@@ -207,6 +207,78 @@ export const AuditLogPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {detailEntry && (
+        <div className="org-slideover-backdrop" onClick={() => setDetailEntry(null)}>
+          <div
+            className="org-slideover org-slideover--wide"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Audit detail"
+            onClick={ev => ev.stopPropagation()}
+          >
+            <header className="org-slideover__header">
+              <h2>Audit Detail</h2>
+              <button type="button" className="org-slideover__close" onClick={() => setDetailEntry(null)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </header>
+            <div className="org-slideover__body">
+              <div className="admin-detail-grid">
+                <div className="admin-detail-row">
+                  <span className="admin-detail-row__label">Actor</span>
+                  <span className="admin-detail-row__value">{detailEntry.actorName || 'System'}</span>
+                </div>
+                <div className="admin-detail-row">
+                  <span className="admin-detail-row__label">Action</span>
+                  <span className="admin-detail-row__value admin-detail-row__value--mono">{detailEntry.action}</span>
+                </div>
+                <div className="admin-detail-row">
+                  <span className="admin-detail-row__label">Resource</span>
+                  <span className="admin-detail-row__value">
+                    {detailEntry.resourceType}: {detailEntry.resourceName} ({detailEntry.resourceId})
+                  </span>
+                </div>
+                <div className="admin-detail-row">
+                  <span className="admin-detail-row__label">Timestamp</span>
+                  <span className="admin-detail-row__value">{formatDateTime(detailEntry.timestamp)}</span>
+                </div>
+                <div className="admin-detail-row">
+                  <span className="admin-detail-row__label">IP Address</span>
+                  <span className="admin-detail-row__value">{detailEntry.ipAddress}</span>
+                </div>
+                <div className="admin-detail-row">
+                  <span className="admin-detail-row__label">Correlation ID</span>
+                  <span className="admin-detail-row__value admin-detail-row__value--mono">{detailEntry.correlationId}</span>
+                </div>
+              </div>
+
+              <div className="admin-section">
+                <h3>Before Values</h3>
+                {detailEntry.beforeValues ? (
+                  <pre className="admin-json-block">{JSON.stringify(detailEntry.beforeValues, null, 2)}</pre>
+                ) : (
+                  <p className="cfg-table__meta">—</p>
+                )}
+              </div>
+
+              <div className="admin-section">
+                <h3>After Values</h3>
+                {detailEntry.afterValues ? (
+                  <pre className="admin-json-block">{JSON.stringify(detailEntry.afterValues, null, 2)}</pre>
+                ) : (
+                  <p className="cfg-table__meta">—</p>
+                )}
+              </div>
+            </div>
+            <footer className="org-slideover__footer">
+              <button type="button" className="org-btn org-btn--secondary" onClick={() => setDetailEntry(null)}>
+                Close
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

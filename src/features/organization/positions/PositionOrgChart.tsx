@@ -20,7 +20,7 @@ import ReactFlow, {
   Position as FlowHandlePosition
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { AlertCircle, SlidersHorizontal, X } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useOrganizationStore } from '../../../store/organizationStore';
 import {
   PositionNode,
@@ -36,7 +36,7 @@ import type { Position } from '../../../types/organization';
 
 function PositionFlowNode({
   data
-}: NodeProps<{ position: Position; isGlobalDragging: boolean; visibleFields: PositionCardVisibleFields }>) {
+}: NodeProps<{ position: Position; isGlobalDragging: boolean }>) {
   const { collapsedPositionIds } = useOrganizationStore();
   const position = data.position;
   const positions = useOrganizationStore(s => s.positions);
@@ -50,7 +50,6 @@ function PositionFlowNode({
         isCollapsed={collapsedPositionIds.has(position.id)}
         hasChildren={hasChildren}
         isGlobalDragging={data.isGlobalDragging}
-        visibleFields={data.visibleFields}
       />
       <Handle type="source" position={FlowHandlePosition.Bottom} className="position-flow-handle" />
     </div>
@@ -72,21 +71,6 @@ export const PositionOrgChart: React.FC = () => {
   } = useOrganizationStore();
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [visibleFields, setVisibleFields] = useState<PositionCardVisibleFields>(() => {
-    try {
-      const stored = localStorage.getItem('onevo-org-chart-fields');
-      return stored ? { ...DEFAULT_POSITION_CARD_FIELDS, ...JSON.parse(stored) } : DEFAULT_POSITION_CARD_FIELDS;
-    } catch {
-      return DEFAULT_POSITION_CARD_FIELDS;
-    }
-  });
-
-  const setField = (field: keyof PositionCardVisibleFields, checked: boolean) => {
-    const next = { ...visibleFields, [field]: checked };
-    setVisibleFields(next);
-    localStorage.setItem('onevo-org-chart-fields', JSON.stringify(next));
-  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -116,14 +100,14 @@ export const PositionOrgChart: React.FC = () => {
             id: n.id,
             type: 'positionNode',
             position: { x: n.x, y: n.y },
-            data: { position, isGlobalDragging, visibleFields },
+            data: { position, isGlobalDragging },
             draggable: false,
             selectable: false,
             width: NODE_WIDTH,
             height: NODE_HEIGHT
           };
         }),
-    [layoutNodes, visibleIds, positions, isGlobalDragging, visibleFields]
+    [layoutNodes, visibleIds, positions, isGlobalDragging]
   );
 
   const flowEdges: Edge[] = useMemo(
@@ -165,44 +149,6 @@ export const PositionOrgChart: React.FC = () => {
 
   return (
     <div className={`position-org-chart${isGlobalDragging ? ' position-org-chart--dragging' : ''}`}>
-      <div className="position-org-chart__filter-wrap">
-        <button
-          type="button"
-          className="org-btn org-btn--secondary"
-          onClick={() => setFiltersOpen(open => !open)}
-          aria-expanded={filtersOpen}
-        >
-          <SlidersHorizontal size={15} /> Card fields
-        </button>
-        {filtersOpen && (
-          <div className="position-org-chart__filters" role="dialog" aria-label="Organization chart card fields">
-            <div className="position-org-chart__filters-head">
-              <strong>Show on cards</strong>
-              <button type="button" onClick={() => setFiltersOpen(false)} aria-label="Close filters"><X size={15} /></button>
-            </div>
-            {(Object.keys(visibleFields) as (keyof PositionCardVisibleFields)[]).map(field => (
-              <label key={field}>
-                <input
-                  type="checkbox"
-                  checked={visibleFields[field]}
-                  onChange={event => setField(field, event.target.checked)}
-                />
-                {field.replace(/([A-Z])/g, ' $1').replace(/^./, value => value.toUpperCase())}
-              </label>
-            ))}
-            <button
-              type="button"
-              className="position-org-chart__reset"
-              onClick={() => {
-                setVisibleFields(DEFAULT_POSITION_CARD_FIELDS);
-                localStorage.removeItem('onevo-org-chart-fields');
-              }}
-            >
-              Reset fields
-            </button>
-          </div>
-        )}
-      </div>
       {dragError && (
         <div className="position-org-chart__error" role="alert">
           <AlertCircle size={16} />
@@ -251,7 +197,6 @@ export const PositionOrgChart: React.FC = () => {
                 isCollapsed={false}
                 hasChildren={getChildren(draggedPosition.id, positions).length > 0}
                 isDragOverlay
-                visibleFields={visibleFields}
               />
             )}
           </DragOverlay>

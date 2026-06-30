@@ -59,7 +59,7 @@ export const PositionsPage: React.FC = () => {
               ))}
             </nav>
 
-            {canCreatePosition && <div className="positions-toolbar__actions">
+            <div className="positions-toolbar__actions">
               {activeTab === 'org-chart' ? (
                 <button
                   type="button"
@@ -79,7 +79,7 @@ export const PositionsPage: React.FC = () => {
                   Add Position
                 </button>
               )}
-            </div>}
+            </div>
           </div>
           <div className="positions-toolbar__divider" aria-hidden="true" />
         </div>

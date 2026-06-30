@@ -5,14 +5,6 @@ export { formatDateTime, formatRelativeTime };
 export interface GeneralSettings {
   companyName: string;
   displayName: string;
-  legalEntityName: string;
-  registrationNumber: string;
-  companyEmail: string;
-  website: string;
-  registeredAddress: string;
-  country: string;
-  state: string;
-  city: string;
   timezone: string;
   dateFormat: string;
   weekStartDay: string;
@@ -22,14 +14,6 @@ export interface GeneralSettings {
 export const DEFAULT_GENERAL: GeneralSettings = {
   companyName: 'Acme Corporation',
   displayName: 'Acme',
-  legalEntityName: 'Acme Technologies Private Limited',
-  registrationNumber: 'PV-2026-10482',
-  companyEmail: 'hello@acme.com',
-  website: 'https://www.acme.com',
-  registeredAddress: 'No. 123, Main Street',
-  country: 'Sri Lanka',
-  state: 'Western Province',
-  city: 'Colombo',
   timezone: 'Europe/London',
   dateFormat: 'DD/MM/YYYY',
   weekStartDay: 'Mon',

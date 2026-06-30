@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { DEFAULT_EMPLOYEE_ID, employees, getEmployeeById } from '../data/employees.data';
 import type { EmployeeId, EmployeeProfile } from '../types/employee.types';
 
@@ -7,7 +7,6 @@ interface EmployeeContextValue {
   selectedEmployee: EmployeeProfile;
   employees: EmployeeProfile[];
   setSelectedEmployeeId: (id: EmployeeId) => void;
-  updateOnboardingProfile: (id: EmployeeId, profile: EmployeeProfile['onboardingProfile']) => void;
 }
 
 const EmployeeContext = createContext<EmployeeContextValue | null>(null);
@@ -23,21 +22,14 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({
   onSelectEmployee,
   children
 }) => {
-  const [employeeRecords, setEmployeeRecords] = useState(employees);
-  const updateOnboardingProfile = useCallback((id: EmployeeId, profile: EmployeeProfile['onboardingProfile']) => {
-    setEmployeeRecords(current => current.map(employee => employee.id === id
-      ? { ...employee, timezone: profile.timeZone, onboardingProfile: profile }
-      : employee));
-  }, []);
   const value = useMemo(
     () => ({
       selectedEmployeeId,
-      selectedEmployee: employeeRecords.find(employee => employee.id === selectedEmployeeId) ?? getEmployeeById(selectedEmployeeId),
-      employees: employeeRecords,
-      setSelectedEmployeeId: onSelectEmployee,
-      updateOnboardingProfile
+      selectedEmployee: getEmployeeById(selectedEmployeeId),
+      employees,
+      setSelectedEmployeeId: onSelectEmployee
     }),
-    [selectedEmployeeId, onSelectEmployee, employeeRecords, updateOnboardingProfile]
+    [selectedEmployeeId, onSelectEmployee]
   );
 
   return <EmployeeContext.Provider value={value}>{children}</EmployeeContext.Provider>;
@@ -51,8 +43,7 @@ export function useEmployeeContext(): EmployeeContextValue {
       selectedEmployeeId: DEFAULT_EMPLOYEE_ID,
       selectedEmployee: getEmployeeById(DEFAULT_EMPLOYEE_ID),
       employees,
-      setSelectedEmployeeId: () => undefined,
-      updateOnboardingProfile: () => undefined
+      setSelectedEmployeeId: () => undefined
     };
   }
 

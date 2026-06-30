@@ -230,6 +230,9 @@ export const AdminUsersPage: React.FC = () => {
   };
 
   const closeDrawer = () => {
+    if (drawer === 'access' && selectedUser && draftRoleId !== (selectedUser.roleIds[0] ?? '')) {
+      if (!window.confirm('Discard the unsaved role change?')) return;
+    }
     setDrawer(null);
     setSelectedUserId(null);
     setPermissionSearch('');
@@ -517,6 +520,51 @@ export const AdminUsersPage: React.FC = () => {
       </div>
 
       {drawer === 'access' && selectedUser && (
+        <div className="org-slideover-backdrop" onClick={closeDrawer}>
+          <aside className="org-slideover org-slideover--wide admin-access-workspace" role="dialog" aria-modal="true" aria-label="Manage user access" onClick={event => event.stopPropagation()}>
+            <header className="org-slideover__header">
+              <div><span className="admin-access-eyebrow">User access</span><h2>{selectedUser.firstName} {selectedUser.lastName}</h2></div>
+              <button type="button" className="org-slideover__close" onClick={closeDrawer} aria-label="Close"><X size={18} /></button>
+            </header>
+
+            <div className="admin-access-profile">
+              <span className="admin-access-profile__avatar">{initials(selectedUser)}</span>
+              <div className="admin-access-profile__identity"><strong>{selectedUser.employeeName}</strong><span>{selectedUser.position ?? 'No position'} · {selectedUser.department ?? 'No department'}</span><small>{selectedUser.email}</small></div>
+              <div className="admin-access-profile__status"><span className={`cfg-badge cfg-badge--${accountBadgeClass(selectedUser.accountStatus)}`}>{ACCOUNT_STATUS_LABELS[selectedUser.accountStatus]}</span><span className="cfg-badge cfg-badge--inactive">Invite {INVITE_STATUS_LABELS[selectedUser.inviteStatus]}</span></div>
+              <div className="admin-access-profile__actions">
+                {selectedUser.accountStatus === 'active' ? <button type="button" className="org-btn org-btn--secondary" onClick={() => disableLogin(selectedUser.id)}><Ban size={14} /> Disable login</button> : <button type="button" className="org-btn org-btn--secondary" onClick={() => enableLogin(selectedUser.id)}><CheckCircle size={14} /> Enable login</button>}
+                <button type="button" className="org-btn org-btn--danger" onClick={() => openRevoke('all')}><AlertTriangle size={14} /> Revoke access</button>
+              </div>
+            </div>
+
+            <nav className="admin-access-tabs" aria-label="User access sections">
+              {([['overview', KeyRound, 'Overview'], ['permissions', ShieldCheck, 'Role & Permissions'], ['sessions', Monitor, 'Sessions']] as const).map(([id, Icon, label]) => <button key={id} type="button" className={accessTab === id ? 'is-active' : ''} onClick={() => setAccessTab(id)}><Icon size={15} />{label}</button>)}
+            </nav>
+
+            <div className="org-slideover__body admin-access-body">
+              {accessTab === 'overview' && <div className="admin-access-overview-grid">
+                <section className="admin-access-panel"><div className="admin-access-panel__heading"><div><span>Primary role</span><h3>{MOCK_ROLES.find(role => role.id === selectedUser.roleIds[0])?.name ?? 'No role'}</h3></div><ShieldCheck size={20} /></div><p>One role controls the user's standard access.</p><button className="cfg-action-btn" onClick={() => setAccessTab('permissions')}>Manage role</button></section>
+                <section className="admin-access-panel"><div className="admin-access-panel__heading"><div><span>Effective permissions</span><h3>{resolvePermissions(selectedUser).length}</h3></div><KeyRound size={20} /></div><p>Combined role and direct permission access.</p><button className="cfg-action-btn" onClick={() => setAccessTab('permissions')}>Review access</button></section>
+                <section className="admin-access-panel"><div className="admin-access-panel__heading"><div><span>Active sessions</span><h3>{(sessions[selectedUser.id] ?? []).length}</h3></div><Monitor size={20} /></div><p>Browsers and devices currently signed in.</p><button className="cfg-action-btn" onClick={() => setAccessTab('sessions')}>View sessions</button></section>
+                <section className="admin-access-panel admin-access-panel--details"><h3>Account details</h3><dl><div><dt>Login method</dt><dd>{TENANT_LOGIN_METHOD}</dd></div><div><dt>Last active</dt><dd>{formatRelativeTime(selectedUser.lastLogin)}</dd></div><div><dt>MFA</dt><dd>{selectedUser.mfaEnabled ? 'Enabled' : 'Not enabled'}</dd></div><div><dt>Access scope</dt><dd>{selectedUser.accessScope.replaceAll('_', ' ')}</dd></div></dl></section>
+              </div>}
+
+              {accessTab === 'permissions' && <div className="admin-access-stack">
+                <section className="admin-access-panel"><div className="admin-access-section-heading"><div><h3>Primary role</h3><p>Select one role and save the change.</p></div>{draftRoleId !== (selectedUser.roleIds[0] ?? '') && <span className="admin-unsaved-badge">Unsaved</span>}</div><div className="admin-role-editor"><select value={draftRoleId} onChange={event => setDraftRoleId(event.target.value)}><option value="">Select a role</option>{activeRoles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select><button type="button" className="org-btn org-btn--primary" disabled={!draftRoleId || draftRoleId === (selectedUser.roleIds[0] ?? '')} onClick={() => saveRole(selectedUser.id, draftRoleId)}><Save size={14} /> Save role</button></div>{draftRoleId && <p className="admin-role-description">{MOCK_ROLES.find(role => role.id === draftRoleId)?.description}</p>}</section>
+
+                <section className="admin-access-panel"><div className="admin-access-section-heading"><div><h3>Effective permissions</h3><p>{resolvePermissions(selectedUser).length} permissions available.</p></div><button type="button" className="org-btn org-btn--secondary org-btn--danger-text" onClick={() => openRevoke('selected')}>Revoke selected</button></div><div className="admin-permission-search"><Search size={15} /><input value={permissionSearch} onChange={event => setPermissionSearch(event.target.value)} placeholder="Search effective permissions" /></div><div className="admin-effective-permissions">{resolvePermissions(selectedUser).filter(code => { const permission = [...GRANTABLE_PERMISSIONS, ...UNIVERSAL_PERMISSIONS].find(item => item.code === code); return `${code} ${permission?.description ?? ''} ${permission?.module ?? ''}`.toLowerCase().includes(permissionSearch.toLowerCase()); }).map(code => { const permission = [...GRANTABLE_PERMISSIONS, ...UNIVERSAL_PERMISSIONS].find(item => item.code === code); const override = (overrides[selectedUser.id] ?? []).find(item => item.permissionCode === code); return <div key={code} className="admin-effective-permission"><div><strong>{permission?.description ?? code}</strong><span>{code}</span></div><em>{permission?.universal ? 'System' : override?.grantType === 'grant' ? 'Direct' : 'Role'}</em></div>; })}</div></section>
+
+                <section className="admin-access-panel"><div className="admin-access-section-heading"><div><h3>Permission overrides</h3><p>Select several permissions, then apply them together.</p></div><span className="admin-selected-pill">{overrideForm.permissionCodes.length} selected</span></div><div className="admin-permission-search"><Search size={15} /><input value={permissionSearch} onChange={event => setPermissionSearch(event.target.value)} placeholder="Search permissions" /></div><div className="admin-permission-picker">{selectablePermissions.filter(permission => `${permission.code} ${permission.description} ${permission.module}`.toLowerCase().includes(permissionSearch.toLowerCase())).map(permission => <label key={permission.id} className={overrideForm.permissionCodes.includes(permission.code) ? 'is-selected' : ''}><input type="checkbox" checked={overrideForm.permissionCodes.includes(permission.code)} onChange={() => toggleOverridePermission(permission.code)} /><span><strong>{permission.description}</strong><small>{permission.module} · {permission.code}</small></span></label>)}</div><div className="admin-override-form admin-override-form--batch"><label><span>Action</span><select value={overrideForm.grantType} onChange={event => setOverrideForm(form => ({ ...form, grantType: event.target.value as 'grant' | 'revoke' }))}><option value="grant">Grant access</option><option value="revoke">Revoke access</option></select></label><label><span>Expiry (optional)</span><input type="date" value={overrideForm.expiresAt} onChange={event => setOverrideForm(form => ({ ...form, expiresAt: event.target.value }))} /></label><label className="admin-override-reason"><span>Reason</span><input value={overrideForm.reason} onChange={event => setOverrideForm(form => ({ ...form, reason: event.target.value }))} placeholder="Why is this override needed?" /></label><button type="button" className="org-btn org-btn--primary" disabled={overrideForm.permissionCodes.length === 0 || !overrideForm.reason.trim()} onClick={() => addOverride(selectedUser.id)}>Add override ({overrideForm.permissionCodes.length})</button></div>{(overrides[selectedUser.id] ?? []).length > 0 && <div className="admin-current-overrides"><h4>Current overrides</h4>{(overrides[selectedUser.id] ?? []).map(item => <div key={item.permissionCode}><span><strong>{item.permissionCode}</strong><small>{item.reason}</small></span><em className={item.grantType}>{item.grantType}</em><button onClick={() => removeOverride(selectedUser.id, item.permissionCode)}>Remove</button></div>)}</div>}</section>
+              </div>}
+
+              {accessTab === 'sessions' && <section className="admin-access-panel"><div className="admin-access-section-heading"><div><h3>Active sessions</h3><p>Review and revoke signed-in devices.</p></div>{(sessions[selectedUser.id] ?? []).length > 0 && <button className="org-btn org-btn--secondary" onClick={() => revokeSessions(selectedUser.id)}><LogOut size={14} /> Revoke all</button>}</div><div className="admin-session-list">{(sessions[selectedUser.id] ?? []).length === 0 ? <div className="admin-access-empty"><Monitor size={24} /><strong>No active sessions</strong><span>This account is not signed in anywhere.</span></div> : (sessions[selectedUser.id] ?? []).map(session => <div key={session.id}><span className="admin-session-icon"><Monitor size={17} /></span><div><strong>{session.device}</strong><span>{session.ipAddress} · Last active {formatRelativeTime(session.lastActivityAt)}</span><small>Started {formatRelativeTime(session.startedAt)}</small></div><button className="cfg-action-btn cfg-action-btn--danger" onClick={() => revokeSession(selectedUser.id, session.id)}>Revoke</button></div>)}</div></section>}
+
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Legacy access drawer retained temporarily for reference.
         <div className="org-slideover-backdrop" onClick={closeDrawer}>
           <div
             className="org-slideover org-slideover--wide admin-access-drawer"
@@ -833,6 +881,16 @@ export const AdminUsersPage: React.FC = () => {
                 <Send size={14} /> Send Invite
               </button>
             </footer>
+          </div>
+        </div>
+      */}
+      {revokeMode && selectedUser && (
+        <div className="billing-inner-modal billing-inner-modal--top" onClick={() => setRevokeMode(null)}>
+          <div className="billing-inner-modal__card admin-revoke-modal" role="dialog" aria-modal="true" aria-label="Revoke access" onClick={event => event.stopPropagation()}>
+            <header><div><h3>{revokeMode === 'all' ? 'Revoke all access' : 'Revoke selected permissions'}</h3><p>{revokeMode === 'all' ? 'Disable login, end sessions and remove all grantable access.' : 'Choose only the permissions this user should lose.'}</p></div><button onClick={() => setRevokeMode(null)} aria-label="Close"><X /></button></header>
+            {revokeMode === 'all' ? <div className="admin-revoke-warning"><AlertTriangle size={20} /><div><strong>High-impact action</strong><span>System-required personal access remains protected.</span></div></div> : <div className="admin-revoke-picker">{resolvePermissions(selectedUser).filter(code => !UNIVERSAL_PERMISSIONS.some(permission => permission.code === code)).map(code => { const permission = GRANTABLE_PERMISSIONS.find(item => item.code === code); return <label key={code} className={revokePermissionCodes.includes(code) ? 'is-selected' : ''}><input type="checkbox" checked={revokePermissionCodes.includes(code)} onChange={() => setRevokePermissionCodes(codes => codes.includes(code) ? codes.filter(item => item !== code) : [...codes, code])} /><span><strong>{permission?.description ?? code}</strong><small>{code}</small></span></label>; })}</div>}
+            <label className="org-form-field"><span>Reason</span><textarea rows={3} value={revokeReason} onChange={event => setRevokeReason(event.target.value)} placeholder="Explain why access is being revoked" /></label>
+            <footer><button className="org-btn org-btn--secondary" onClick={() => setRevokeMode(null)}>Cancel</button><button className="org-btn org-btn--danger" disabled={!revokeReason.trim() || (revokeMode === 'selected' && revokePermissionCodes.length === 0)} onClick={() => applyRevoke(selectedUser)}>{revokeMode === 'all' ? 'Revoke all access' : `Revoke selected (${revokePermissionCodes.length})`}</button></footer>
           </div>
         </div>
       )}

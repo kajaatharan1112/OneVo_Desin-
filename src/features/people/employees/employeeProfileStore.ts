@@ -84,7 +84,7 @@ interface EmployeeProfileStore {
     values: ScheduleOverrideFormValues
   ) => { ok: boolean; error?: string };
   removeScheduleOverride: (id: string) => void;
-  uploadDocument: (employeeId: string, name: string, type: string, url?: string, mimeType?: string) => void;
+  uploadDocument: (employeeId: string, name: string, type: string) => void;
   recordPositionChangeActivity: (
     employeeId: string,
     actionType: 'promotion' | 'transfer',
@@ -397,7 +397,7 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
     set({ scheduleOverrides: get().scheduleOverrides.filter(o => o.id !== id), toast: 'Schedule override removed.' });
   },
 
-  uploadDocument: (employeeId, name, type, url, mimeType) => {
+  uploadDocument: (employeeId, name, type) => {
     set({
       documents: [
         {
@@ -406,9 +406,7 @@ export const useEmployeeProfileStore = create<EmployeeProfileStore>((set, get) =
           name,
           type,
           status: 'uploaded',
-          date: new Date().toISOString().slice(0, 10),
-          url,
-          mimeType
+          date: new Date().toISOString().slice(0, 10)
         },
         ...get().documents
       ],

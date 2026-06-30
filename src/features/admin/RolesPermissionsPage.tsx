@@ -16,8 +16,6 @@ import {
   permissionsByModule,
   formatRelativeTime,
 } from './adminMockData';
-import { useRoleStore } from '../../store/roleStore';
-import { useActorAccess } from '../access/useActorAccess';
 
 type DrawerMode = 'create' | 'edit' | null;
 
@@ -127,7 +125,8 @@ export const RolesPermissionsPage: React.FC = () => {
         permissionIds: roleForm.permissionIds,
       });
     } else {
-      createRole({
+      const newRole: AdminRole = {
+        id: `role-${Date.now()}`,
         name: roleForm.name.trim(),
         description: roleForm.description,
         permissionIds: roleForm.permissionIds,
@@ -176,18 +175,6 @@ export const RolesPermissionsPage: React.FC = () => {
   );
 
   const canSaveRole = roleForm.name.trim().length > 0 && roleForm.permissionIds.length > 0 && !isProtectedRole;
-
-  if (!canView) {
-    return (
-      <div className="cfg-page">
-        <div className="cfg-empty-state">
-          <Lock size={24} />
-          <h2>Access restricted</h2>
-          <p>You do not have permission to view roles and permissions.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="cfg-page admin-roles-page">
@@ -238,7 +225,7 @@ export const RolesPermissionsPage: React.FC = () => {
                 <th>Type</th>
                 <th>Permissions</th>
                 <th>Updated</th>
-                <th>Action</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>

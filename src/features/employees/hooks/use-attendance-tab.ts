@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useEmployeeContext } from '../context/employee-context';
 import {
   attendanceAlerts,
   attendanceBreakSessions,
@@ -135,8 +134,8 @@ export function useAttendanceTab() {
 
   return {
     isLoading,
-    clockStatus: dynamicClockStatus,
-    workHours: dynamicWorkHours,
+    clockStatus: attendanceClockStatus,
+    workHours: attendanceWorkHours,
     attendanceInsight,
     timeline: attendanceTimeline,
     timelineCount: attendanceTimeline.length,

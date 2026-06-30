@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Eye, Ban, Activity, X, Monitor, MoreHorizontal } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
+import { BiometricDevicesPage } from '../biometric-devices/BiometricDevicesPage';
 import {
   MOCK_DEVICES,
   formatDateTime,

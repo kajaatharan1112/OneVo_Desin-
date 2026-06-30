@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Check, CreditCard, Download, FileText, HardDrive, History, MoreHorizontal, Users, X } from 'lucide-react';
+import React from 'react';
+import { CreditCard, Download, ExternalLink } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
 import { MOCK_INVOICES, type Invoice } from './settingsMockData';
 import { recordHistory } from '../../store/historyStore';
@@ -72,46 +72,128 @@ export const BillingSettingsPage: React.FC = () => {
 
       <section className="settings-card billing-contact-inline"><header><div><h2>Billing contact</h2><p>Invoices, reminders and billing communications are sent here.</p></div>{!editingContact && <button className="org-btn org-btn--secondary" onClick={() => { setDraftContact(contact); setEditingContact(true); }}>Edit</button>}</header><div className="settings-form-grid settings-form-grid--3"><label className="org-form-field"><span>Finance Contact Name</span><input value={draftContact.name} disabled={!editingContact} onChange={event => setDraftContact(value => ({ ...value, name: event.target.value }))} /></label><label className="org-form-field"><span>Finance Email</span><input value={draftContact.email} disabled={!editingContact} onChange={event => setDraftContact(value => ({ ...value, email: event.target.value }))} /></label><label className="org-form-field"><span>Billing Phone</span><input value={draftContact.phone} disabled={!editingContact} onChange={event => setDraftContact(value => ({ ...value, phone: event.target.value }))} /></label></div><button className="billing-contact-card" onClick={() => setCardModal(true)}><CreditCard /><div><span>Payment card</span><strong>Visa •••• 4242</strong><small>Expires 09/28 · Click to manage cards</small></div></button>{editingContact && <footer><button className="org-btn org-btn--secondary" onClick={() => { setDraftContact(contact); setEditingContact(false); }}>Cancel</button><button className="org-btn org-btn--primary" onClick={() => { setContact(draftContact); setEditingContact(false); recordHistory({ title: 'Billing contact updated', description: `Billing contact was updated to ${draftContact.name}.`, category: 'Billing' }); }}>Save</button></footer>}</section>
 
-      <section className="settings-card billing-actions-card"><div><h2>Payment history</h2><p>View invoices, payment details and monthly descriptions.</p></div><button className="org-btn org-btn--secondary" onClick={() => open('history')}><History /> View History</button></section>
+  return (
+    <div className="cfg-page">
+      <SettingsPageHeader
+        title="Billing"
+        description="Review subscription, invoices, usage limits, and billing status."
+        icon={<CreditCard size={15} />}
+        actions={
+          <button type="button" className="org-btn org-btn--secondary" disabled title="Contact your account manager to change plans">
+            <ExternalLink size={14} /> Manage Plan
+          </button>
+        }
+      />
+
+      <div className="settings-body">
+        <section className="settings-card">
+          <header className="settings-card__header">
+            <h2 className="settings-card__title">Current Subscription</h2>
+          </header>
+          <div className="settings-card__body">
+            <div className="settings-subscription">
+              <div className="settings-stat">
+                <div className="settings-stat__label">Plan</div>
+                <div className="settings-stat__value">Business Pro</div>
+              </div>
+              <div className="settings-stat">
+                <div className="settings-stat__label">Billing cycle</div>
+                <div className="settings-stat__value">Monthly</div>
+              </div>
+              <div className="settings-stat">
+                <div className="settings-stat__label">Status</div>
+                <div className="settings-stat__value">
+                  <span className="cfg-badge cfg-badge--active">Active</span>
+                </div>
+              </div>
+              <div className="settings-stat">
+                <div className="settings-stat__label">Renewal date</div>
+                <div className="settings-stat__value">1 Jul 2026</div>
+              </div>
+              <div className="settings-stat">
+                <div className="settings-stat__label">Confirmed employees</div>
+                <div className="settings-stat__value">48 / 60 seats</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="settings-card">
+          <header className="settings-card__header">
+            <h2 className="settings-card__title">Usage</h2>
+          </header>
+          <div className="settings-card__body">
+            <div className="settings-subscription">
+              <div className="settings-stat">
+                <div className="settings-stat__label">Active employees</div>
+                <div className="settings-stat__value">48</div>
+              </div>
+              <div className="settings-stat">
+                <div className="settings-stat__label">Storage</div>
+                <div className="settings-stat__value">12.4 GB / 50 GB</div>
+              </div>
+              <div className="settings-stat">
+                <div className="settings-stat__label">AI allowance</div>
+                <div className="settings-stat__value">18,200 / 50,000 tokens</div>
+              </div>
+            </div>
+            <div className="org-form-field">
+              <label>Add-on modules</label>
+              <div className="admin-review-list">
+                <span className="admin-review-chip">Monitoring</span>
+                <span className="admin-review-chip">Payroll</span>
+                <span className="admin-review-chip">Automations</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="settings-card">
+          <header className="settings-card__header">
+            <h2 className="settings-card__title">Invoices</h2>
+          </header>
+          <div className="settings-card__body">
+            <div className="cfg-table-wrap">
+            <table className="cfg-table">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Payment Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {MOCK_INVOICES.map(inv => (
+                  <tr key={inv.id}>
+                    <td className="cfg-table__name">{inv.number}</td>
+                    <td>{formatDateTime(`${inv.date}T00:00:00Z`).split(',')[0]}</td>
+                    <td>{inv.amount}</td>
+                    <td>
+                      <span className={`cfg-badge cfg-badge--${invoiceStatusClass(inv.status)}`}>
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td>{inv.paymentDate ?? '—'}</td>
+                    <td>
+                      <div className="cfg-row-actions cfg-row-actions--labeled">
+                        <button type="button" className="cfg-action-btn">View</button>
+                        <button type="button" className="cfg-action-btn">
+                          <Download size={13} /> Download
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
-
-    {drawer && <div className="org-slideover-backdrop" onClick={close}><aside className="org-slideover org-slideover--billing" onClick={event => event.stopPropagation()}><header className="org-slideover__header"><div><h2>{drawer === 'plan' ? 'Manage Plan' : drawer === 'seats' ? 'Manage Seats' : drawer === 'storage' ? 'Manage Storage' : 'Payment History'}</h2><p>{drawer === 'history' ? 'Review and export all payments.' : 'Configure, review and confirm your changes.'}</p></div><button className="org-slideover__close" onClick={close}><X /></button></header><div className="org-slideover__body">
-      {(drawer === 'plan' || drawer === 'seats' || drawer === 'storage') && step === 'configure' && <>
-        {drawer === 'seats' && <div className="billing-choice"><button className={seatMode === 'current' ? 'is-selected' : ''} onClick={() => { setSeatMode('current'); setSelectedPlan(currentPlan); }}>Keep current plan<strong>{plans[currentPlan].name}</strong><span>Only add seats</span></button><button className={seatMode === 'upgrade' ? 'is-selected' : ''} onClick={() => setSeatMode('upgrade')}>Upgrade plan<strong>Compare plans</strong><span>Unlock plans and add-ons</span></button></div>}
-        {(drawer === 'plan' || (drawer === 'seats' && seatMode === 'upgrade')) && <div className="billing-plan-grid">{(Object.keys(plans) as PlanId[]).map(id => <button key={id} className={`billing-plan-card${selectedPlan === id ? ' is-selected' : ''}`} onClick={() => setSelectedPlan(id)}><span>{plans[id].name}</span><strong>${plans[id].price}<small>/seat</small></strong><p>{plans[id].description}</p>{id === currentPlan && <em>Current</em>}{selectedPlan === id && <Check />}</button>)}</div>}
-        {(drawer === 'plan' || drawer === 'seats') && <section className="billing-config-section"><h3>Seat count</h3><div className="billing-counter"><button onClick={() => setSelectedSeats(value => Math.max(48, value - 1))}>−</button><strong>{selectedSeats}</strong><button onClick={() => setSelectedSeats(value => value + 1)}>+</button></div><p>48 seats are currently assigned.</p></section>}
-        {drawer === 'storage' && storageMode === 'overview' && <div className="storage-dashboard"><section className="storage-usage-card"><div><span>Current storage</span><strong>38.4 GB <small>/ {plans[currentPlan].storage} GB</small></strong></div><div className="storage-bar"><i style={{ width: '77%' }} /></div><div className="storage-breakdown"><span><b>Reports</b><em>5.4 GB</em></span><span><b>Monitoring</b><em>10.3 GB</em></span><span><b>Employee details</b><em>9.3 GB</em></span><span><b>Work files</b><em>13.4 GB</em></span></div></section><section className="storage-trend"><header><div><h3>Storage growth</h3><p>Storage consumed over time</p></div><select value={storagePeriod} onChange={event => setStoragePeriod(event.target.value as 'week' | 'month' | 'year')}><option value="week">Weekly</option><option value="month">Monthly</option><option value="year">Yearly</option></select></header><StorageLineChart period={storagePeriod} /></section><div className="storage-actions"><button className="org-btn org-btn--secondary" onClick={() => setStorageMode('manage')}>Manage data</button><button className="org-btn org-btn--primary" onClick={() => setStorageMode('upgrade')}>Upgrade storage</button></div></div>}
-        {drawer === 'storage' && storageMode === 'manage' && <section className="storage-manager"><header><div><h3>{storageSubcategory ?? storageCategory ?? 'Manage stored data'}</h3><p>{storageSubcategory ? 'Current-year data is protected. Select older yearly archives to delete.' : storageCategory === 'Reports' ? 'Choose a report category.' : storageCategory ? 'Review stored groups. Current data cannot be deleted.' : 'Open a category to review its stored data.'}</p></div>{(storageSubcategory || (storageCategory && storageCategory !== 'Reports')) && <button className="org-btn org-btn--secondary" disabled={!selectedFiles.length} onClick={() => { setStorageFiles(files => files.filter(file => !selectedFiles.includes(file.id))); setSelectedFiles([]); }}>Delete selected ({selectedFiles.length})</button>}</header>
-          {!storageCategory ? <div className="storage-category-grid">{['Reports','Monitoring','Employee details','Work files'].map(category => { const items = storageFiles.filter(file => file.category === category); const total = items.reduce((sum,item) => sum + item.size,0); return <button key={category} onClick={() => setStorageCategory(category)}><span className="storage-file-thumb"><FileText /></span><div><strong>{category}</strong><small>{items.length} stored groups · {total.toFixed(1)} GB</small></div><b>View data →</b></button>; })}</div>
-          : storageCategory === 'Reports' && !storageSubcategory ? <div className="storage-category-grid">{['Leave','Billing','Attendance'].map(category => { const items = storageFiles.filter(file => file.category === 'Reports' && file.subcategory === category); return <button key={category} onClick={() => setStorageSubcategory(category)}><span className="storage-file-thumb"><FileText /></span><div><strong>{category} reports</strong><small>{items.length} yearly archives · {items.reduce((sum,item) => sum + item.size,0).toFixed(1)} GB</small></div><b>View years →</b></button>; })}</div>
-          : <div className="storage-file-grid">{storageFiles.filter(file => file.category === storageCategory && (!storageSubcategory || file.subcategory === storageSubcategory)).map((file,index) => <label key={file.id} className={`${selectedFiles.includes(file.id) ? 'is-selected ' : ''}${file.current ? 'is-protected' : ''}`}><input type="checkbox" disabled={file.current} checked={selectedFiles.includes(file.id)} onChange={() => setSelectedFiles(files => files.includes(file.id) ? files.filter(value => value !== file.id) : [...files,file.id])} /><span className={`storage-file-thumb storage-file-thumb--${index % 4}`}><FileText /></span><strong>{file.name}</strong><span>{file.detail}</span><small>{file.size.toFixed(1)} GB</small>{file.current && <em>Current data · Protected</em>}</label>)}</div>}
-          <div className="storage-manager__back"><button className="org-btn org-btn--ghost" onClick={() => { if (storageSubcategory) { setStorageSubcategory(null); setSelectedFiles([]); } else if (storageCategory) { setStorageCategory(null); setSelectedFiles([]); } else setStorageMode('overview'); }}>{storageSubcategory ? 'Back to report categories' : storageCategory ? 'Back to storage categories' : 'Back to storage overview'}</button></div></section>}
-        {drawer === 'storage' && storageMode === 'upgrade' && <section className="billing-config-section"><h3>Choose storage</h3><div className="billing-storage-options">{[50,100,200,500].map(value => <button key={value} className={storage === value ? 'is-selected' : ''} onClick={() => setStorage(value)}><HardDrive /><strong>{value} GB</strong><span>${Math.max(0,value-plans[currentPlan].storage)*.35}/month</span></button>)}</div><button className="org-btn org-btn--ghost" onClick={() => setStorageMode('overview')}>Back to storage overview</button></section>}
-        {(drawer === 'plan' || (drawer === 'seats' && seatMode === 'upgrade')) && <section className="billing-config-section"><h3>Add-on modules</h3><div className="billing-addon-grid">{['Monitoring','Advanced Reports','Priority Support'].map(name => <label key={name} className={addOns.includes(name) ? 'is-selected' : ''}><input type="checkbox" checked={addOns.includes(name)} onChange={() => setAddOns(values => values.includes(name) ? values.filter(value => value !== name) : [...values,name])} /><span>{name}</span><strong>+$49/mo</strong></label>)}</div></section>}
-      </>}
-      {(drawer === 'plan' || drawer === 'seats' || drawer === 'storage') && step === 'payment' && <PaymentFlow title={drawer === 'storage' ? 'Storage update' : drawer === 'seats' ? 'Seat update' : 'Plan update'} items={payItems} amount={amount} onBack={() => setStep('configure')} onConfirm={confirm} />}
-      {step === 'success' && <div className="billing-success"><span><Check /></span><h3>Payment complete</h3><p>Your billing changes are now active.</p><button className="org-btn org-btn--primary" onClick={close}>Done</button></div>}
-      {drawer === 'history' && <><div className="invoice-history-toolbar"><div><strong>Invoices</strong><span>{MOCK_INVOICES.length} payments</span></div><div className="invoice-export"><button type="button" className="org-btn org-btn--secondary" onClick={() => setExportMenu(value => !value)}><Download /> Export</button>{exportMenu && <div className="dept-table__menu"><button onClick={() => exportHistory('csv')}>Export CSV</button><button onClick={() => exportHistory('pdf')}>Export PDF</button></div>}</div></div><div className="cfg-table-wrap invoice-table-wrap"><table className="cfg-table"><thead><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>{MOCK_INVOICES.map(invoice => <tr key={invoice.id}><td><strong>{invoice.number}</strong></td><td>{invoice.date}</td><td>{invoice.amount}</td><td><span className="cfg-badge cfg-badge--active">{invoice.status}</span></td><td><div className="dept-table__actions"><button type="button" className="dept-table__menu-btn" aria-label={`Actions for ${invoice.number}`} onClick={event => { event.stopPropagation(); setOpenInvoiceMenu(value => value === invoice.id ? null : invoice.id); }}><MoreHorizontal /></button>{openInvoiceMenu === invoice.id && <div className="dept-table__menu"><button type="button" onClick={() => { setInvoiceView(invoice); setOpenInvoiceMenu(null); }}>View</button><button type="button" onClick={() => downloadInvoice(invoice)}>Download</button></div>}</div></td></tr>)}</tbody></table></div></>}
-      </div>{(drawer === 'plan' || drawer === 'seats' || (drawer === 'storage' && storageMode === 'upgrade')) && step === 'configure' && <footer className="org-slideover__footer"><button className="org-btn org-btn--secondary" onClick={close}>Cancel</button><button className="org-btn org-btn--primary" onClick={() => setStep('payment')}>Continue to payment</button></footer>}</aside></div>}
-
-    {cardModal && <CardManager onClose={() => setCardModal(false)} />}{invoiceView && <InvoicePreview invoice={invoiceView} onDownload={() => downloadInvoice(invoiceView)} onClose={() => setInvoiceView(null)} />}
-  </div>;
-};
-
-const StorageLineChart = ({ period }: { period: 'week' | 'month' | 'year' }) => {
-  const datasets = {
-    week: { values: [1.2, .8, 1.6, 1.1, 2.0, .6, 1.4], labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Today'] },
-    month: { values: [4.2, 5.8, 3.6, 6.1, 4.9], labels: ['Week 1','Week 2','Week 3','Week 4','This week'] },
-    year: { values: [8, 11, 7, 13, 9, 15, 10, 12], labels: ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Now'] }
-  };
-  const data = datasets[period]; const width = 620; const height = 180; const max = period === 'week' ? 2.5 : period === 'month' ? 8 : 16; const left = 48; const bottom = 28;
-  const points = data.values.map((value,index) => `${left + index * ((width - left - 24) / (data.values.length - 1))},${height - bottom - (value / max) * (height - 58)}`).join(' ');
-  const ticks = [0, max / 2, max];
-  return <div className="storage-line-chart"><div className="storage-chart-meaning"><strong>Storage added</strong><span>Exact data added during each period—not total balance.</span></div><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${period} storage added line chart`}><defs><linearGradient id="storageArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity=".28"/><stop offset="1" stopColor="var(--accent)" stopOpacity="0"/></linearGradient></defs>{ticks.map(value => { const y = height-bottom-(value/max)*(height-58); return <g key={value}><line x1={left} x2={width-24} y1={y} y2={y}/><text x="4" y={y+4}>{value.toFixed(value < 3 ? 1 : 0)} GB</text></g>; })}<polygon points={`${left},${height-bottom} ${points} ${width-24},${height-bottom}`} fill="url(#storageArea)"/><polyline points={points}/>{data.values.map((value,index) => { const [x,y] = points.split(' ')[index].split(','); return <g key={index}><circle cx={x} cy={y} r="4"/><text className="storage-point-value" x={x} y={Number(y)-10} textAnchor="middle">{value} GB</text><title>{data.labels[index]}: {value} GB added</title></g>; })}</svg><div className="storage-chart-labels" style={{ gridTemplateColumns: `repeat(${data.labels.length},1fr)`, paddingLeft: `${left}px`, paddingRight: '24px' }}>{data.labels.map((label,index) => <span key={label}><b>{label}</b><em>{data.values[index]} GB</em></span>)}</div></div>;
-};
-
-const CardManager = ({ onClose }: { onClose: () => void }) => {
-  const [selected, setSelected] = useState('4242'); const [adding, setAdding] = useState(false);
-  return <div className="billing-inner-modal" onClick={onClose}><div className="billing-inner-modal__card" onClick={event => event.stopPropagation()}><header><div><h3>{adding ? 'Add payment card' : 'Manage payment cards'}</h3><p>{adding ? 'Enter the new card details.' : 'Select, switch or add a card.'}</p></div><button onClick={onClose}><X /></button></header>{adding ? <div className="settings-form-grid"><label className="org-form-field settings-form-grid__full"><span>Card number</span><input placeholder="1234 5678 9012 3456" /></label><label className="org-form-field settings-form-grid__full"><span>Cardholder name</span><input /></label><label className="org-form-field"><span>Expiry</span><input placeholder="MM/YY" /></label><label className="org-form-field"><span>Security code</span><input placeholder="CVV" /></label></div> : <div className="saved-card-list"><button className={selected === '4242' ? 'is-selected' : ''} onClick={() => setSelected('4242')}><span className="saved-card-radio">{selected === '4242' && <Check />}</span><CreditCard /><div><strong>Visa •••• 4242</strong><span>Priya Sharma · Exp 09/28</span></div></button><button className={selected === '5678' ? 'is-selected' : ''} onClick={() => setSelected('5678')}><span className="saved-card-radio">{selected === '5678' && <Check />}</span><CreditCard /><div><strong>Mastercard •••• 5678</strong><span>Priya Sharma · Exp 09/27</span></div></button></div>}<footer><button className="org-btn org-btn--secondary" onClick={() => adding ? setAdding(false) : onClose()}>{adding ? 'Back' : 'Close'}</button><button className="org-btn org-btn--primary" onClick={() => adding ? setAdding(false) : setAdding(true)}>{adding ? 'Save card' : '+ Add new card'}</button></footer></div></div>;
+  );
 };
 const InvoicePreview = ({ invoice, onClose, onDownload }: { invoice: Invoice; onClose: () => void; onDownload: () => void }) => <div className="billing-inner-modal" onClick={onClose}><div className="billing-inner-modal__card invoice-preview" onClick={event => event.stopPropagation()}><header><div><h3>Invoice {invoice.number}</h3><p>Monthly subscription invoice details.</p></div><button onClick={onClose}><X /></button></header><dl><div><dt>Billing period</dt><dd>{invoice.date}</dd></div><div><dt>Description</dt><dd>Business Pro subscription, seats and active add-ons</dd></div><div><dt>Payment status</dt><dd>{invoice.status}</dd></div><div><dt>Total paid</dt><dd>{invoice.amount}</dd></div></dl><footer><button className="org-btn org-btn--secondary" onClick={onDownload}><Download /> Download invoice</button><button className="org-btn org-btn--primary" onClick={onClose}>Close</button></footer></div></div>;

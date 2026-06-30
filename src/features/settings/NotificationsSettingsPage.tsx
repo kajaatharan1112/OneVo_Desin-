@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Eye } from 'lucide-react';
 import { SettingsPageHeader } from './components/SettingsPageHeader';
+import { NotificationPreviewDrawer } from './components/NotificationPreviewDrawer';
 import {
   buildInitialDeliveries,
   NOTIFICATION_CATALOG,
@@ -20,6 +21,7 @@ export const NotificationsSettingsPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const dirty = serializeDeliveries(NOTIFICATION_CATALOG, deliveries) !== savedSnapshot;
 
@@ -32,6 +34,7 @@ export const NotificationsSettingsPage: React.FC = () => {
     });
   }, [search, categoryFilter]);
 
+  const previewNotification = previewId ? NOTIFICATION_CATALOG.find(n => n.id === previewId) : null;
 
   const patchDelivery = (id: string, channel: DeliveryChannel, value: boolean) => {
     setDeliveries(prev => {
@@ -96,6 +99,7 @@ export const NotificationsSettingsPage: React.FC = () => {
                   <th>Category</th>
                   <th className="notif-matrix__channel">In-app</th>
                   <th className="notif-matrix__channel">Email</th>
+                  <th className="cfg-row-actions__header">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,6 +128,11 @@ export const NotificationsSettingsPage: React.FC = () => {
                           onChange={e => patchDelivery(n.id, 'email', e.target.checked)}
                         />
                       </td>
+                      <td>
+                        <button type="button" className="cfg-action-btn" onClick={() => setPreviewId(n.id)}>
+                          <Eye size={13} /> Preview
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -138,6 +147,14 @@ export const NotificationsSettingsPage: React.FC = () => {
         </section>
       </div>
 
+      {previewNotification && (
+        <NotificationPreviewDrawer
+          notification={previewNotification}
+          delivery={deliveries[previewNotification.id] ?? previewNotification.defaults}
+          emailAvailable
+          onClose={() => setPreviewId(null)}
+        />
+      )}
     </div>
   );
 };
