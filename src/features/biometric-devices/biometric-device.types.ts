@@ -1,34 +1,11 @@
-export type BiometricBrand = 'zkteco' | 'hikvision' | 'essl' | 'suprema' | 'anviz' | 'other';
+export type BiometricBrand = 'ZKTeco' | 'Hikvision' | 'eSSL' | 'Suprema' | 'Anviz' | 'Others';
 export type DeviceStatus = 'online' | 'offline' | 'attention' | 'disabled' | 'archived';
-export type SyncStatus = 'success' | 'syncing' | 'failed' | 'idle';
-export type SyncFrequency = 'realtime' | '5-minutes' | '15-minutes' | 'hourly' | 'manual';
-export type SyncDirection = 'hrms-to-device' | 'device-to-hrms' | 'two-way';
+export type SyncFrequency = 'Realtime' | 'Every 5 Minutes' | 'Every 15 Minutes' | 'Hourly' | 'Manual';
+export type SyncDirection = 'HRMS → Device' | 'Device → HRMS' | 'Two-Way Synchronization';
 
-export interface DeviceConnection {
-  ipAddress: string;
-  port: number;
-  communicationKey: string;
-  username: string;
-  password: string;
-}
-
-export interface DeviceAssignment {
-  company: string;
-  branch: string;
-  location: string;
-  timezone: string;
-}
-
-export interface DeviceSyncConfig {
-  frequency: SyncFrequency;
-  direction: SyncDirection;
-  autoRetry: boolean;
-  retryAttempts: number;
-}
-
-export interface DeviceActivity {
+export interface DeviceLog {
   id: string;
-  timestamp: string;
+  at: string;
   event: string;
   description: string;
   status: 'success' | 'info' | 'failed';
@@ -41,32 +18,46 @@ export interface BiometricDevice {
   model: string;
   serialNumber: string;
   firmware: string;
-  description: string;
-  connection: Omit<DeviceConnection, 'communicationKey' | 'password'> & { credentialConfigured: boolean };
-  assignment: DeviceAssignment;
-  syncConfig: DeviceSyncConfig;
+  ipAddress: string;
+  port: number;
+  branch: string;
+  location: string;
+  timezone: string;
   status: DeviceStatus;
-  syncStatus: SyncStatus;
   healthScore: number;
-  lastHeartbeat: string | null;
-  lastSync: string | null;
-  nextSync: string | null;
+  lastHeartbeat: string;
+  lastSync: string;
+  nextSync: string;
   connectedSince: string;
-  networkLatencyMs: number | null;
-  activities: DeviceActivity[];
+  syncFrequency: SyncFrequency;
+  syncDirection: SyncDirection;
+  autoRetry: boolean;
+  retryAttempts: number;
+  latency: number;
+  logs: DeviceLog[];
 }
 
-export interface DeviceDraft {
+export interface ConnectDeviceForm {
+  brand: BiometricBrand | '';
   name: string;
-  brand: BiometricBrand | null;
+  ipAddress: string;
+  port: string;
+  communicationKey: string;
+  username: string;
+  password: string;
   description: string;
-  connection: DeviceConnection;
-  assignment: DeviceAssignment;
-  syncConfig: DeviceSyncConfig;
+  company: string;
+  branch: string;
+  location: string;
+  timezone: string;
+  syncFrequency: SyncFrequency;
+  syncDirection: SyncDirection;
+  autoRetry: boolean;
+  retryAttempts: number;
 }
 
-export interface ConnectionTestResult {
-  success: boolean;
-  checks: Array<{ label: string; passed: boolean; message?: string }>;
-  detected?: Pick<BiometricDevice, 'model' | 'serialNumber' | 'firmware'>;
-}
+export const EMPTY_CONNECT_DEVICE_FORM: ConnectDeviceForm = {
+  brand: '', name: '', ipAddress: '', port: '4370', communicationKey: '', username: '', password: '',
+  description: '', company: 'OneVo Holdings', branch: '', location: '', timezone: 'Asia/Colombo',
+  syncFrequency: 'Every 5 Minutes', syncDirection: 'Device → HRMS', autoRetry: true, retryAttempts: 3,
+};

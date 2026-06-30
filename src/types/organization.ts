@@ -1,16 +1,9 @@
 export type EntityStatus = 'active' | 'inactive';
 export type PositionType = 'unique' | 'pooled';
-export type EmployeeStatus = 'active' | 'onboarding' | 'offboarding' | 'inactive';
+export type EmployeeStatus = 'active' | 'onboarding' | 'inactive';
 export type EmploymentType = 'full-time' | 'part-time' | 'contract';
 export type WorkMode = 'onsite' | 'remote' | 'hybrid' | 'field';
 export type AssignmentStatus = 'active' | 'ended';
-export type CoverageTargetType = 'position' | 'department' | 'user';
-export type CoverageMode = CoverageTargetType;
-
-export interface CoverageTarget {
-  type: CoverageTargetType;
-  id: string;
-}
 
 export interface Department {
   id: string;
@@ -31,11 +24,6 @@ export interface Position {
   type: PositionType;
   capacity: number;
   status: EntityStatus;
-  roleId: string;
-  coverageEnabled: boolean;
-  coverageMode?: CoverageMode;
-  primaryCoverage?: CoverageTarget | null;
-  secondaryCoverage: CoverageTarget[];
 }
 
 export interface Employee {

@@ -5,7 +5,8 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
-  Search,
+  ListFilter,
+  Search
 } from 'lucide-react';
 import { buildDepartmentTree, getDepartmentHeadEmployee } from '../../../utils/organizationUtils';
 import { useOrganizationStore } from '../../../store/organizationStore';
@@ -22,7 +23,7 @@ interface FlatRow {
 function flattenVisibleTree(
   nodes: DepartmentTreeNode[],
   collapsedIds: Set<string>,
-  depth = 0,
+  depth = 0
 ): FlatRow[] {
   const rows: FlatRow[] = [];
 
@@ -76,7 +77,14 @@ function nodeMatchesSearch(node: DepartmentTreeNode, query: string): boolean {
 }
 
 export const DepartmentTree: React.FC = () => {
-  const { departments, collapsedDeptIds } = useOrganizationStore();
+  const {
+    departments,
+    positions,
+    assignments,
+    employees,
+    collapsedDeptIds
+  } = useOrganizationStore();
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [issuesOnly, setIssuesOnly] = useState(false);
@@ -97,9 +105,20 @@ export const DepartmentTree: React.FC = () => {
       if (q && !nodeMatchesSearch(node, q)) return false;
       return true;
     });
-  }, [tree, collapsedDeptIds, search, statusFilter]);
+  }, [
+    tree,
+    collapsedDeptIds,
+    search,
+    statusFilter,
+    issuesOnly,
+    departments,
+    positions,
+    assignments,
+    employees
+  ]);
 
   const totalDepartments = departments.length;
+  const totalPositions = positions.length;
   const pageSize = 20;
   const totalPages = Math.max(1, Math.ceil(visibleRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -111,7 +130,7 @@ export const DepartmentTree: React.FC = () => {
 
   const collapseAll = () => {
     useOrganizationStore.setState({
-      collapsedDeptIds: new Set(collectExpandableIds(tree)),
+      collapsedDeptIds: new Set(collectExpandableIds(tree))
     });
   };
 
@@ -133,8 +152,8 @@ export const DepartmentTree: React.FC = () => {
               type="search"
               placeholder="Search departments..."
               value={search}
-              onChange={event => {
-                setSearch(event.target.value);
+              onChange={e => {
+                setSearch(e.target.value);
                 setPage(1);
               }}
             />
@@ -143,8 +162,8 @@ export const DepartmentTree: React.FC = () => {
           <select
             className="dept-table__filter"
             value={statusFilter}
-            onChange={event => {
-              setStatusFilter(event.target.value);
+            onChange={e => {
+              setStatusFilter(e.target.value);
               setPage(1);
             }}
             aria-label="Filter by status"
@@ -153,6 +172,18 @@ export const DepartmentTree: React.FC = () => {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+
+          <label className="dept-table__checkbox">
+            <input
+              type="checkbox"
+              checked={issuesOnly}
+              onChange={e => {
+                setIssuesOnly(e.target.checked);
+                setPage(1);
+              }}
+            />
+            Show issues only
+          </label>
         </div>
 
         <div className="dept-table__toolbar-right">
@@ -183,18 +214,33 @@ export const DepartmentTree: React.FC = () => {
                 <ArrowUpDown size={12} className="dept-table__sort-icon" aria-hidden />
               </th>
               <th>
-                Head Department
+                Code
                 <ArrowUpDown size={12} className="dept-table__sort-icon" aria-hidden />
               </th>
-              <th>Status</th>
+              <th>
+                Positions
+                <ArrowUpDown size={12} className="dept-table__sort-icon" aria-hidden />
+              </th>
+              <th>
+                Head Role
+                <ArrowUpDown size={12} className="dept-table__sort-icon" aria-hidden />
+              </th>
+              <th>
+                Head Person
+                <ArrowUpDown size={12} className="dept-table__sort-icon" aria-hidden />
+              </th>
               <th>Issues</th>
+              <th>
+                Status
+                <ArrowUpDown size={12} className="dept-table__sort-icon" aria-hidden />
+              </th>
               <th className="dept-table__th-actions" aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
             {pagedRows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="dept-table__empty">
+                <td colSpan={8} className="dept-table__empty">
                   No departments match the current filters.
                 </td>
               </tr>
@@ -220,6 +266,8 @@ export const DepartmentTree: React.FC = () => {
       <footer className="dept-table__footer">
         <div className="dept-table__stats">
           <span>Total Departments: {totalDepartments}</span>
+          <span className="dept-table__stats-sep">·</span>
+          <span>Total Positions: {totalPositions}</span>
         </div>
 
         <div className="dept-table__pagination">
@@ -227,7 +275,7 @@ export const DepartmentTree: React.FC = () => {
             type="button"
             className="dept-table__page-btn"
             disabled={currentPage <= 1}
-            onClick={() => setPage(value => Math.max(1, value - 1))}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
             aria-label="Previous page"
           >
             <ChevronLeft size={16} />
@@ -237,7 +285,7 @@ export const DepartmentTree: React.FC = () => {
             type="button"
             className="dept-table__page-btn"
             disabled={currentPage >= totalPages}
-            onClick={() => setPage(value => Math.min(totalPages, value + 1))}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             aria-label="Next page"
           >
             <ChevronRight size={16} />

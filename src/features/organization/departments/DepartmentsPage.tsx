@@ -33,10 +33,7 @@ export const DepartmentsPage: React.FC = () => {
       </div>
 
       {departmentForm.open && (
-        <DepartmentFormPanel
-          key={`${departmentForm.mode}-${departmentForm.departmentId ?? 'new'}-${departmentForm.parentDepartmentId ?? 'root'}`}
-          onClose={closeDepartmentForm}
-        />
+        <DepartmentFormPanel onClose={closeDepartmentForm} />
       )}
       <OrgToast />
     </div>

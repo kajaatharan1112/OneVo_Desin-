@@ -56,7 +56,7 @@ export const useRoleStore = create<RoleStore>()(
       updateRole: (id, input) => {
         set(state => ({
           roles: state.roles.map(role =>
-            role.id === id && role.id !== 'role-owner'
+            role.id === id && role.type !== 'system'
               ? {
                   ...role,
                   name: input.name.trim(),

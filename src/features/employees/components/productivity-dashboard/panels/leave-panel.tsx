@@ -70,7 +70,7 @@ export const LeavePanel: React.FC<LeavePanelProps> = ({ summary, records }) => {
           role="img"
           aria-label={`${summary.used} of ${summary.totalEntitlement} leave days used`}
         >
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <Pie
                 data={pieData}

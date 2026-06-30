@@ -89,7 +89,7 @@ export const ApprovalPiePanel: React.FC<ApprovalPiePanelProps> = ({ stats }) => 
 
       {/* ── Right: Pie chart (80%) ── */}
       <div className="apr-chart-wrap">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: -10, right: -10, bottom: -10, left: -10 }}>
             <Pie
               data={data}
