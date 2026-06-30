@@ -225,7 +225,7 @@ export const AvailabilityPanel: React.FC<AvailabilityPanelProps> = ({ monthData,
         </div>
       ) : (
         <div className="perf-avail-chart-wrap" aria-hidden="true">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={yearData} margin={{ top: 4, right: 6, bottom: 0, left: -18 }} barCategoryGap="28%">
               <CartesianGrid vertical={false} stroke="#eaecf0" strokeDasharray="3 3" />
               <XAxis
