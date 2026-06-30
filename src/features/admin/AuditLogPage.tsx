@@ -1,170 +1,208 @@
-import React, { useMemo, useState } from 'react';
-import { Search, Download, Eye, X } from 'lucide-react';
-import {
-  MOCK_AUDIT_LOG,
-  formatDateTime,
-  type AuditLogEntry,
-} from './adminMockData';
-import { useAccessStore } from '../access/accessStore';
-import { accessAuditToLogEntry } from '../access/accessAuditUtils';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Download, History } from 'lucide-react';
+import { ConfigShellHeader } from '../../shared/components/config-shell-header/ConfigShellHeader';
+import { downloadCsv, downloadSimplePdf } from '../../shared/utils/exportUtils';
+import { useHistoryStore, type HistoryCategory } from '../../store/historyStore';
 
-const ACTION_OPTIONS = [
-  'user.invited',
-  'user.login.disabled',
-  'role.permissions.updated',
-  'role.assigned',
-  'role.created',
-  'user.permissions.overridden',
-  'auth.login.failed',
+const categories: Array<'All' | HistoryCategory> = [
+  'All',
+  'People',
+  'Organization',
+  'Access',
+  'Leave',
+  'Attendance',
+  'Work',
+  'Calendar',
+  'Billing',
+  'Settings',
 ];
 
-export const AuditLogPage: React.FC = () => {
-  const accessAuditEntries = useAccessStore(s => s.auditEntries);
-  const allEntries = useMemo(
-    () => [
-      ...accessAuditEntries.map(accessAuditToLogEntry),
-      ...MOCK_AUDIT_LOG
-    ].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
-    [accessAuditEntries]
-  );
-  const [search, setSearch] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [actorFilter, setActorFilter] = useState('all');
-  const [actionFilter, setActionFilter] = useState('all');
-  const [detailEntry, setDetailEntry] = useState<AuditLogEntry | null>(null);
+const formatTime = (value: string) =>
+  new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 
-  const actors = useMemo(() => {
-    const names = new Set(allEntries.map(e => e.actorName).filter(Boolean));
-    return Array.from(names).sort();
-  }, [allEntries]);
+const isToday = (value: string) => {
+  const current = new Date();
+  const date = new Date(value);
+  return (
+    current.getFullYear() === date.getFullYear() &&
+    current.getMonth() === date.getMonth() &&
+    current.getDate() === date.getDate()
+  );
+};
+
+export const AuditLogPage: React.FC = () => {
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const entries = useHistoryStore(state => state.entries);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<'All' | HistoryCategory>('All');
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [exportMenuOpen]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return allEntries.filter(e => {
-      if (q) {
-        const haystack = `${e.actorName} ${e.action} ${e.resourceName} ${e.resourceType}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      if (dateFrom && e.timestamp.slice(0, 10) < dateFrom) return false;
-      if (dateTo && e.timestamp.slice(0, 10) > dateTo) return false;
-      if (actorFilter !== 'all' && e.actorName !== actorFilter) return false;
-      if (actionFilter !== 'all' && e.action !== actionFilter) return false;
-      return true;
+    const query = search.trim().toLowerCase();
+    return entries.filter(entry => {
+      if (category !== 'All' && entry.category !== category) return false;
+      if (!query) return true;
+      return `${entry.actor} ${entry.title} ${entry.description} ${entry.target ?? ''} ${entry.category}`
+        .toLowerCase()
+        .includes(query);
     });
   }, [search, dateFrom, dateTo, actorFilter, actionFilter, allEntries]);
 
-  const exportCsv = () => {
-    const headers = ['Timestamp', 'Actor', 'Action', 'Resource', 'IP Address', 'Status'];
-    const rows = filtered.map(e => [
-      formatDateTime(e.timestamp),
-      e.actorName,
-      e.action,
-      `${e.resourceType}: ${e.resourceName}`,
-      e.ipAddress,
-      e.status,
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'audit-log.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+  const summary = useMemo(
+    () => ({
+      total: entries.length,
+      today: entries.filter(entry => isToday(entry.createdAt)).length,
+      access: entries.filter(entry => entry.category === 'Access').length,
+      organization: entries.filter(entry => entry.category === 'Organization').length,
+    }),
+    [entries],
+  );
+
+  const exportHistory = (format: 'csv' | 'pdf') => {
+    setExportMenuOpen(false);
+    const rows = [
+      ['Time', 'Person', 'Activity', 'Details', 'Area'],
+      ...filtered.map(entry => [
+        formatTime(entry.createdAt),
+        entry.actor,
+        entry.title,
+        entry.description,
+        entry.category,
+      ]),
+    ];
+
+    if (format === 'csv') {
+      downloadCsv('onevo-history.csv', rows);
+      return;
+    }
+
+    downloadSimplePdf(
+      'onevo-history.pdf',
+      ['ONEVO HISTORY', '', ...filtered.map(entry => `${formatTime(entry.createdAt)} | ${entry.actor} | ${entry.title} | ${entry.category}`)],
+    );
   };
 
   return (
-    <div className="cfg-page">
-      <div className="cfg-page__header">
-        <div>
-          <h1 className="cfg-page__title">Audit Log</h1>
-          <p className="cfg-page__subtitle">
-            Review tenant activity, security changes, and configuration history.
-          </p>
+    <div className="cfg-page history-page">
+      <ConfigShellHeader
+        title="History"
+        icon={<History size={15} />}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search people, activity, details or area...',
+          label: 'Search history',
+        }}
+        actions={
+          <div className="dept-table__actions admin-export-wrap" ref={exportMenuRef}>
+            <button
+              type="button"
+              className="org-btn org-btn--secondary"
+              onClick={() => setExportMenuOpen(value => !value)}
+            >
+              <Download size={14} /> Export
+            </button>
+            {exportMenuOpen && (
+              <div className="dept-table__menu admin-export-menu">
+                <button type="button" onClick={() => exportHistory('csv')}>
+                  Export CSV
+                </button>
+                <button type="button" onClick={() => exportHistory('pdf')}>
+                  Export PDF
+                </button>
+              </div>
+            )}
+          </div>
+        }
+      />
+
+      <div className="admin-summary-row">
+        <div className="admin-summary-card">
+          <span className="admin-summary-card__label">Total Activity</span>
+          <strong>{summary.total}</strong>
         </div>
-        <button type="button" className="org-btn org-btn--secondary" onClick={exportCsv}>
-          <Download size={14} /> Export CSV
-        </button>
+        <div className="admin-summary-card">
+          <span className="admin-summary-card__label">Today</span>
+          <strong>{summary.today}</strong>
+        </div>
+        <div className="admin-summary-card">
+          <span className="admin-summary-card__label">Access Updates</span>
+          <strong>{summary.access}</strong>
+        </div>
+        <div className="admin-summary-card">
+          <span className="admin-summary-card__label">Organization Updates</span>
+          <strong>{summary.organization}</strong>
+        </div>
       </div>
 
-      <div className="cfg-page__toolbar audit-log-toolbar">
-        <div className="cfg-search">
-          <Search size={14} />
-          <input placeholder="Search audit log…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <div className="cfg-date-range">
-          <input
-            type="date"
-            className="cfg-date-input"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            aria-label="From date"
-          />
-          <span className="cfg-date-range__sep">–</span>
-          <input
-            type="date"
-            className="cfg-date-input"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            aria-label="To date"
-          />
-        </div>
-        <select className="cfg-filter-select" value={actorFilter} onChange={e => setActorFilter(e.target.value)}>
-          <option value="all">All actors</option>
-          {actors.map(a => (
-            <option key={a} value={a}>{a}</option>
-          ))}
-        </select>
-        <select className="cfg-filter-select" value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
-          <option value="all">All events</option>
-          {ACTION_OPTIONS.map(a => (
-            <option key={a} value={a}>{a}</option>
+      <div className="cfg-page__toolbar history-page__toolbar">
+        <select
+          className="cfg-filter-select"
+          value={category}
+          onChange={event => setCategory(event.target.value as 'All' | HistoryCategory)}
+          aria-label="Filter history by area"
+        >
+          {categories.map(value => (
+            <option key={value}>{value}</option>
           ))}
         </select>
       </div>
 
       <div className="cfg-page__body">
-        <div className="cfg-table-wrap">
-          <table className="cfg-table">
+        <div className="cfg-table-wrap admin-table-wrap">
+          <table className="cfg-table history-table">
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Actor</th>
-                <th>Event</th>
-                <th>Target</th>
-                <th>Source</th>
+                <th>When</th>
+                <th>Person</th>
+                <th>Activity</th>
                 <th>Details</th>
+                <th>Area</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(e => (
-                <tr key={e.id}>
-                  <td>{formatDateTime(e.timestamp)}</td>
-                  <td>{e.actorName || 'System'}</td>
-                  <td>{e.action}</td>
-                  <td>
-                    <div className="cfg-table__name">{e.resourceName}</div>
-                    <div className="cfg-table__meta">{e.resourceType}</div>
+              {filtered.map(entry => (
+                <tr key={entry.id}>
+                  <td className="history-table__when">
+                    <div className="cfg-table__name">{formatTime(entry.createdAt)}</div>
                   </td>
-                  <td><span className="cfg-table__meta">{e.ipAddress}</span></td>
+                  <td className="history-table__who">
+                    <div className="cfg-table__name">{entry.actor}</div>
+                  </td>
+                  <td className="history-table__activity">
+                    <strong>{entry.title}</strong>
+                  </td>
                   <td>
-                    <div className="audit-details-cell">
-                      {e.status === 'failed' && (
-                        <span className="cfg-badge cfg-badge--failed cfg-badge--sm">Failed</span>
-                      )}
-                      <button type="button" className="cfg-action-btn cfg-action-btn--ghost" onClick={() => setDetailEntry(e)}>
-                        <Eye size={13} /> View
-                      </button>
-                    </div>
+                    <span className="cfg-table__meta">{entry.description}</span>
+                  </td>
+                  <td>
+                    <span className="cfg-badge cfg-badge--open">{entry.category}</span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
           {filtered.length === 0 && (
             <div className="cfg-empty">
-              <p className="cfg-empty__title">No audit entries match your filters</p>
+              <p className="cfg-empty__title">No history matches your search</p>
             </div>
           )}
         </div>

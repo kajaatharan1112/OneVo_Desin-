@@ -30,10 +30,17 @@ export const TodayTasksPanel: React.FC<TodayTasksPanelProps> = ({ tasks, highlig
               key={task.id}
               className={`wd-task-item${isOpen ? ' wd-task-item--open' : ''}`}
             >
-              <button
-                type="button"
+              <div
                 className="wd-task-item__trigger"
                 onClick={() => toggle(task.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggle(task.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 aria-expanded={isOpen}
               >
                 {/* Header — grid: title row + meta row (no overlap) */}
@@ -87,7 +94,7 @@ export const TodayTasksPanel: React.FC<TodayTasksPanelProps> = ({ tasks, highlig
                     </span>
                   </span>
                 </span>
-              </button>
+              </div>
             </li>
           );
         })}

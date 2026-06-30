@@ -8,6 +8,8 @@ import type {
   EmployeeFormValues,
   EmployeeOnboardingValues,
   Position,
+  CoverageMode,
+  CoverageTarget,
   PositionAssignment,
   PositionFormState
 } from '../types/organization';
@@ -98,7 +100,7 @@ const SEED_DEPARTMENTS: Department[] = [
   }
 ];
 
-const SEED_POSITIONS: Position[] = [
+const SEED_POSITIONS_RAW: Array<Omit<Position, 'roleId' | 'coverageEnabled' | 'secondaryCoverage'>> = [
   {
     id: 'pos-ceo',
     name: 'CEO',
@@ -241,6 +243,17 @@ const SEED_POSITIONS: Position[] = [
   }
 ];
 
+const SEED_POSITIONS: Position[] = SEED_POSITIONS_RAW.map(position => ({
+  ...position,
+  roleId: position.id === 'pos-ceo'
+    ? 'role-owner'
+    : position.type === 'unique'
+      ? 'role-leave-approver'
+      : 'role-employee',
+  coverageEnabled: false,
+  secondaryCoverage: []
+}));
+
 const SEED_EMPLOYEES: Employee[] = [
   { id: 'emp-1', firstName: 'Ahmad', lastName: 'Razif', email: 'ahmad.razif@onevo.com', phone: '+94 77 123 4567', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
   { id: 'emp-2', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@onevo.com', phone: '+94 77 234 5678', status: 'active', employmentType: 'full-time', startDate: '2024-01-01', workMode: 'onsite' },
@@ -301,6 +314,7 @@ interface OrganizationState {
     description: string;
     status: Department['status'];
   }) => { ok: boolean; error?: string };
+  deactivateDepartment: (departmentId: string) => { ok: boolean; error?: string };
 
   openCreateRootPosition: () => void;
   openCreateChildPosition: (parentId: string) => void;
@@ -315,7 +329,13 @@ interface OrganizationState {
     type: Position['type'];
     capacity: number;
     status: Position['status'];
+    roleId: string;
+    coverageEnabled: boolean;
+    coverageMode?: CoverageMode;
+    primaryCoverage?: CoverageTarget | null;
+    secondaryCoverage?: CoverageTarget[];
   }) => { ok: boolean; error?: string };
+  deactivatePosition: (positionId: string) => { ok: boolean; error?: string };
 
   reparentPosition: (positionId: string, newReportsToPositionId: string) => boolean;
   toggleDeptCollapse: (id: string) => void;
@@ -408,6 +428,9 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     if (!isDepartmentCodeUnique(data.code, departments, data.id)) {
       return { ok: false, error: 'Department code must be unique.' };
     }
+    if (!data.id && departments.length > 0 && !data.parentDepartmentId) {
+      return { ok: false, error: 'Head Department is required after the first department.' };
+    }
 
     const parentCheck = canSetDepartmentParent(data.id ?? null, data.parentDepartmentId, departments);
     if (!parentCheck.ok) {
@@ -415,7 +438,8 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     }
 
     if (data.id) {
-      const headPositionId = data.headPositionId ?? null;
+      const currentDepartment = departments.find(department => department.id === data.id);
+      const headPositionId = data.headPositionId === undefined ? currentDepartment?.headPositionId ?? null : data.headPositionId;
       if (headPositionId) {
         const headPos = get().positions.find(p => p.id === headPositionId);
         if (!headPos || headPos.departmentId !== data.id) {
@@ -455,6 +479,25 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     }
 
     get().closeDepartmentForm();
+    return { ok: true };
+  },
+
+  deactivateDepartment: departmentId => {
+    const department = get().departments.find(item => item.id === departmentId);
+    if (!department) return { ok: false, error: 'Department not found.' };
+
+    set({
+      departments: get().departments.map(item =>
+        item.id === departmentId ? { ...item, status: 'inactive' as const } : item,
+      ),
+    });
+    recordHistory({
+      title: 'Department deactivated',
+      description: `${department.name} was deactivated.`,
+      category: 'Organization',
+      target: department.name,
+    });
+    get().showToast('Department deactivated.');
     return { ok: true };
   },
 
@@ -521,6 +564,9 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       return { ok: false, error: 'Position code must be unique.' };
     }
     if (!data.departmentId) return { ok: false, error: 'Department is required.' };
+    const resolvedRoleId = data.roleId || 'role-employee';
+    const role = useRoleStore.getState().roles.find(candidate => candidate.id === resolvedRoleId);
+    if (!role || !role.active) return { ok: false, error: 'Select an active role for this position.' };
 
     const dept = departments.find(d => d.id === data.departmentId);
     if (!dept || dept.status === 'inactive') {
@@ -537,6 +583,43 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
       }
       if (data.id && wouldCreateCycle(data.id, data.reportsToPositionId, positions)) {
         return { ok: false, error: 'Cannot create a circular reporting chain.' };
+      }
+    }
+
+    const otherRootExists = positions.some(position =>
+      position.id !== data.id && position.reportsToPositionId === null
+    );
+    if (!data.reportsToPositionId && otherRootExists) {
+      return { ok: false, error: 'Only one root position is allowed. Select a reporting manager.' };
+    }
+
+    const coverageTargets = [
+      ...(data.primaryCoverage ? [data.primaryCoverage] : []),
+      ...(data.secondaryCoverage ?? [])
+    ];
+    if (data.coverageEnabled && !data.primaryCoverage) {
+      return { ok: false, error: 'Select and confirm a primary coverage area.' };
+    }
+    const coverageKeys = coverageTargets.map(target => `${target.type}:${target.id}`);
+    if (new Set(coverageKeys).size !== coverageKeys.length) {
+      return { ok: false, error: 'A coverage target can only be selected once.' };
+    }
+    for (const target of coverageTargets) {
+      if (target.type === 'user') {
+        return { ok: false, error: 'User-based coverage is reserved for a future release.' };
+      }
+      if (target.type === 'position') {
+        if (target.id === data.id) return { ok: false, error: 'A position cannot cover itself.' };
+        const targetPosition = positions.find(position => position.id === target.id);
+        if (!targetPosition || targetPosition.status !== 'active') {
+          return { ok: false, error: 'Coverage positions must be active.' };
+        }
+      }
+      if (target.type === 'department') {
+        const targetDepartment = departments.find(department => department.id === target.id);
+        if (!targetDepartment || targetDepartment.status !== 'active') {
+          return { ok: false, error: 'Coverage departments must be active.' };
+        }
       }
     }
 
@@ -559,7 +642,12 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
                 reportsToPositionId: data.reportsToPositionId,
                 type: data.type,
                 capacity,
-                status: data.status
+                status: data.status,
+                roleId: resolvedRoleId,
+                coverageEnabled: data.coverageEnabled,
+                coverageMode: data.coverageEnabled ? data.coverageMode : undefined,
+                primaryCoverage: data.coverageEnabled ? data.primaryCoverage ?? null : null,
+                secondaryCoverage: data.coverageEnabled ? data.secondaryCoverage ?? [] : []
               }
             : p
         )
@@ -573,12 +661,55 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
         reportsToPositionId: data.reportsToPositionId,
         type: data.type,
         capacity,
-        status: data.status
+        status: data.status,
+        roleId: resolvedRoleId,
+        coverageEnabled: data.coverageEnabled,
+        coverageMode: data.coverageEnabled ? data.coverageMode : undefined,
+        primaryCoverage: data.coverageEnabled ? data.primaryCoverage ?? null : null,
+        secondaryCoverage: data.coverageEnabled ? data.secondaryCoverage ?? [] : []
       };
       set({ positions: [...positions, newPos] });
     }
 
     get().closePositionForm();
+    return { ok: true };
+  },
+
+  deactivatePosition: positionId => {
+    const { positions, departments } = get();
+    const position = positions.find(item => item.id === positionId);
+    if (!position) return { ok: false, error: 'Position not found.' };
+
+    const childPositions = positions.filter(item => item.reportsToPositionId === positionId);
+    if (!position.reportsToPositionId && childPositions.length > 0) {
+      return { ok: false, error: 'Root positions with child positions cannot be deactivated directly.' };
+    }
+
+    set({
+      positions: positions.map(item => {
+        if (item.id === positionId) {
+          return { ...item, status: 'inactive' as const };
+        }
+        if (item.reportsToPositionId === positionId) {
+          return { ...item, reportsToPositionId: position.reportsToPositionId };
+        }
+        return item;
+      }),
+      departments: departments.map(department =>
+        department.headPositionId === positionId ? { ...department, headPositionId: null } : department,
+      ),
+    });
+
+    recordHistory({
+      title: 'Position deactivated',
+      description:
+        childPositions.length > 0
+          ? `${position.name} was deactivated and ${childPositions.length} child position(s) were moved to the higher reporting position.`
+          : `${position.name} was deactivated.`,
+      category: 'Organization',
+      target: position.name,
+    });
+    get().showToast('Position deactivated.');
     return { ok: true };
   },
 
@@ -895,7 +1026,47 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
     get().showToast(existing ? 'Employee updated.' : 'Employee added.');
     return { ok: true };
   }
-}));
+    }),
+    {
+      name: 'onevo-organization-store',
+      version: 2,
+      migrate: (persisted, version) => {
+        type LegacyPosition = Partial<Omit<Position, 'coverageMode' | 'primaryCoverage' | 'secondaryCoverage'>> & {
+          coverageMode?: CoverageMode;
+          primaryCoverage?: CoverageTarget | null;
+          secondaryCoverage?: CoverageTarget[];
+          coverageType?: CoverageMode;
+          primaryCoverageId?: string | null;
+          secondaryCoverageIds?: string[];
+        };
+        const state = persisted as Omit<Partial<OrganizationState>, 'positions'> & { positions?: LegacyPosition[] };
+        if (version >= 2 || !state.positions) return state as OrganizationState;
+        return {
+          ...state,
+          positions: state.positions.map(position => ({
+            ...position,
+            roleId: position.roleId ?? 'role-employee',
+            coverageEnabled: Boolean(position.primaryCoverageId),
+            coverageMode: position.coverageMode ?? position.coverageType,
+            primaryCoverage: position.primaryCoverage ?? (position.primaryCoverageId && position.coverageType
+              ? { type: position.coverageType, id: position.primaryCoverageId }
+              : null),
+            secondaryCoverage: position.secondaryCoverage ?? (position.secondaryCoverageIds ?? []).map((id: string) => ({
+              type: position.coverageType ?? 'department',
+              id
+            }))
+          } as Position))
+        } as OrganizationState;
+      },
+      partialize: state => ({
+        departments: state.departments,
+        positions: state.positions,
+        employees: state.employees,
+        assignments: state.assignments
+      })
+    }
+  )
+);
 
 function wouldCreateCycle(
   positionId: string,

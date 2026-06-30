@@ -45,6 +45,51 @@ function row(input: RowInput): NotificationTypeDef {
 }
 
 export const NOTIFICATION_CATALOG: NotificationTypeDef[] = [
+  ...[
+    ['Employee promotion', 'Sent when an employee is promoted.', 'employee.promotion'],
+    ['Employee invitation', 'Sent when a new employee invitation is created.', 'employee.invitation'],
+    ['Employee transfer', 'Sent when an employee moves to another department or position.', 'employee.transfer'],
+    ['Employee offboarding', 'Sent when an employee offboarding process starts.', 'employee.offboarding'],
+    ['Employee access blocked', 'Sent when employee login access is blocked.', 'employee.access.blocked'],
+  ].map(([name, description, eventKey]) => row({ category: 'Employee', name, description, eventKey, defaults: { inApp: true, email: true }, preview: { inApp: description, emailSubject: name, emailBody: description, recipients: 'Employee and relevant managers', rules: 'Sent when this employee event occurs.' } })),
+  ...[
+    ['User invite sent', 'Sent when a user invite link is created or resent.', 'user.invite.sent'],
+    ['User invite accepted', 'Sent when the invited user accepts the access link.', 'user.invite.accepted'],
+    ['User invite revoked', 'Sent when an existing invite or user access is revoked.', 'user.invite.revoked'],
+  ].map(([name, description, eventKey]) =>
+    row({
+      category: 'Access',
+      name,
+      description,
+      eventKey,
+      defaults: { inApp: true, email: true },
+      preview: {
+        inApp:
+          name === 'User invite accepted'
+            ? 'Priya Sharma accepted the user access invite.'
+            : name === 'User invite revoked'
+              ? 'Jordan Wright user access invite was revoked.'
+              : 'A new user invite link was sent to Jordan Wright.',
+        emailSubject: name,
+        emailBody:
+          name === 'User invite accepted'
+            ? 'The invited user opened the access link and completed the acceptance flow.'
+            : name === 'User invite revoked'
+              ? 'The existing invite or access grant was revoked by an administrator.'
+              : 'A new access link has been generated and sent to the invited user.',
+        recipients: name === 'User invite accepted' ? 'Administrators / inviter' : 'Invited user and administrators',
+        rules:
+          name === 'User invite accepted'
+            ? 'Sent when the invite acceptance link is used successfully.'
+            : 'Sent when a user invitation state changes.',
+      },
+    }),
+  ),
+  ...[
+    ['Position created', 'Sent when a new position is added to the hierarchy.', 'setup.position.created'],
+    ['Position updated', 'Sent when position details or reporting line changes.', 'setup.position.updated'],
+    ['Position member assigned', 'Sent when an employee is assigned to a position.', 'setup.position.member.assigned'],
+  ].map(([name, description, eventKey]) => row({ category: 'Setup', name, description, eventKey, defaults: { inApp: true, email: false }, preview: { inApp: description, emailSubject: name, emailBody: description, recipients: 'Organization administrators', rules: 'Sent when this setup event occurs.' } })),
   row({
     category: 'Projects',
     name: 'Project invite received',
@@ -328,6 +373,9 @@ export const NOTIFICATION_CATALOG: NotificationTypeDef[] = [
 ];
 
 export const NOTIFICATION_CATEGORIES = [
+  'Employee',
+  'Access',
+  'Setup',
   'Projects',
   'Workspaces',
   'Work Items',
