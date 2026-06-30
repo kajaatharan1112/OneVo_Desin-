@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Sun, Thermometer, Coffee, Calendar, X, Plus,
-  CalendarDays, Clock, Info, Users, Settings, Paperclip, UploadCloud
+  CalendarDays, Clock, Info, Users, Settings, Paperclip, UploadCloud, ClipboardList
 } from 'lucide-react';
 import { employeeLeaveBalance } from '../../data/employee-requests.data';
 import {
@@ -15,6 +15,7 @@ import {
 import { useLeaveRequestStore } from '../../../../store/leaveRequestStore';
 import { employeeCalendarData } from '../../data/employee-calendar.data';
 import { useInbox, INBOX_CURRENT_USER } from '../../../../core/notifications/inbox-context';
+import { useEmployeeContext } from '../../context/employee-context';
 import { LeavePoliciesPage } from '../../../leave/configuration/LeavePoliciesPage';
 import { LeaveTypesPage } from '../../../leave/configuration/LeaveTypesPage';
 import { LeaveEntitlementsPage } from '../../../leave/configuration/LeaveEntitlementsPage';
@@ -37,16 +38,24 @@ const STATUS_LABEL: Record<string, string> = {
 
 interface LeaveFormState {
   leaveType: LeaveTypeKey;
+  unit: 'days' | 'hours';
   startDate: string;
   endDate: string;
+  startTime: string;
+  endTime: string;
+  hours: number;
   reason: string;
   attachmentName: string;
 }
 
 const DEFAULT_FORM: LeaveFormState = {
   leaveType: 'Annual',
+  unit: 'days',
   startDate: '',
   endDate: '',
+  startTime: '09:00',
+  endTime: '17:00',
+  hours: 8,
   reason: '',
   attachmentName: ''
 };
@@ -54,7 +63,7 @@ const DEFAULT_FORM: LeaveFormState = {
 export const EmployeeLeave: React.FC = () => {
   const { addInboxItem } = useInbox();
   const { selectedEmployee } = useEmployeeContext();
-  const isManager = selectedEmployee.id === 'manager';
+  const showToggleAndConfig = selectedEmployee.id !== 'alex';
   const [activeView, setActiveView] = useState<'self' | 'team'>('self');
   const [configurationView, setConfigurationView] = useState<'menu' | 'types' | 'policies' | 'entitlements' | null>(null);
   const [isConfigDropdownOpen, setIsConfigDropdownOpen] = useState(false);
@@ -90,17 +99,67 @@ export const EmployeeLeave: React.FC = () => {
     };
   }, []);
   const [modalOpen, setModalOpen]     = useState(false);
-  const allRequests = useLeaveRequestStore(s => s.requests);
-  const addRequest = useLeaveRequestStore(s => s.addRequest);
-  const approveRequest = useLeaveRequestStore(s => s.approveRequest);
-  const rejectRequest = useLeaveRequestStore(s => s.rejectRequest);
+  const [requests, setRequests]       = useState<LeaveRequest[]>(SEED_REQUESTS);
+  const [teamLeaves, setTeamLeaves]   = useState<TeamLeaveEntry[]>(TEAM_LEAVE);
+  const [selectedTeamLeaveId, setSelectedTeamLeaveId] = useState<string | null>(null);
   const [form, setForm]               = useState<LeaveFormState>(DEFAULT_FORM);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
 
-  const myRequests = allRequests.filter(r => r.employeeName === undefined);
-  const teamRequests = allRequests.filter(r => r.employeeName !== undefined);
+  const handleApproveTeamLeave = (id: string) => {
+    setTeamLeaves(prev =>
+      prev.map(item => (item.id === id ? { ...item, status: 'approved' } : item))
+    );
+    const item = teamLeaves.find(t => t.id === id);
+    if (item) {
+      addInboxItem({
+        id: `leave-approved-${id}-${Date.now()}`,
+        recipientId: 'alex',
+        category: 'approval',
+        title: 'Leave Request Approved',
+        message: `Your ${item.leaveType} leave request has been approved.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: [{ id: 'dismiss', label: 'Dismiss', variant: 'secondary' }]
+      });
+    }
+  };
 
-  const filtered = myRequests.filter(r => filter === 'all' || r.status === filter);
+  const handleRejectTeamLeave = (id: string) => {
+    setTeamLeaves(prev =>
+      prev.map(item => (item.id === id ? { ...item, status: 'rejected' } : item))
+    );
+    const item = teamLeaves.find(t => t.id === id);
+    if (item) {
+      addInboxItem({
+        id: `leave-rejected-${id}-${Date.now()}`,
+        recipientId: 'alex',
+        category: 'approval',
+        title: 'Leave Request Rejected',
+        message: `Your ${item.leaveType} leave request has been rejected.`,
+        timeLabel: 'Just now',
+        filter: 'new',
+        actions: [{ id: 'dismiss', label: 'Dismiss', variant: 'secondary' }]
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (form.unit === 'hours' && form.startTime && form.endTime) {
+      const [sh, sm] = form.startTime.split(':').map(Number);
+      const [eh, em] = form.endTime.split(':').map(Number);
+      if (!isNaN(sh) && !isNaN(eh)) {
+        const startMin = sh * 60 + (sm || 0);
+        const endMin = eh * 60 + (em || 0);
+        let diffHours = (endMin - startMin) / 60;
+        if (diffHours < 0) diffHours = 0;
+        diffHours = Math.round(diffHours * 10) / 10;
+        setForm(f => ({ ...f, hours: diffHours }));
+      }
+    }
+  }, [form.startTime, form.endTime, form.unit]);
+
+  const filtered = requests.filter(r => filter === 'all' || r.status === filter);
+  const selectedTeamLeave = teamLeaves.find(t => t.id === selectedTeamLeaveId);
 
   useEffect(() => {
     if (!modalOpen) {
@@ -108,11 +167,18 @@ export const EmployeeLeave: React.FC = () => {
     }
   }, [modalOpen]);
 
+  useEffect(() => {
+    if (!showToggleAndConfig) {
+      setActiveView('self');
+      setConfigurationView(null);
+    }
+  }, [showToggleAndConfig]);
+
   // Helper to find conflicting events (meetings, reminders/tasks, shifts) within selected dates
   const conflictingEvents = React.useMemo(() => {
-    if (!form.startDate || !form.endDate) return [];
+    if (!form.startDate) return [];
     const start = new Date(form.startDate);
-    const end = new Date(form.endDate);
+    const end = form.unit === 'days' && form.endDate ? new Date(form.endDate) : start;
     if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
 
     return (employeeCalendarData?.events || []).filter(event => {
@@ -125,7 +191,7 @@ export const EmployeeLeave: React.FC = () => {
       
       return isWithinRange && isConflictType;
     });
-  }, [form.startDate, form.endDate]);
+  }, [form.startDate, form.endDate, form.unit]);
 
   const hasConflict = conflictingEvents.length > 0;
 
@@ -182,12 +248,37 @@ export const EmployeeLeave: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const id = `lr-${Date.now()}`;
+
+    const formatDate = (dateStr: string) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    let calculatedDays = 1;
+    let finalStartDate = formatDate(form.startDate);
+    let finalEndDate = form.unit === 'days' ? formatDate(form.endDate) : finalStartDate;
+
+    if (form.unit === 'days') {
+      if (form.startDate && form.endDate) {
+        const start = new Date(form.startDate);
+        const end = new Date(form.endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        calculatedDays = isNaN(diffDays) ? 1 : diffDays;
+      }
+    } else {
+      calculatedDays = form.hours / 8;
+    }
+
     const newReq: LeaveRequest = {
       id,
       leaveType:     form.leaveType,
-      startDate:     form.startDate,
-      endDate:       form.endDate,
-      days:          1,
+      startDate:     finalStartDate,
+      endDate:       finalEndDate,
+      days:          calculatedDays,
+      hours:         form.unit === 'hours' ? form.hours : undefined,
       status:        'pending',
       submittedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
       reason:        form.reason,
@@ -221,55 +312,78 @@ export const EmployeeLeave: React.FC = () => {
             <span className="elp-header__sub">2026 leave year</span>
           </div>
           <div className="elp-header__actions">
-            <div className="elp-view-toggle" role="group" aria-label="Time off view">
-              <button type="button" className={`elp-view-toggle__button${activeView === 'self' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('self')}>Self</button>
-              {isManager && (
-                <button type="button" className={`elp-view-toggle__button${activeView === 'team' ? ' elp-view-toggle__button--active' : ''}`} onClick={() => setActiveView('team')}>Team</button>
-              )}
-            </div>
-            <div className="elp-config-dropdown-container" ref={dropdownRef}>
-              <button
-                type="button"
-                className={`elp-config-button${isConfigDropdownOpen ? ' elp-config-button--active' : ''}`}
-                onClick={() => setIsConfigDropdownOpen(!isConfigDropdownOpen)}
-              >
-                <Settings size={13} /> Configuration
-              </button>
-              {isConfigDropdownOpen && (
-                <div className="elp-config-dropdown">
+            {showToggleAndConfig && (
+              <>
+                <div className="elp-view-toggle">
                   <button
                     type="button"
-                    className="elp-config-dropdown-item"
+                    className={`elp-view-toggle__button ${activeView === 'self' ? 'elp-view-toggle__button--active' : ''}`}
                     onClick={() => {
-                      setConfigurationView('types');
-                      setIsConfigDropdownOpen(false);
+                      setActiveView('self');
+                      setConfigurationView(null);
                     }}
                   >
-                    Time off Type
+                    Self
                   </button>
                   <button
                     type="button"
-                    className="elp-config-dropdown-item"
+                    className={`elp-view-toggle__button ${activeView === 'team' ? 'elp-view-toggle__button--active' : ''}`}
                     onClick={() => {
-                      setConfigurationView('policies');
-                      setIsConfigDropdownOpen(false);
+                      setActiveView('team');
+                      setConfigurationView(null);
                     }}
                   >
-                    Time off Policy
-                  </button>
-                  <button
-                    type="button"
-                    className="elp-config-dropdown-item"
-                    onClick={() => {
-                      setConfigurationView('entitlements');
-                      setIsConfigDropdownOpen(false);
-                    }}
-                  >
-                    Entitlement
+                    Team
                   </button>
                 </div>
-              )}
-            </div>
+                
+                <div className="elp-config-dropdown-container" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    className={`elp-config-button ${isConfigDropdownOpen ? 'elp-config-button--active' : ''}`}
+                    onClick={() => setIsConfigDropdownOpen(!isConfigDropdownOpen)}
+                  >
+                    <Settings size={13} />
+                    Configuration
+                  </button>
+                  {isConfigDropdownOpen && (
+                    <div className="elp-config-dropdown">
+                      <button
+                        type="button"
+                        className="elp-config-dropdown-item"
+                        onClick={() => {
+                          setConfigurationView('types');
+                          setIsConfigDropdownOpen(false);
+                        }}
+                      >
+                        Time Off Type
+                      </button>
+                      <button
+                        type="button"
+                        className="elp-config-dropdown-item"
+                        onClick={() => {
+                          setConfigurationView('policies');
+                          setIsConfigDropdownOpen(false);
+                        }}
+                      >
+                        Time Off Policy
+                      </button>
+                      <button
+                        type="button"
+                        className="elp-config-dropdown-item"
+                        onClick={() => {
+                          setConfigurationView('entitlements');
+                          setIsConfigDropdownOpen(false);
+                        }}
+                      >
+                        Entitlement
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             {activeView === 'self' && (
               <button type="button" className="era-btn era-btn--primary" onClick={() => setModalOpen(true)}>
                 <Plus size={13} /> Apply Leave
@@ -348,7 +462,7 @@ export const EmployeeLeave: React.FC = () => {
                       {req.startDate === req.endDate
                         ? req.startDate
                         : `${req.startDate} – ${req.endDate}`}
-                      <span className="elp-request-row__days">· {req.days}d</span>
+                      <span className="elp-request-row__days">· {req.hours ? `${req.hours}h` : `${req.days}d`}</span>
                       {req.approver && req.status === 'pending' && (
                         <>
                           <span className="elp-dot" />
@@ -462,7 +576,7 @@ export const EmployeeLeave: React.FC = () => {
                 <tr key={entry.id}>
                   <td>{entry.leaveType}</td>
                   <td>{entry.startDate} – {entry.endDate}</td>
-                  <td>{entry.days}d</td>
+                  <td>{entry.hours ? `${entry.hours}h` : `${entry.days}d`}</td>
                   <td>{entry.approver}</td>
                   <td>
                     <span className={`era-status-badge era-status-badge--${entry.status}`}>
@@ -484,68 +598,223 @@ export const EmployeeLeave: React.FC = () => {
               <div className="era-panel elp-team-summary__item"><span>Upcoming</span><strong>2</strong></div>
               <div className="era-panel elp-team-summary__item">
                 <span>Pending requests</span>
-                <strong>{teamRequests.filter(r => r.status === 'pending').length}</strong>
+                <strong>{teamLeaves.filter(item => item.status === 'pending').length}</strong>
               </div>
             </div>
-          <div className="elp-history-panel era-panel">
-            <div className="elp-section-head">
-              <span className="elp-section-title">
-                <Users size={13} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />
-                Team Leave
-              </span>
-              <span style={{ fontSize: '0.6875rem', color: 'var(--nexus-text-muted)' }}>Direct reports</span>
-            </div>
-            <table className="elp-history-table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Type</th>
-                  <th>Dates</th>
-                  <th>Days</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamRequests.map(req => (
-                  <tr key={req.id}>
-                    <td>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{
-                          width: 22, height: 22, borderRadius: '50%',
-                          background: 'var(--accent)', color: '#fff',
-                          fontSize: '0.65rem', fontWeight: 600,
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0
-                        }}>{(req.employeeName ?? '??').split(' ').map(p => p[0]).slice(0, 2).join('')}</span>
-                        {req.employeeName}
-                      </span>
-                    </td>
-                    <td>{req.leaveType}</td>
-                    <td>{req.startDate === req.endDate ? req.startDate : `${req.startDate} – ${req.endDate}`}</td>
-                    <td>{req.days}d</td>
-                    <td>
-                      <span className={`era-status-badge era-status-badge--${req.status}`}>
-                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                      </span>
-                    </td>
-                    <td>
-                      {req.status === 'pending' && (
-                        <span style={{ display: 'inline-flex', gap: '0.375rem' }}>
-                          <button type="button" className="era-btn era-btn--ghost" onClick={() => approveRequest(req.id)}>
-                            Approve
-                          </button>
-                          <button type="button" className="era-btn era-btn--ghost" onClick={() => rejectRequest(req.id)}>
-                            Reject
-                          </button>
-                        </span>
-                      )}
-                    </td>
+
+            {/* Card 1: Team Time Off */}
+            <div className="elp-history-panel era-panel">
+              <div className="elp-section-head">
+                <span className="elp-section-title">
+                  <Users size={13} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />
+                  Team Time Off
+                </span>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--nexus-text-muted)' }}>Approved and historical team leaves</span>
+              </div>
+              <table className="elp-history-table">
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {teamLeaves.filter(t => t.status !== 'pending').length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '1rem', color: 'var(--nexus-text-muted)', fontSize: '0.78rem' }}>
+                        No approved or historical leaves.
+                      </td>
+                    </tr>
+                  ) : (
+                    teamLeaves.filter(t => t.status !== 'pending').map(entry => (
+                      <tr key={entry.id}>
+                        <td>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: 'var(--accent)', color: '#fff',
+                              fontSize: '0.65rem', fontWeight: 600,
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0
+                            }}>{entry.initials}</span>
+                            {entry.name}
+                          </span>
+                        </td>
+                        <td>{entry.leaveType}</td>
+                        <td>{entry.startDate === entry.endDate ? entry.startDate : `${entry.startDate} – ${entry.endDate}`}</td>
+                        <td>{(entry as any).hours ? `${(entry as any).hours}h` : `${entry.days}d`}</td>
+                        <td>
+                          <span className={`era-status-badge era-status-badge--${entry.status}`}>
+                            {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Card 2: Leave Requests */}
+            <div className="elp-history-panel era-panel" style={{ marginTop: '1.125rem' }}>
+              <div className="elp-section-head">
+                <span className="elp-section-title">
+                  <ClipboardList size={13} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />
+                  Leave Requests
+                </span>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--nexus-text-muted)' }}>Click request to review on the right side</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                {teamLeaves.filter(t => t.status === 'pending').length === 0 ? (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--nexus-text-muted)', fontSize: '0.78rem' }}>
+                    No pending leave requests.
+                  </div>
+                ) : (
+                  teamLeaves.filter(t => t.status === 'pending').map(req => (
+                    <button
+                      type="button"
+                      key={req.id}
+                      onClick={() => setSelectedTeamLeaveId(req.id)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '1rem',
+                        textAlign: 'left',
+                        border: selectedTeamLeaveId === req.id ? '1px solid var(--accent)' : '1px solid var(--border)',
+                        borderRadius: '12px',
+                        background: selectedTeamLeaveId === req.id ? 'var(--surface-muted)' : 'var(--surface-panel)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-h)' }}>
+                          <span style={{
+                            width: 22, height: 22, borderRadius: '50%',
+                            background: 'var(--accent)', color: '#fff',
+                            fontSize: '0.65rem', fontWeight: 600,
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0
+                          }}>{req.initials}</span>
+                          {req.name}
+                        </span>
+                        <span className="era-status-badge era-status-badge--pending">Pending</span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--nexus-text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{req.leaveType} Leave · {req.startDate === req.endDate ? req.startDate : `${req.startDate} – ${req.endDate}`}</span>
+                        <span style={{ fontWeight: 500, color: 'var(--text-h)' }}>{req.days}d</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
           </div>
+        )}
+
+        {/* ── Slideover Details Drawer ── */}
+        {selectedTeamLeave && (
+          <div className="org-slideover-backdrop" onClick={() => setSelectedTeamLeaveId(null)}>
+            <aside
+              className="org-slideover"
+              role="dialog"
+              aria-modal="true"
+              onClick={event => event.stopPropagation()}
+              style={{ width: '400px', display: 'flex', flexDirection: 'column' }}
+            >
+              <header className="org-slideover__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-h)' }}>Leave Request Details</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--nexus-text-muted)' }}>Review employee request</p>
+                </div>
+                <button
+                  type="button"
+                  className="org-slideover__close"
+                  onClick={() => setSelectedTeamLeaveId(null)}
+                  aria-label="Close details"
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--nexus-text-muted)', padding: '4px' }}
+                >
+                  <X size={18} />
+                </button>
+              </header>
+              
+              <div style={{ padding: '1.5rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: 'var(--accent)', color: '#fff',
+                    fontSize: '0.9rem', fontWeight: 600,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    {selectedTeamLeave.initials}
+                  </span>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-h)' }}>{selectedTeamLeave.name}</h3>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--nexus-text-muted)' }}>Direct Report</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--surface-muted)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--nexus-text-muted)' }}>Leave Type:</span>
+                    <strong style={{ color: 'var(--text-h)' }}>{selectedTeamLeave.leaveType} Leave</strong>
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--nexus-text-muted)' }}>Duration:</span>
+                    <strong style={{ color: 'var(--text-h)' }}>
+                      {selectedTeamLeave.startDate === selectedTeamLeave.endDate
+                        ? selectedTeamLeave.startDate
+                        : `${selectedTeamLeave.startDate} – ${selectedTeamLeave.endDate}`}
+                    </strong>
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--nexus-text-muted)' }}>Total:</span>
+                    <strong style={{ color: 'var(--text-h)' }}>
+                      {(selectedTeamLeave as any).hours ? `${(selectedTeamLeave as any).hours}h` : `${selectedTeamLeave.days}d`}
+                    </strong>
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--nexus-text-muted)' }}>Status:</span>
+                    <span className="era-status-badge era-status-badge--pending" style={{ textTransform: 'capitalize' }}>
+                      {selectedTeamLeave.status}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {selectedTeamLeave.status === 'pending' && (
+                <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    type="button"
+                    className="era-btn era-btn--primary"
+                    style={{ flex: 1, height: '38px' }}
+                    onClick={() => {
+                      handleApproveTeamLeave(selectedTeamLeave.id);
+                      setSelectedTeamLeaveId(null);
+                    }}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    className="era-btn era-btn--ghost"
+                    style={{ flex: 1, height: '38px', border: '1px solid var(--border)' }}
+                    onClick={() => {
+                      handleRejectTeamLeave(selectedTeamLeave.id);
+                      setSelectedTeamLeaveId(null);
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
+            </aside>
           </div>
         )}
 
@@ -580,59 +849,163 @@ export const EmployeeLeave: React.FC = () => {
                   <option value="Other">Other</option>
                 </select>
               </label>
-              <div className="elp-field-row" style={{ alignItems: 'flex-end', position: 'relative', gap: '0.75rem' }}>
-                <label className="elp-field" style={{ flex: 1 }}>
-                  <span className="elp-field__label">From</span>
-                  <input
-                    type="date"
-                    className="elp-field__input"
-                    value={form.startDate}
-                    onChange={e => {
-                      patchForm({ startDate: e.target.value });
-                      setShowSchedulePreview(false);
-                    }}
-                    required
-                  />
-                </label>
-                <label className="elp-field" style={{ flex: 1 }}>
-                  <span className="elp-field__label">To</span>
-                  <input
-                    type="date"
-                    className="elp-field__input"
-                    value={form.endDate}
-                    onChange={e => {
-                      patchForm({ endDate: e.target.value });
-                      setShowSchedulePreview(false);
-                    }}
-                    required
-                  />
-                </label>
-                {hasConflict && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSchedulePreview(!showSchedulePreview)}
-                    className={`elp-schedule-alert-btn ${showSchedulePreview ? 'active' : ''}`}
-                    title="You have meetings/tasks scheduled during this period. Click to view."
-                    style={{
-                      height: '42px',
-                      width: '42px',
-                      borderRadius: '8px',
-                      border: '1px solid #fee2e2',
-                      background: showSchedulePreview ? '#fee2e2' : '#fef2f2',
-                      color: '#ef4444',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Calendar size={18} />
-                  </button>
-                )}
+              <div className="elp-field">
+                <span className="elp-field__label">Leave Mode</span>
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.375rem', alignItems: 'center' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-h)' }}>
+                    <input
+                      type="radio"
+                      name="leaveUnit"
+                      checked={form.unit === 'days'}
+                      onChange={() => patchForm({ unit: 'days' })}
+                      style={{ cursor: 'pointer', accentColor: 'var(--accent)', width: '16px', height: '16px' }}
+                    />
+                    Days
+                  </label>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-h)' }}>
+                    <input
+                      type="radio"
+                      name="leaveUnit"
+                      checked={form.unit === 'hours'}
+                      onChange={() => patchForm({ unit: 'hours' })}
+                      style={{ cursor: 'pointer', accentColor: 'var(--accent)', width: '16px', height: '16px' }}
+                    />
+                    Hours
+                  </label>
+                </div>
               </div>
+              {form.unit === 'days' ? (
+                <div className="elp-field-row" style={{ alignItems: 'flex-end', position: 'relative', gap: '0.75rem' }}>
+                  <label className="elp-field" style={{ flex: 1 }}>
+                    <span className="elp-field__label">From</span>
+                    <input
+                      type="date"
+                      className="elp-field__input"
+                      value={form.startDate}
+                      onChange={e => {
+                        patchForm({ startDate: e.target.value });
+                        setShowSchedulePreview(false);
+                      }}
+                      required
+                    />
+                  </label>
+                  <label className="elp-field" style={{ flex: 1 }}>
+                    <span className="elp-field__label">To</span>
+                    <input
+                      type="date"
+                      className="elp-field__input"
+                      value={form.endDate}
+                      onChange={e => {
+                        patchForm({ endDate: e.target.value });
+                        setShowSchedulePreview(false);
+                      }}
+                      required
+                    />
+                  </label>
+                  {hasConflict && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSchedulePreview(!showSchedulePreview)}
+                      className={`elp-schedule-alert-btn ${showSchedulePreview ? 'active' : ''}`}
+                      title="You have meetings/tasks scheduled during this period. Click to view."
+                      style={{
+                        height: '42px',
+                        width: '42px',
+                        borderRadius: '8px',
+                        border: '1px solid #fee2e2',
+                        background: showSchedulePreview ? '#fee2e2' : '#fef2f2',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Calendar size={18} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                  <div className="elp-field-row" style={{ alignItems: 'flex-end', position: 'relative', gap: '0.75rem', gridTemplateColumns: hasConflict ? '1fr auto' : '1fr' }}>
+                    <label className="elp-field" style={{ flex: 1 }}>
+                      <span className="elp-field__label">Date</span>
+                      <input
+                        type="date"
+                        className="elp-field__input"
+                        value={form.startDate}
+                        onChange={e => {
+                          patchForm({ startDate: e.target.value });
+                          setShowSchedulePreview(false);
+                        }}
+                        required
+                      />
+                    </label>
+                    {hasConflict && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSchedulePreview(!showSchedulePreview)}
+                        className={`elp-schedule-alert-btn ${showSchedulePreview ? 'active' : ''}`}
+                        title="You have meetings/tasks scheduled during this period. Click to view."
+                        style={{
+                          height: '42px',
+                          width: '42px',
+                          borderRadius: '8px',
+                          border: '1px solid #fee2e2',
+                          background: showSchedulePreview ? '#fee2e2' : '#fef2f2',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Calendar size={18} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="elp-field-row" style={{ gap: '0.75rem' }}>
+                    <label className="elp-field" style={{ flex: 1 }}>
+                      <span className="elp-field__label">Start Time</span>
+                      <input
+                        type="time"
+                        className="elp-field__input"
+                        value={form.startTime}
+                        onChange={e => patchForm({ startTime: e.target.value })}
+                        required
+                      />
+                    </label>
+                    <label className="elp-field" style={{ flex: 1 }}>
+                      <span className="elp-field__label">End Time</span>
+                      <input
+                        type="time"
+                        className="elp-field__input"
+                        value={form.endTime}
+                        onChange={e => patchForm({ endTime: e.target.value })}
+                        required
+                      />
+                    </label>
+                  </div>
+                  <label className="elp-field">
+                    <span className="elp-field__label">Total Hours</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      className="elp-field__input"
+                      value={form.hours}
+                      onChange={e => patchForm({ hours: parseFloat(e.target.value) || 0 })}
+                      required
+                    />
+                  </label>
+                </div>
+              )}
               {hasConflict && showSchedulePreview && (
                 <div 
                   className="elp-schedule-preview" 

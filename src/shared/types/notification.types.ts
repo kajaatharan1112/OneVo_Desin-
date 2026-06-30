@@ -29,6 +29,7 @@ export interface AppNotification {
   accessApprovalMeta?: { requestId: string };
   leaveMeta?: { requestId: string; leaveType?: string };
   attendanceMeta?: { requestId: string; type: 'overtime' | 'correction' };
+  deviceRequestMeta?: { requestId: string };
 }
 
 export type WorkInboxKind =

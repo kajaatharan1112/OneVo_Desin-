@@ -108,18 +108,36 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM – 5 PM
 // ── Main component ─────────────────────────────────────────────────────────
 
 export const MyCalendarTab: React.FC = () => {
-  const localEvents = useCalendarStore(s => s.events);
-  const syncStatus = useCalendarStore(s => s.syncStatus);
-  const lastConnectedProvider = useCalendarStore(s => s.lastConnectedProvider);
-  const addEvents = useCalendarStore(s => s.addEvents);
-  const updateEvent = useCalendarStore(s => s.updateEvent);
-  const deleteEventInStore = useCalendarStore(s => s.deleteEvent);
-  const restoreEventInStore = useCalendarStore(s => s.restoreEvent);
-  const zoomConnected = useCalendarStore(s => s.zoomConnected);
-  const setZoomConnected = useCalendarStore(s => s.setZoomConnected);
-  const { addInboxItem } = useInbox();
+  const { selectedEmployeeId } = useEmployeeContext();
+  const onboardingTasks = useChecklistTaskStore(state => state.tasks);
+
+  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(() => {
+    if (selectedEmployeeId !== 'manager') return employeeCalendarData.events;
+    const seen = new Set<string>();
+    const reminders: CalendarEvent[] = onboardingTasks
+      .filter(task => task.templateType === 'onboarding' && task.assigneeEmployeeId)
+      .filter(task => {
+        const key = `${task.employeeId}-${task.templateId}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map(task => ({
+        id: `onboarding-reminder-${task.employeeId}-${task.templateId}`,
+        title: `Collect documents - ${task.employeeName || 'New employee'}`,
+        date: task.dueDate,
+        start: task.dueTime || '17:00',
+        type: 'reminder', status: 'pending', source: 'personal', scope: 'my',
+        note: `${task.employeeName || 'Employee'} (${task.employeeNumber || '--'}) onboarding document checklist.`
+      }));
+    return [...employeeCalendarData.events, ...reminders];
+  });
+
+  const [syncStatus, setSyncStatus] = useState(employeeCalendarData.syncStatus);
+  const [lastConnectedProvider, setLastConnectedProvider] = useState<SyncProvider | null>(
+    employeeCalendarData.syncStatus.google === 'connected' ? 'google' : null
+  );
   const [connectingProvider, setConnectingProvider] = useState<SyncProvider | null>(null);
-  const [connectingZoom, setConnectingZoom] = useState(false);
 
   const today = useMemo(() => parseLocalDate(TODAY_KEY), []);
 

@@ -49,10 +49,25 @@ const SETTINGS_OTHER_ITEMS = [
   { id: 'audit-log',       label: 'Audit Log',       icon: <ClipboardList size={13} /> },
 ] as const;
 
-export function buildSettingsNavItem(): NavItem {
-  const otherItems = SETTINGS_OTHER_ITEMS.filter(
-    item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY
-  );
+export function buildSettingsNavItem(isEmployee = false, includeBulkOnboarding = false): NavItem {
+  const otherItems = [
+    ...(includeBulkOnboarding ? [{ id: 'bulk-onboarding', label: 'Bulk onboarding', icon: <Users size={13} /> }] : []),
+    ...SETTINGS_OTHER_ITEMS.filter(item => item.id !== 'devices' || TENANT_DEVICE_CAPABILITY)
+  ];
+  const subSections: SubNavSection[] = [
+    { id: 'main', items: [...SETTINGS_SUB_ITEMS] },
+  ];
+  if (!isEmployee) {
+    subSections.push({
+      id: 'policy',
+      label: 'Policy',
+      collapsible: true,
+      defaultOpen: true,
+      items: [...SETTINGS_POLICY_ITEMS],
+    });
+  }
+  subSections.push({ id: 'other', items: otherItems });
+
   return {
     id: 'settings',
     label: 'Settings',
@@ -66,9 +81,9 @@ export function buildSettingsNavItem(): NavItem {
 }
 
 /** Tenant-wide administration — single main-rail entry (no separate Admin item). */
-export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
-export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false);
-export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true);
+export const SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false, false);
+export const TENANT_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(false, true);
+export const EMPLOYEE_SETTINGS_NAV_ITEM: NavItem = buildSettingsNavItem(true, false);
 
 /** Unified work area — projects are the main container; workspace is a filter context. */
 export const WORK_NAV_ITEM: NavItem = {

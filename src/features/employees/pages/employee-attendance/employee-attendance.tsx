@@ -15,15 +15,17 @@ interface AttendanceLogEntry {
   id: string; date: string; day: string; isoDate: string;
   clockIn: string; clockOut: string; hours: string;
   mode: 'Office' | 'Remote'; status: 'on-time' | 'late';
+  timeOff?: string;
 }
 
 const ATTENDANCE_LOG: AttendanceLogEntry[] = [
-  { id: 'al-1', date: 'Jun 17', day: 'Tue', isoDate: '2026-06-17', clockIn: '9:15 AM', clockOut: '6:03 PM', hours: '8h 48m', mode: 'Office', status: 'on-time' },
-  { id: 'al-2', date: 'Jun 16', day: 'Mon', isoDate: '2026-06-16', clockIn: '9:08 AM', clockOut: '6:00 PM', hours: '8h 52m', mode: 'Remote', status: 'on-time' },
-  { id: 'al-3', date: 'Jun 13', day: 'Fri', isoDate: '2026-06-13', clockIn: '9:30 AM', clockOut: '5:45 PM', hours: '8h 15m', mode: 'Office', status: 'late'    },
-  { id: 'al-4', date: 'Jun 12', day: 'Thu', isoDate: '2026-06-12', clockIn: '9:00 AM', clockOut: '6:05 PM', hours: '9h 05m', mode: 'Office', status: 'on-time' },
-  { id: 'al-5', date: 'Jun 11', day: 'Wed', isoDate: '2026-06-11', clockIn: '9:20 AM', clockOut: '5:50 PM', hours: '8h 30m', mode: 'Remote', status: 'on-time' },
-  { id: 'al-6', date: 'Jun 10', day: 'Tue', isoDate: '2026-06-10', clockIn: '9:10 AM', clockOut: '6:00 PM', hours: '8h 50m', mode: 'Office', status: 'on-time' }
+  { id: 'al-1', date: 'Jun 17', day: 'Tue', isoDate: '2026-06-17', clockIn: '9:15 AM', clockOut: '6:03 PM', hours: '8h 48m', mode: 'Office', status: 'on-time', timeOff: '—' },
+  { id: 'al-2', date: 'Jun 16', day: 'Mon', isoDate: '2026-06-16', clockIn: '9:08 AM', clockOut: '6:00 PM', hours: '8h 52m', mode: 'Remote', status: 'on-time', timeOff: '—' },
+  { id: 'al-leave', date: 'Jun 15', day: 'Sun', isoDate: '2026-06-15', clockIn: '—', clockOut: '—', hours: '0h', mode: 'Remote', status: 'on-time', timeOff: 'Annual Leave' },
+  { id: 'al-3', date: 'Jun 13', day: 'Fri', isoDate: '2026-06-13', clockIn: '9:30 AM', clockOut: '5:45 PM', hours: '8h 15m', mode: 'Office', status: 'late',    timeOff: '—' },
+  { id: 'al-4', date: 'Jun 12', day: 'Thu', isoDate: '2026-06-12', clockIn: '9:00 AM', clockOut: '6:05 PM', hours: '9h 05m', mode: 'Office', status: 'on-time', timeOff: '—' },
+  { id: 'al-5', date: 'Jun 11', day: 'Wed', isoDate: '2026-06-11', clockIn: '9:20 AM', clockOut: '5:50 PM', hours: '8h 30m', mode: 'Remote', status: 'on-time', timeOff: '—' },
+  { id: 'al-6', date: 'Jun 10', day: 'Tue', isoDate: '2026-06-10', clockIn: '9:10 AM', clockOut: '6:00 PM', hours: '8h 50m', mode: 'Office', status: 'on-time', timeOff: '—' }
 ];
 
 interface OvertimeRequest {
@@ -44,16 +46,23 @@ const SEED_CORRECTIONS: CorrectionRequest[] = [
   { id: 'cor-1', date: 'Jun 5', requestedIn: '8:45 AM', requestedOut: '6:15 PM', reason: 'System outage at clock-in', status: 'pending', approver: 'HR', submittedDate: 'Jun 6' }
 ];
 
+const EMPLOYEE_LEAVES: Record<string, { balance: string; nextLeave: string }> = {
+  alex: { balance: '24 Days Left', nextLeave: 'Jun 20 - 23 (Annual)' },
+  manager: { balance: '18 Days Left', nextLeave: 'Jul 2 - 3 (Casual)' },
+  marcus: { balance: '32 Days Left', nextLeave: 'Aug 12 - 15 (Annual)' },
+};
+
 /* ─── Team mock (manager view) ─── */
 interface TeamAttendanceEntry {
   id: string; name: string; initials: string; date: string;
   clockIn: string; clockOut: string; hours: string;
   mode: 'Office' | 'Remote'; status: 'on-time' | 'late';
+  timeOff?: string;
 }
 
 const TEAM_ATTENDANCE: TeamAttendanceEntry[] = [
-  { id: 'ta-1', name: 'Alexander Pierce', initials: 'AP', date: 'Jun 17', clockIn: '9:10 AM', clockOut: '6:00 PM', hours: '8h 50m', mode: 'Office', status: 'on-time' },
-  { id: 'ta-2', name: 'Jordan Kim',       initials: 'JK', date: 'Jun 17', clockIn: '9:40 AM', clockOut: '5:55 PM', hours: '8h 15m', mode: 'Remote', status: 'late'    },
+  { id: 'ta-1', name: 'Alexander Pierce', initials: 'AP', date: 'Jun 17', clockIn: '9:10 AM', clockOut: '6:00 PM', hours: '8h 50m', mode: 'Office', status: 'on-time', timeOff: 'Jun 20 - 23 (Annual)' },
+  { id: 'ta-2', name: 'Jordan Kim',       initials: 'JK', date: 'Jun 17', clockIn: '9:40 AM', clockOut: '5:55 PM', hours: '8h 15m', mode: 'Remote', status: 'late',    timeOff: 'Jun 18 (Sick)' },
 ];
 
 /* ─── Form state ─── */
@@ -260,14 +269,69 @@ export const EmployeeAttendance: React.FC = () => {
                   </div>
                   <span className="eap-week-row__hours">{w.loggedHours}</span>
                 </div>
-              ))}
-            </div>
-            <div className="eap-week-totals">
-              <span className="eap-week-totals__label">Total hours</span>
-              <span className="eap-week-totals__value">{attendanceWeeklyPatternTotals.totalLabel}</span>
-            </div>
-          </div>
-        </div>
+                <table className="eap-log-table">
+                  <colgroup>
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '12%' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Clock In</th>
+                      <th>Clock Out</th>
+                      <th>Hours</th>
+                      <th>Mode</th>
+                      <th>Status</th>
+                      <th>Time Off</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ATTENDANCE_LOG.map(entry => (
+                       <tr key={entry.id}>
+                        <td className="eap-log-table__date">
+                          {entry.date} <span style={{ color: 'var(--nexus-text-muted)', fontWeight: 400 }}>({entry.day})</span>
+                        </td>
+                        <td>{entry.clockIn}</td>
+                        <td>{entry.clockOut}</td>
+                        <td className="eap-log-table__hours">{entry.hours}</td>
+                        <td>
+                          <span className={`eap-mode-chip eap-mode-chip--${entry.mode.toLowerCase()}`}>
+                            {entry.mode === 'Office' ? <Building2 size={10} /> : <Laptop size={10} />}
+                            {entry.mode}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`eap-punct-chip eap-punct-chip--${entry.status}`}>
+                            {entry.status === 'on-time' ? 'On time' : 'Late'}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.72rem', color: 'var(--nexus-text-muted)' }}>
+                          {entry.timeOff || '—'}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="era-btn era-btn--ghost"
+                            style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', gap: '0.25rem' }}
+                            onClick={() => openCorrectionForRow(entry)}
+                            title="Request Correction"
+                          >
+                            <ClipboardList size={11} />
+                            Correct
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
         {/* ── Bottom grid: OT + corrections ── */}
         <div className="eap-bottom-grid">
@@ -324,10 +388,121 @@ export const EmployeeAttendance: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+
+              </div>
+
+              <div className="eap-panel era-panel">
+                <div className="eap-section-head">
+                  <span className="eap-section-title">Time Off & Leaves</span>
+                  <span className="eap-section-meta">Balance</span>
+                </div>
+                <table className="eap-log-table">
+                  <colgroup>
+                    <col style={{ width: '35%' }} />
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '35%' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>Leave Type</th>
+                      <th>Used / Total</th>
+                      <th>Next Scheduled</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ fontWeight: 600 }}>Annual Leave</td>
+                      <td>
+                        {selectedEmployee.id === 'alex' ? '6 / 24 Days' : selectedEmployee.id === 'manager' ? '8 / 18 Days' : '4 / 32 Days'}
+                      </td>
+                      <td style={{ fontSize: '0.72rem', color: 'var(--nexus-text-muted)' }}>
+                        {EMPLOYEE_LEAVES[selectedEmployee.id]?.nextLeave || '—'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 600 }}>Sick Leave</td>
+                      <td>1 / 10 Days</td>
+                      <td style={{ fontSize: '0.72rem', color: 'var(--nexus-text-muted)' }}>—</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 600 }}>Casual Leave</td>
+                      <td>2 / 5 Days</td>
+                      <td style={{ fontSize: '0.72rem', color: 'var(--nexus-text-muted)' }}>—</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        ) : (
+          /* ── Team attendance view ── */
+          <div className="eap-team-container">
+            <div className="eap-team-main-content">
+              {/* Card 1: Team Attendance */}
+              <div className="eap-panel era-panel">
+                <div className="eap-section-head">
+                  <span className="eap-section-title"><Users size={13} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />Team Attendance — Today</span>
+                  <span className="eap-section-meta">Jun 17</span>
+                </div>
+                <table className="eap-log-table">
+                  <colgroup>
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '20%' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Clock In</th>
+                      <th>Clock Out</th>
+                      <th>Hours</th>
+                      <th>Mode</th>
+                      <th>Status</th>
+                      <th>Time Off</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {TEAM_ATTENDANCE.map(entry => (
+                      <tr key={entry.id}>
+                        <td>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: 'var(--accent)', color: '#fff',
+                              fontSize: '0.65rem', fontWeight: 600,
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0
+                            }}>{entry.initials}</span>
+                            {entry.name}
+                          </span>
+                        </td>
+                        <td>{entry.clockIn}</td>
+                        <td>{entry.clockOut}</td>
+                        <td className="eap-log-table__hours">{entry.hours}</td>
+                        <td>
+                          <span className={`eap-mode-chip eap-mode-chip--${entry.mode.toLowerCase()}`}>
+                            {entry.mode === 'Office' ? <Building2 size={10} /> : <Laptop size={10} />}
+                            {entry.mode}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`eap-punct-chip eap-punct-chip--${entry.status}`}>
+                            {entry.status === 'on-time' ? 'On time' : 'Late'}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.72rem', color: 'var(--nexus-text-muted)' }}>
+                          {entry.timeOff || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
 
         {/* ── Team attendance (manager only) ── */}
         {isManager && (

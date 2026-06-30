@@ -43,6 +43,8 @@ import { DevicesSettingsPage } from '../features/settings/DevicesSettingsPage';
 import { TENANT_DEVICE_CAPABILITY } from '../features/settings/settingsConfig';
 import { SchedulesPage } from '../features/time-attendance/configuration/SchedulesPage';
 import { ClockInPolicyPage } from '../features/time-attendance/clock-in-policy/ClockInPolicyPage';
+import { EmployeeMonitoring } from '../features/employees/pages/employee-monitoring/employee-monitoring';
+import { MonitoringPolicyPage } from '../features/employees/pages/employee-monitoring/MonitoringPolicyPage';
 import { PeopleEmployeesRoutes } from '../features/people/employees/PeopleEmployeesRoutes';
 import { WorkProvider } from '../features/work/context/work-context';
 import { InboxProvider } from '../core/notifications/inbox-context';
@@ -170,7 +172,7 @@ function App() {
           case 'time-off-type': return <LeaveTypesPage />;
           case 'time-off-policy': return <LeavePoliciesPage />;
           case 'entitlement': return <LeaveEntitlementsPage />;
-          case 'monitoring-policy':
+          case 'monitoring-policy': return <MonitoringPolicyPage />;
           case 'monitoring-privacy-setting':
           case 'app-allowlist':
             return renderSectionPage('Settings', allEmployeeItems, resolvedSubId);
@@ -192,6 +194,7 @@ function App() {
           case 'schedules': return <SchedulesPage />;
           case 'time-off': return <EmployeeLeave />;
           case 'time-tracking': return <EmployeeAttendance />;
+          case 'monitoring': return <EmployeeMonitoring />;
           default: return renderSectionPage(activeTab, allEmployeeItems, resolvedSubId);
         }
       }
@@ -265,6 +268,7 @@ function App() {
           case 'entitlement':
             return <LeaveEntitlementsPage />;
           case 'monitoring-policy':
+            return <MonitoringPolicyPage />;
           case 'monitoring-privacy-setting':
           case 'app-allowlist':
             return renderSectionPage('Settings', allTenantItems, resolvedSubId);
@@ -283,6 +287,8 @@ function App() {
             return <SchedulesPage />;
           case 'time-off':
             return <EmployeeLeave />;
+          case 'monitoring':
+            return <EmployeeMonitoring />;
           default:
             return renderSectionPage(activeTab, allTenantItems, resolvedSubId);
         }

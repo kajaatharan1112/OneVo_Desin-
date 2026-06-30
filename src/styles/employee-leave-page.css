@@ -494,6 +494,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--text);
+  text-align: left;
 }
 
 .elp-field__input {
