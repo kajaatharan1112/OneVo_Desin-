@@ -19,7 +19,7 @@ export const PROJECT_NAV_TOOLS: { id: ProjectNavId; label: string }[] = [
   { id: 'overview', label: 'Overall view' },
   { id: 'work-items', label: 'Task board' },
   { id: 'progress', label: 'Analytics' },
-  { id: 'goal', label: 'Goal' },
+  { id: 'goal', label: 'Milestones' },
   { id: 'members', label: 'Members' },
 ];
 

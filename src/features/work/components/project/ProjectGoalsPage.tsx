@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import {
-  ArrowLeft,
   Clock,
   Plus,
   Trash2,
   User,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import { useWork } from '../../context/work-context';
 import {
@@ -12,6 +14,7 @@ import {
   MOCK_EMPLOYEES,
   employeeName,
   formatWorkDate,
+  formatWorkDateShort,
   priorityBadgeClass,
   type MilestoneStatus,
   type ProjectGoal,
@@ -38,13 +41,13 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
   } = useWork();
 
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'settings'>('details');
+  const [expandedMilestoneIds, setExpandedMilestoneIds] = useState<Record<string, boolean>>({});
 
   // Creation states
   const [isCreatingGoal, setIsCreatingGoal] = useState(false);
   const [isCreatingMilestone, setIsCreatingMilestone] = useState(false);
 
-  // Goal Form State
+  // Milestone (formerly Goal) Form State
   const [goalForm, setGoalForm] = useState({
     name: '',
     description: '',
@@ -53,7 +56,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     status: 'active' as 'active' | 'completed' | 'on_hold',
   });
 
-  // Milestone Form State
+  // Sub Milestone (formerly Milestone) Form State
   const [milestoneForm, setMilestoneForm] = useState({
     name: '',
     description: '',
@@ -64,26 +67,19 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     status: 'upcoming' as MilestoneStatus,
   });
 
-  // Checklist states
-  const [newGoalChecklistItem, setNewGoalChecklistItem] = useState('');
-  const [newMilestoneChecklistItems, setNewMilestoneChecklistItems] = useState<Record<string, string>>({});
+  // Checklist text input state indexed by milestone (goal) ID
+  const [newChecklistText, setNewChecklistText] = useState<Record<string, string>>({});
 
   const projectGoals = useMemo(
     () => goals.filter(g => g.projectId === project.id),
     [goals, project.id]
   );
 
-  const selectedGoal = useMemo(
-    () => goals.find(g => g.id === selectedGoalId) || null,
-    [goals, selectedGoalId]
-  );
+  const toggleExpand = (id: string) => {
+    setExpandedMilestoneIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
-  const goalMilestones = useMemo(
-    () => (selectedGoalId ? milestones.filter(m => m.projectId === project.id && m.goalId === selectedGoalId) : []),
-    [milestones, project.id, selectedGoalId]
-  );
-
-  // Goal handlers
+  // Milestone (formerly Goal) handlers
   const handleCreateGoal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!goalForm.name.trim()) return;
@@ -110,21 +106,14 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     setIsCreatingGoal(false);
   };
 
-  const handleUpdateGoal = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedGoal) return;
-    updateGoal(selectedGoal.id, selectedGoal);
-    setActiveTab('details');
-  };
-
-  const handleDeleteGoal = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this Goal?')) {
+  const handleDeleteGoal = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this Milestone?')) {
       deleteGoal(id);
-      setSelectedGoalId(null);
     }
   };
 
-  // Milestone handlers
+  // Sub Milestone (formerly Milestone) handlers
   const handleCreateMilestone = (e: React.FormEvent) => {
     e.preventDefault();
     if (!milestoneForm.name.trim() || !milestoneForm.dueDate || !selectedGoalId) return;
@@ -157,22 +146,24 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     setIsCreatingMilestone(false);
   };
 
-  // Goal Checklist Handlers
-  const addGoalChecklistItem = (goalId: string) => {
-    if (!newGoalChecklistItem.trim()) return;
+  // Milestone (formerly Goal) Checklist Handlers
+  const handleAddChecklist = (goalId: string) => {
+    const text = newChecklistText[goalId] || '';
+    if (!text.trim()) return;
+
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
 
     const newItem = {
       id: `gc-${Date.now()}`,
-      text: newGoalChecklistItem.trim(),
+      text: text.trim(),
       done: false,
     };
 
     updateGoal(goalId, {
       checklist: [...goal.checklist, newItem],
     });
-    setNewGoalChecklistItem('');
+    setNewChecklistText(prev => ({ ...prev, [goalId]: '' }));
   };
 
   const toggleGoalChecklistItem = (goalId: string, itemId: string) => {
@@ -195,47 +186,6 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     });
   };
 
-  // Milestone Checklist Handlers
-  const addMilestoneChecklistItem = (milestoneId: string) => {
-    const text = newMilestoneChecklistItems[milestoneId];
-    if (!text || !text.trim()) return;
-    const ms = milestones.find(m => m.id === milestoneId);
-    if (!ms) return;
-
-    const newItem = {
-      id: `msc-${Date.now()}`,
-      text: text.trim(),
-      done: false,
-    };
-
-    const currentChecklist = ms.checklist || [];
-    updateMilestone(milestoneId, {
-      checklist: [...currentChecklist, newItem],
-    });
-
-    setNewMilestoneChecklistItems(prev => ({ ...prev, [milestoneId]: '' }));
-  };
-
-  const toggleMilestoneChecklistItem = (milestoneId: string, itemId: string) => {
-    const ms = milestones.find(m => m.id === milestoneId);
-    if (!ms || !ms.checklist) return;
-
-    const updatedChecklist = ms.checklist.map(item =>
-      item.id === itemId ? { ...item, done: !item.done } : item
-    );
-
-    updateMilestone(milestoneId, { checklist: updatedChecklist });
-  };
-
-  const deleteMilestoneChecklistItem = (milestoneId: string, itemId: string) => {
-    const ms = milestones.find(m => m.id === milestoneId);
-    if (!ms || !ms.checklist) return;
-
-    updateMilestone(milestoneId, {
-      checklist: ms.checklist.filter(item => item.id !== itemId),
-    });
-  };
-
   const getMilestoneTasks = (msId: string) => {
     return tasks.filter(t => t.projectId === project.id && milestones.find(m => m.id === msId)?.linkedWorkItemIds.includes(t.id));
   };
@@ -244,9 +194,9 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     <div className="work-goals-page" style={{ padding: '24px 20px', fontFamily: 'Outfit, Inter, sans-serif' }}>
       <style dangerouslySetInnerHTML={{ __html: `
         .goal-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
           margin-top: 16px;
         }
         .goal-card {
@@ -256,20 +206,21 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
           padding: 20px;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
           transition: all 0.2s ease-in-out;
-          cursor: pointer;
           display: flex;
           flex-direction: column;
           gap: 12px;
         }
-        .goal-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-          border-color: var(--accent);
-        }
         .goal-card-header {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
+          align-items: center;
+        }
+        .goal-card-title-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          flex: 1;
         }
         .goal-card-title {
           font-size: 16px;
@@ -293,22 +244,6 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
           color: var(--text-m, #475569);
           line-height: 1.5;
           margin: 0;
-          flex: 1;
-        }
-        .goal-card-meta {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 12px;
-          color: var(--text-s, #64748b);
-          border-top: 1px solid var(--border, #cbd5e1);
-          padding-top: 12px;
-          margin-top: 4px;
-        }
-        .goal-card-meta-item {
-          display: flex;
-          align-items: center;
-          gap: 4px;
         }
         
         /* Form drawer styles */
@@ -335,46 +270,19 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
           to { transform: translateX(0); }
         }
         
-        /* Goal detailed view styles */
-        .goal-details-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 24px;
-        }
-        .goal-details-title-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          width: 100%;
-        }
+        /* Milestone detailed view styles */
         .goal-details-tabs {
           display: flex;
           gap: 4px;
           border-bottom: 1px solid var(--border);
           margin-bottom: 20px;
         }
-        .goal-details-tab-btn {
-          background: none;
-          border: none;
-          padding: 8px 16px;
-          font-size: 13.5px;
-          font-weight: 600;
-          color: var(--text-m);
-          cursor: pointer;
-          border-bottom: 2px solid transparent;
-          transition: all 0.15s;
-        }
-        .goal-details-tab-btn--active {
-          color: var(--accent);
-          border-bottom-color: var(--accent);
-        }
         
         .milestone-section-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin: 24px 0 16px;
+          margin-bottom: 16px;
         }
         
         /* Milestone Card for Goals */
@@ -383,7 +291,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
           border: 1px solid #e2e8f0;
           border-radius: 8px;
           padding: 16px;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
           display: flex;
           flex-direction: column;
           gap: 12px;
@@ -419,436 +327,287 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
         }
       ` }} />
 
-      {!selectedGoalId ? (
-        /* ── LIST VIEW ── */
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-h)' }}>Project Goals</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-m)' }}>
-                Establish core project objectives and trace phase-wise progress.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="org-btn org-btn--primary org-btn--sm"
-              onClick={() => setIsCreatingGoal(true)}
-            >
-              <Plus size={14} /> Create Goal
-            </button>
+      <div>
+        {/* Page Top Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-h)' }}>Project Milestones</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-m)' }}>
+              Establish core project milestones and trace phase-wise progress.
+            </p>
           </div>
-
-          {projectGoals.length === 0 ? (
-            <div className="cfg-empty" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '40px', textAlign: 'center' }}>
-              <p className="cfg-empty__title" style={{ fontSize: '15px', fontWeight: 600, color: '#334155', margin: 0 }}>No goals defined yet</p>
-              <p className="cfg-empty__desc" style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>Add high-level project goals to align your milestones and checklists.</p>
-              <button
-                type="button"
-                className="org-btn org-btn--secondary org-btn--sm"
-                onClick={() => setIsCreatingGoal(true)}
-                style={{ marginTop: '16px' }}
-              >
-                + Define First Goal
-              </button>
-            </div>
-          ) : (
-            <div className="goal-grid">
-              {projectGoals.map(goal => {
-                const goalMilestonesCount = milestones.filter(m => m.projectId === project.id && m.goalId === goal.id).length;
-                const completedChecklist = goal.checklist.filter(item => item.done).length;
-                const totalChecklist = goal.checklist.length;
-                const progressPercent = totalChecklist > 0 ? Math.round((completedChecklist / totalChecklist) * 100) : 0;
-
-                return (
-                  <div
-                    key={goal.id}
-                    className="goal-card"
-                    onClick={() => { setSelectedGoalId(goal.id); setActiveTab('details'); }}
-                  >
-                    <div className="goal-card-header">
-                      <h3 className="goal-card-title">{goal.name}</h3>
-                      <span className={`goal-badge goal-badge--${goal.status}`}>
-                        {goal.status.replace('_', ' ')}
-                      </span>
-                    </div>
-
-                    <p className="goal-card-desc">{goal.description || 'No objective description provided.'}</p>
-
-                    {totalChecklist > 0 && (
-                      <div style={{ marginTop: '4px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: 'var(--text-s)', marginBottom: '4px' }}>
-                          <span>Checklist ({completedChecklist}/{totalChecklist})</span>
-                          <span>{progressPercent}%</span>
-                        </div>
-                        <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: 'var(--accent)', width: `${progressPercent}%` }} />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="goal-card-meta">
-                      <div className="goal-card-meta-item">
-                        <Clock size={12} />
-                        <span>{goal.durationHours} Hours</span>
-                      </div>
-                      <div className="goal-card-meta-item">
-                        <User size={12} />
-                        <span>{employeeName(goal.ownerId)}</span>
-                      </div>
-                      <div className="goal-card-meta-item" style={{ marginLeft: 'auto' }}>
-                        <span>{goalMilestonesCount} Milestones</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <button
+            type="button"
+            className="org-btn org-btn--primary org-btn--sm"
+            onClick={() => setIsCreatingGoal(true)}
+          >
+            <Plus size={14} /> Create Milestone
+          </button>
         </div>
-      ) : (
-        /* ── DETAILED GOAL VIEW ── */
-        <div>
-          <div className="goal-details-header">
+
+        {projectGoals.length === 0 ? (
+          <div className="cfg-empty" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '40px', textAlign: 'center' }}>
+            <p className="cfg-empty__title" style={{ fontSize: '15px', fontWeight: 600, color: '#334155', margin: 0 }}>No milestones defined yet</p>
+            <p className="cfg-empty__desc" style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>Add high-level project milestones to align your sub milestones and checklists.</p>
             <button
               type="button"
               className="org-btn org-btn--secondary org-btn--sm"
-              onClick={() => setSelectedGoalId(null)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={() => setIsCreatingGoal(true)}
+              style={{ marginTop: '16px' }}
             >
-              <ArrowLeft size={14} /> Back to Goals
+              + Define First Milestone
             </button>
           </div>
+        ) : (
+          <div className="goal-grid">
+            {projectGoals.map(goal => {
+              const isExpanded = !!expandedMilestoneIds[goal.id];
+              const goalMilestonesCount = milestones.filter(m => m.projectId === project.id && m.goalId === goal.id).length;
+              const completedChecklist = goal.checklist.filter(item => item.done).length;
+              const totalChecklist = goal.checklist.length;
+              const progressPercent = totalChecklist > 0 ? Math.round((completedChecklist / totalChecklist) * 100) : 0;
+              const currentGoalMilestones = milestones.filter(m => m.projectId === project.id && m.goalId === goal.id);
 
-          {selectedGoal && (
-            <div>
-              <div className="goal-details-title-row">
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>{selectedGoal.name}</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: '13.5px', color: '#475569' }}>
-                    {selectedGoal.description || 'No objective description.'}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span className={`goal-badge goal-badge--${selectedGoal.status}`}>
-                    {selectedGoal.status.replace('_', ' ')}
-                  </span>
-                  <button
-                    type="button"
-                    className="org-btn org-btn--secondary org-btn--sm"
-                    onClick={() => handleDeleteGoal(selectedGoal.id)}
-                    style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}
-                  >
-                    <Trash2 size={13} /> Delete Goal
-                  </button>
-                </div>
-              </div>
+              return (
+                <div key={goal.id} className="goal-card">
+                  {/* Card Header */}
+                  <div className="goal-card-header">
+                    <div className="goal-card-title-group" onClick={() => toggleExpand(goal.id)}>
+                      {isExpanded ? <ChevronDown size={18} style={{ color: 'var(--text-s)' }} /> : <ChevronRight size={18} style={{ color: 'var(--text-s)' }} />}
+                      <h3 className="goal-card-title">{goal.name}</h3>
+                    </div>
 
-              <div className="goal-details-tabs" style={{ marginTop: '20px' }}>
-                <button
-                  type="button"
-                  className={`goal-details-tab-btn${activeTab === 'details' ? ' goal-details-tab-btn--active' : ''}`}
-                  onClick={() => setActiveTab('details')}
-                >
-                  Goal Details & Milestones
-                </button>
-                <button
-                  type="button"
-                  className={`goal-details-tab-btn${activeTab === 'settings' ? ' goal-details-tab-btn--active' : ''}`}
-                  onClick={() => setActiveTab('settings')}
-                >
-                  Goal Settings
-                </button>
-              </div>
-
-              {activeTab === 'details' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '16px' }}>
-                  {/* Left Column: Milestones */}
-                  <div>
-                    <div className="milestone-section-header">
-                      <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Milestones under this Goal</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <select
+                        value={goal.status}
+                        onChange={e => updateGoal(goal.id, { status: e.target.value as any })}
+                        className={`goal-badge goal-badge--${goal.status}`}
+                        style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px' }}
+                      >
+                        <option value="active" style={{ color: '#1e40af', background: '#eff6ff' }}>Active</option>
+                        <option value="completed" style={{ color: '#15803d', background: '#dcfce7' }}>Completed</option>
+                        <option value="on_hold" style={{ color: '#b45309', background: '#fef3c7' }}>On Hold</option>
+                      </select>
+                      
                       <button
                         type="button"
-                        className="org-btn org-btn--primary org-btn--sm"
-                        onClick={() => setIsCreatingMilestone(true)}
+                        onClick={(e) => handleDeleteGoal(goal.id, e)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}
+                        title="Delete Milestone"
                       >
-                        <Plus size={13} /> Add Milestone
+                        <Trash2 size={15} />
                       </button>
                     </div>
+                  </div>
 
-                    {goalMilestones.length === 0 ? (
-                      <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No milestones created under this goal yet.</p>
+                  {/* Description */}
+                  <p className="goal-card-desc" style={{ paddingLeft: '26px' }}>{goal.description || 'No milestone description provided.'}</p>
+
+                  {/* Progress Indicator */}
+                  {totalChecklist > 0 && (
+                    <div style={{ paddingLeft: '26px', marginTop: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: 'var(--text-s)', marginBottom: '4px' }}>
+                        <span>Milestone Checklist ({completedChecklist}/{totalChecklist})</span>
+                        <span>{progressPercent}%</span>
                       </div>
-                    ) : (
-                      goalMilestones.map(ms => {
-                        const msTasks = getMilestoneTasks(ms.id);
-                        const doneTasks = msTasks.filter(t => t.status === 'done').length;
-                        const msChecklist = ms.checklist || [];
-                        const completedMsChecklist = msChecklist.filter(c => c.done).length;
-                        const totalMsChecklist = msChecklist.length;
+                      <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', background: 'var(--accent)', width: `${progressPercent}%` }} />
+                      </div>
+                    </div>
+                  )}
 
-                        return (
-                          <div key={ms.id} className="goal-ms-card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <div>
-                                <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: '#0f172a' }}>{ms.name}</h4>
-                                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>{ms.description}</p>
-                              </div>
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                <span className={`cfg-badge cfg-badge--${priorityBadgeClass(ms.priority || 'Medium')}`}>
-                                  {ms.priority || 'Medium'}
-                                </span>
-                                <span className={`cfg-badge cfg-badge--open`}>
-                                  Due {formatWorkDate(ms.dueDate)}
-                                </span>
-                                <button
-                                  type="button"
-                                  className="cfg-action-btn"
-                                  style={{ padding: '2px 4px', background: 'transparent' }}
-                                  onClick={() => {
-                                    if (window.confirm('Delete this milestone?')) {
-                                      deleteMilestone(ms.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 size={13} style={{ color: '#b91c1c' }} />
-                                </button>
-                              </div>
-                            </div>
+                  {/* Quick summary line when collapsed */}
+                  {!isExpanded && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--text-s)', paddingLeft: '26px', borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginTop: '6px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={12} />
+                        {goal.durationHours} Hours
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <User size={12} />
+                        {employeeName(goal.ownerId)}
+                      </span>
+                      <span style={{ marginLeft: 'auto', fontWeight: 600, color: 'var(--accent)' }}>
+                        {goalMilestonesCount} Sub Milestones
+                      </span>
+                    </div>
+                  )}
 
-                            {/* Milestone Tasks list */}
-                            {msTasks.length > 0 && (
-                              <div style={{ background: '#ffffff', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '10px 12px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Linked Work Items ({doneTasks}/{msTasks.length}):</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  {msTasks.map(task => (
-                                    <div
-                                      key={task.id}
-                                      onClick={() => openTaskDetail(task.id)}
-                                      style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', padding: '2px 0' }}
-                                    >
-                                      <span>{task.key}: {task.title}</span>
-                                      <span style={{ textDecoration: 'none', color: '#475569', fontSize: '11px' }}>{task.status.toUpperCase()}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                  {/* EXPANDED DETAILED INLINE VIEW */}
+                  {isExpanded && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '12px' }}>
+                      {/* Left: Sub Milestones */}
+                      <div>
+                        <div className="milestone-section-header">
+                          <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>Sub Milestones under this Milestone</h4>
+                          <button
+                            type="button"
+                            className="org-btn org-btn--primary org-btn--sm"
+                            onClick={() => {
+                              setSelectedGoalId(goal.id);
+                              setIsCreatingMilestone(true);
+                            }}
+                            style={{ padding: '3px 8px', fontSize: '11px' }}
+                          >
+                            <Plus size={11} /> Add Sub Milestone
+                          </button>
+                        </div>
 
-                            {/* Milestone checklist: "Add the checklist" */}
-                            <div style={{ marginTop: '6px', borderTop: '1px dashed #e2e8f0', paddingTop: '10px' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Milestone Checklist ({completedMsChecklist}/{totalMsChecklist})</span>
-                              
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                                {msChecklist.map(item => (
-                                  <div key={item.id} className="checklist-item-row" style={{ padding: '3px 0', borderBottom: 'none' }}>
-                                    <label className="checklist-item-label" onClick={() => toggleMilestoneChecklistItem(ms.id, item.id)}>
-                                      <input type="checkbox" checked={item.done} readOnly />
-                                      <span className={item.done ? 'checklist-item-text--done' : ''}>{item.text}</span>
-                                    </label>
+                        {currentGoalMilestones.length === 0 ? (
+                          <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>No sub milestones created yet.</p>
+                          </div>
+                        ) : (
+                          currentGoalMilestones.map(ms => {
+                            const msTasks = getMilestoneTasks(ms.id);
+                            const doneTasks = msTasks.filter(t => t.status === 'done').length;
+
+                            return (
+                              <div key={ms.id} className="goal-ms-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <div>
+                                    <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{ms.name}</h5>
+                                    <p style={{ margin: '3px 0 0', fontSize: '11.5px', color: '#64748b' }}>{ms.description}</p>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <span className={`cfg-badge cfg-badge--${priorityBadgeClass(ms.priority || 'Medium')}`} style={{ fontSize: '9px', padding: '1px 6px' }}>
+                                      {ms.priority || 'Medium'}
+                                    </span>
+                                    <span className={`cfg-badge cfg-badge--open`} style={{ fontSize: '9px', padding: '1px 6px' }}>
+                                      Due {formatWorkDateShort(ms.dueDate)}
+                                    </span>
                                     <button
                                       type="button"
-                                      onClick={() => deleteMilestoneChecklistItem(ms.id, item.id)}
-                                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
+                                      style={{ padding: '2px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                                      onClick={() => {
+                                        if (window.confirm('Delete this sub milestone?')) {
+                                          deleteMilestone(ms.id);
+                                        }
+                                      }}
                                     >
-                                      <Trash2 size={12} />
+                                      <Trash2 size={12} style={{ color: '#b91c1c' }} />
                                     </button>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
 
-                              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                <input
-                                  type="text"
-                                  placeholder="Add milestone checklist item..."
-                                  value={newMilestoneChecklistItems[ms.id] || ''}
-                                  onChange={e => setNewMilestoneChecklistItems(prev => ({ ...prev, [ms.id]: e.target.value }))}
-                                  onKeyDown={e => { if (e.key === 'Enter') addMilestoneChecklistItem(ms.id); }}
-                                  style={{ flex: 1, padding: '4px 8px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => addMilestoneChecklistItem(ms.id)}
-                                  className="org-btn org-btn--secondary org-btn--sm"
-                                  style={{ padding: '4px 8px' }}
-                                >
-                                  Add
-                                </button>
+                                {/* Link to tasks */}
+                                {msTasks.length > 0 && (
+                                  <div style={{ background: '#ffffff', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px 10px', marginTop: '4px' }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Linked Work Items ({doneTasks}/{msTasks.length}):</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                      {msTasks.map(task => (
+                                        <div
+                                          key={task.id}
+                                          onClick={() => openTaskDetail(task.id)}
+                                          style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}
+                                        >
+                                          <span>{task.key}: {task.title}</span>
+                                          <span style={{ textDecoration: 'none', color: '#475569', fontSize: '10px' }}>{task.status.toUpperCase()}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Right: Milestone Checklist & Parameter settings */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div>
+                          <h4 style={{ margin: '0 0 10px', fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>Milestone Checklist</h4>
+                          <div className="goal-checklist-wrap" style={{ padding: '12px' }}>
+                            {goal.checklist.length === 0 ? (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#64748b', textAlign: 'center' }}>No checklist items.</p>
+                            ) : (
+                              goal.checklist.map(item => (
+                                <div key={item.id} className="checklist-item-row" style={{ padding: '4px 0' }}>
+                                  <label className="checklist-item-label" onClick={() => toggleGoalChecklistItem(goal.id, item.id)}>
+                                    <input type="checkbox" checked={item.done} readOnly />
+                                    <span className={item.done ? 'checklist-item-text--done' : ''} style={{ fontSize: '12px' }}>{item.text}</span>
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteGoalChecklistItem(goal.id, item.id)}
+                                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                              <input
+                                type="text"
+                                placeholder="New checklist item..."
+                                value={newChecklistText[goal.id] || ''}
+                                onChange={e => {
+                                  const textVal = e.target.value;
+                                  setNewChecklistText(prev => ({ ...prev, [goal.id]: textVal }));
+                                }}
+                                onKeyDown={e => { if (e.key === 'Enter') handleAddChecklist(goal.id); }}
+                                style={{ flex: 1, padding: '4px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleAddChecklist(goal.id)}
+                                className="org-btn org-btn--secondary org-btn--sm"
+                                style={{ padding: '4px 8px', fontSize: '11px' }}
+                              >
+                                Add
+                              </button>
                             </div>
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
+                        </div>
 
-                  {/* Right Column: Goal Checklist */}
-                  <div>
-                    <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Goal Checklist</h3>
-                    
-                    <div className="goal-checklist-wrap">
-                      {selectedGoal.checklist.length === 0 ? (
-                        <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b', textAlign: 'center' }}>No checklist items added.</p>
-                      ) : (
-                        selectedGoal.checklist.map(item => (
-                          <div key={item.id} className="checklist-item-row">
-                            <label className="checklist-item-label" onClick={() => toggleGoalChecklistItem(selectedGoal.id, item.id)}>
-                              <input type="checkbox" checked={item.done} readOnly />
-                              <span className={item.done ? 'checklist-item-text--done' : ''}>{item.text}</span>
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => deleteGoalChecklistItem(selectedGoal.id, item.id)}
-                              style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                        {/* Parameter edit box */}
+                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#475569' }}>Milestone Settings</h4>
+                          
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ color: '#64748b' }}>Duration (Hours):</span>
+                              <input 
+                                type="number" 
+                                value={goal.durationHours} 
+                                onChange={e => updateGoal(goal.id, { durationHours: Number(e.target.value) })}
+                                style={{ width: '70px', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right' }}
+                              />
+                            </div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ color: '#64748b' }}>Owner:</span>
+                              <select 
+                                value={goal.ownerId}
+                                onChange={e => updateGoal(goal.id, { ownerId: e.target.value })}
+                                style={{ padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                              >
+                                {MOCK_EMPLOYEES.map(emp => (
+                                  <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                        ))
-                      )}
-
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                        <input
-                          type="text"
-                          placeholder="New checklist item..."
-                          value={newGoalChecklistItem}
-                          onChange={e => setNewGoalChecklistItem(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') addGoalChecklistItem(selectedGoal.id); }}
-                          style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => addGoalChecklistItem(selectedGoal.id)}
-                          className="org-btn org-btn--secondary org-btn--sm"
-                        >
-                          Add
-                        </button>
+                        </div>
                       </div>
                     </div>
-
-                    <div style={{ marginTop: '20px', background: '#eff6ff', padding: '16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                      <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#1e40af' }}>Goal Parameters</h4>
-                      <div style={{ fontSize: '12px', color: '#1e3a8a', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div>Duration: <strong>{selectedGoal.durationHours} Hours</strong></div>
-                        <div>Owner: <strong>{employeeName(selectedGoal.ownerId)}</strong></div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                /* ── GOAL SETTINGS TAB ── */
-                <form
-                  onSubmit={handleUpdateGoal}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    maxWidth: '600px',
-                    marginTop: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                  }}
-                >
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>Goal Settings</h3>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Update parameters for this project objective.</p>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-                  <div className="org-form-field">
-                    <label htmlFor="settings-name">Goal Name</label>
-                    <input
-                      id="settings-name"
-                      value={selectedGoal.name}
-                      onChange={e => {
-                        const val = e.target.value;
-                        updateGoal(selectedGoal.id, { name: val });
-                      }}
-                      required
-                    />
-                  </div>
-
-                  <div className="org-form-field">
-                    <label htmlFor="settings-desc">Description</label>
-                    <textarea
-                      id="settings-desc"
-                      rows={3}
-                      value={selectedGoal.description}
-                      onChange={e => {
-                        const val = e.target.value;
-                        updateGoal(selectedGoal.id, { description: val });
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="org-form-field">
-                      <label htmlFor="settings-duration">Duration (Hours)</label>
-                      <input
-                        id="settings-duration"
-                        type="number"
-                        min={1}
-                        value={selectedGoal.durationHours}
-                        onChange={e => {
-                          const val = Number(e.target.value);
-                          updateGoal(selectedGoal.id, { durationHours: val });
-                        }}
-                        required
-                      />
-                    </div>
-                    <div className="org-form-field">
-                      <label htmlFor="settings-owner">Owner</label>
-                      <select
-                        id="settings-owner"
-                        value={selectedGoal.ownerId}
-                        onChange={e => {
-                          const val = e.target.value;
-                          updateGoal(selectedGoal.id, { ownerId: val });
-                        }}
-                      >
-                        {MOCK_EMPLOYEES.map(emp => (
-                          <option key={emp.id} value={emp.id}>{emp.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="org-form-field">
-                    <label htmlFor="settings-status">Status</label>
-                    <select
-                      id="settings-status"
-                      value={selectedGoal.status}
-                      onChange={e => {
-                        const val = e.target.value as any;
-                        updateGoal(selectedGoal.id, { status: val });
-                      }}
-                    >
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="on_hold">On Hold</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                    <button
-                      type="submit"
-                      className="org-btn org-btn--primary"
-                    >
-                      Save Settings
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── CREATE GOAL DRAWER ── */}
+      {/* ── CREATE MILESTONE (formerly Goal) DRAWER ── */}
       {isCreatingGoal && (
         <div className="goals-drawer-backdrop" onClick={() => setIsCreatingGoal(false)}>
           <div className="goals-drawer" onClick={e => e.stopPropagation()}>
             <div style={{ padding: '24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Create Goal</h3>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Create Milestone</h3>
               <button
                 type="button"
                 onClick={() => setIsCreatingGoal(false)}
@@ -860,7 +619,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
             
             <form onSubmit={handleCreateGoal} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, overflowY: 'auto' }}>
               <div className="org-form-field">
-                <label htmlFor="goal-name">Goal Name <span style={{ color: 'red' }}>*</span></label>
+                <label htmlFor="goal-name">Milestone Name <span style={{ color: 'red' }}>*</span></label>
                 <input
                   id="goal-name"
                   placeholder="e.g. Design System Implementation"
@@ -874,7 +633,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
                 <label htmlFor="goal-desc">Description</label>
                 <textarea
                   id="goal-desc"
-                  placeholder="What is the objective of this project goal?"
+                  placeholder="What is the objective of this project milestone?"
                   rows={4}
                   value={goalForm.description}
                   onChange={e => setGoalForm(f => ({ ...f, description: e.target.value }))}
@@ -921,19 +680,19 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
 
               <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #cbd5e1' }}>
                 <button type="button" className="org-btn org-btn--secondary" onClick={() => setIsCreatingGoal(false)}>Cancel</button>
-                <button type="submit" className="org-btn org-btn--primary" disabled={!goalForm.name.trim()}>Create Goal</button>
+                <button type="submit" className="org-btn org-btn--primary" disabled={!goalForm.name.trim()}>Create Milestone</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ── CREATE MILESTONE DRAWER ── */}
+      {/* ── CREATE SUB MILESTONE (formerly Milestone) DRAWER ── */}
       {isCreatingMilestone && (
         <div className="goals-drawer-backdrop" onClick={() => setIsCreatingMilestone(false)}>
           <div className="goals-drawer" onClick={e => e.stopPropagation()}>
             <div style={{ padding: '24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Add Milestone under Goal</h3>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Add Sub Milestone</h3>
               <button
                 type="button"
                 onClick={() => setIsCreatingMilestone(false)}
@@ -945,7 +704,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
             
             <form onSubmit={handleCreateMilestone} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, overflowY: 'auto' }}>
               <div className="org-form-field">
-                <label htmlFor="ms-name-form">Milestone Name <span style={{ color: 'red' }}>*</span></label>
+                <label htmlFor="ms-name-form">Sub Milestone Name <span style={{ color: 'red' }}>*</span></label>
                 <input
                   id="ms-name-form"
                   placeholder="e.g. Beta release"
@@ -959,7 +718,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
                 <label htmlFor="ms-desc-form">Description</label>
                 <textarea
                   id="ms-desc-form"
-                  placeholder="Describe this milestone phase..."
+                  placeholder="Describe this sub milestone phase..."
                   rows={3}
                   value={milestoneForm.description}
                   onChange={e => setFormMs(f => ({ ...f, description: e.target.value }))}
@@ -1031,7 +790,7 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
 
               <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #cbd5e1' }}>
                 <button type="button" className="org-btn org-btn--secondary" onClick={() => setIsCreatingMilestone(false)}>Cancel</button>
-                <button type="submit" className="org-btn org-btn--primary" disabled={!milestoneForm.name.trim() || !milestoneForm.dueDate}>Add Milestone</button>
+                <button type="submit" className="org-btn org-btn--primary" disabled={!milestoneForm.name.trim() || !milestoneForm.dueDate}>Add Sub Milestone</button>
               </div>
             </form>
           </div>
@@ -1040,7 +799,6 @@ export const ProjectGoalsPage: React.FC<Props> = ({ project }) => {
     </div>
   );
 
-  // Helper function to update milestone form state safely
   function setFormMs(updater: (f: typeof milestoneForm) => typeof milestoneForm) {
     setMilestoneForm(updater);
   }

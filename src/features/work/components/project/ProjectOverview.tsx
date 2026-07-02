@@ -464,23 +464,23 @@ export const ProjectOverview: React.FC<Props> = ({ project }) => {
           </div>
 
           <div className="work-overview-doc__state-panel">
-            <h3 className="work-overview-doc__state-title">Goals & Milestones</h3>
+            <h3 className="work-overview-doc__state-title">Milestones & Sub Milestones</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ color: 'var(--clr-text-secondary)' }}>Goals Objective</span>
+                <span style={{ color: 'var(--clr-text-secondary)' }}>Milestones Objective</span>
                 <strong style={{ color: 'var(--text-h)' }}>{projectGoals.length} Active</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ color: 'var(--clr-text-secondary)' }}>Milestones Count</span>
+                <span style={{ color: 'var(--clr-text-secondary)' }}>Sub Milestones Count</span>
                 <strong style={{ color: 'var(--text-h)' }}>{projectMilestones.length} Phases</strong>
               </div>
               {projectGoals.length > 0 && (
                 <div style={{ marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--clr-text-secondary)', textTransform: 'uppercase' }}>Objectives List:</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--clr-text-secondary)', textTransform: 'uppercase' }}>Milestones List:</span>
                   <ul className="work-mini-list" style={{ marginTop: '6px', paddingLeft: 0, listStyle: 'none' }}>
                     {projectGoals.map(g => (
                       <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--text-m)', padding: '2px 0' }}>
-                        <span>🎯 {g.name}</span>
+                        <span>📍 {g.name}</span>
                         <span style={{ fontSize: '10px', color: 'var(--clr-text-secondary)' }}>({g.durationHours}h)</span>
                       </li>
                     ))}

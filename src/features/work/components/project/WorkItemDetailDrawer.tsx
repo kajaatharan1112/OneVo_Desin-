@@ -462,17 +462,6 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                 />
               </div>
               <div className="org-form-field">
-                <label htmlFor="wid-end">End date</label>
-                <input
-                  id="wid-end"
-                  type="date"
-                  value={task.endDate ?? ''}
-                  onChange={e => patch({ endDate: e.target.value || null })}
-                />
-              </div>
-            </div>
-            <div className="settings-form-grid">
-              <div className="org-form-field">
                 <label htmlFor="wid-due">Due date</label>
                 <input
                   id="wid-due"
@@ -481,7 +470,10 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                   onChange={e => patch({ dueDate: e.target.value || null })}
                 />
               </div>
-              {project.workspaceIds.length > 0 && (
+            </div>
+            
+            <div className="settings-form-grid">
+              {project.workspaceIds.length > 0 ? (
                 <div className="org-form-field">
                   <label htmlFor="wid-ws">Linked workspace</label>
                   <select
@@ -495,10 +487,9 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                     ))}
                   </select>
                 </div>
+              ) : (
+                <div />
               )}
-            </div>
-
-            <div className="settings-form-grid">
               <div className="org-form-field">
                 <label htmlFor="wid-milestone">Allocated Milestone</label>
                 <select
@@ -512,6 +503,9 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="settings-form-grid">
               <div className="org-form-field">
                 <label htmlFor="wid-estimate">Allocated Hours</label>
                 <input
@@ -523,6 +517,7 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                   placeholder="e.g. 8"
                 />
               </div>
+              <div />
             </div>
             <div className="org-form-field">
               <label>Assignees</label>
