@@ -77,11 +77,14 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
 
   // Calendar specific state
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  const [calendarAnchorDate, setCalendarAnchorDate] = useState(() => new Date());
+  const [calendarViewType, setCalendarViewType] = useState<'month' | 'week' | 'day'>('month');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [dragOverUnscheduled, setDragOverUnscheduled] = useState(false);
+  const [inlineAddDate, setInlineAddDate] = useState<string | null>(null);
+  const [inlineAddTitle, setInlineAddTitle] = useState('');
+  const [hoveredCellDate, setHoveredCellDate] = useState<string | null>(null);
 
   const initialSignalRef = useRef(addWorkItemSignal);
 
@@ -172,28 +175,49 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   }, []);
 
   /* ── Calendar Handlers & Helpers ────────────────────────────── */
-  const prevMonth = () => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(y => y - 1);
-    } else {
-      setViewMonth(m => m - 1);
-    }
+  const handlePrev = () => {
+    setCalendarAnchorDate(prev => {
+      const d = new Date(prev);
+      if (calendarViewType === 'month') {
+        d.setMonth(d.getMonth() - 1);
+      } else if (calendarViewType === 'week') {
+        d.setDate(d.getDate() - 7);
+      } else {
+        d.setDate(d.getDate() - 1);
+      }
+      return d;
+    });
   };
 
-  const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(y => y + 1);
-    } else {
-      setViewMonth(m => m + 1);
-    }
+  const handleNext = () => {
+    setCalendarAnchorDate(prev => {
+      const d = new Date(prev);
+      if (calendarViewType === 'month') {
+        d.setMonth(d.getMonth() + 1);
+      } else if (calendarViewType === 'week') {
+        d.setDate(d.getDate() + 7);
+      } else {
+        d.setDate(d.getDate() + 1);
+      }
+      return d;
+    });
   };
 
   const goToToday = () => {
-    const today = new Date();
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth());
+    setCalendarAnchorDate(new Date());
+  };
+
+  const getWeekRangeLabel = (anchor: Date) => {
+    const start = new Date(anchor);
+    const day = start.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diffToMonday);
+    
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    
+    const format = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return `${format(start)} – ${format(end)}, ${end.getFullYear()}`;
   };
 
   const handleCellDragOver = useCallback((e: React.DragEvent, dateStr: string) => {
@@ -240,12 +264,14 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   };
 
   const calendarCells = useMemo(() => {
-    const firstDayIndex = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
-    const totalDays = daysInMonth(viewYear, viewMonth);
+    const year = calendarAnchorDate.getFullYear();
+    const month = calendarAnchorDate.getMonth();
+    const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+    const totalDays = daysInMonth(year, month);
     const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
 
-    const prevMonthYear = viewMonth === 0 ? viewYear - 1 : viewYear;
-    const prevM = viewMonth === 0 ? 11 : viewMonth - 1;
+    const prevMonthYear = month === 0 ? year - 1 : year;
+    const prevM = month === 0 ? 11 : month - 1;
     const prevTotalDays = daysInMonth(prevMonthYear, prevM);
     for (let i = firstDayIndex - 1; i >= 0; i--) {
       const d = prevTotalDays - i;
@@ -254,20 +280,42 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
     }
 
     for (let d = 1; d <= totalDays; d++) {
-      const cellDate = new Date(viewYear, viewMonth, d);
+      const cellDate = new Date(year, month, d);
       cells.push({ dateStr: toIso(cellDate), dayNum: d, isCurrentMonth: true });
     }
 
     const remaining = 42 - cells.length;
-    const nextMonthYear = viewMonth === 11 ? viewYear + 1 : viewYear;
-    const nextM = viewMonth === 11 ? 0 : viewMonth + 1;
+    const nextMonthYear = month === 11 ? year + 1 : year;
+    const nextM = month === 11 ? 0 : month + 1;
     for (let d = 1; d <= remaining; d++) {
       const cellDate = new Date(nextMonthYear, nextM, d);
       cells.push({ dateStr: toIso(cellDate), dayNum: d, isCurrentMonth: false });
     }
 
     return cells;
-  }, [viewYear, viewMonth]);
+  }, [calendarAnchorDate]);
+
+  const weekCells = useMemo(() => {
+    const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean; weekdayName: string }[] = [];
+    const day = calendarAnchorDate.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    
+    const start = new Date(calendarAnchorDate);
+    start.setDate(start.getDate() + diffToMonday);
+
+    const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    for (let i = 0; i < 7; i++) {
+      const cellDate = new Date(start);
+      cellDate.setDate(start.getDate() + i);
+      cells.push({
+        dateStr: toIso(cellDate),
+        dayNum: cellDate.getDate(),
+        isCurrentMonth: cellDate.getMonth() === calendarAnchorDate.getMonth(),
+        weekdayName: weekdayNames[i]
+      });
+    }
+    return cells;
+  }, [calendarAnchorDate]);
 
   const scheduledTasks = useMemo(() => {
     return projectTaskList.filter(t => t.dueDate && !t.parentTaskId);
@@ -436,7 +484,7 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
             <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#ffffff' }}>
               <button
                 type="button"
-                onClick={prevMonth}
+                onClick={handlePrev}
                 style={{ background: 'transparent', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#334155', display: 'flex', alignItems: 'center' }}
               >
                 <ChevronLeft size={14} />
@@ -444,28 +492,30 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
               <div style={{ width: '1px', background: '#cbd5e1', alignSelf: 'stretch' }} />
               <button
                 type="button"
-                onClick={nextMonth}
+                onClick={handleNext}
                 style={{ background: 'transparent', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#334155', display: 'flex', alignItems: 'center' }}
               >
                 <ChevronRight size={14} />
               </button>
             </div>
 
-            {/* Month / Year Label */}
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', minWidth: '90px', textAlign: 'center' }}>
-              {new Date(viewYear, viewMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            {/* Month / Week / Day Label */}
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', minWidth: '95px', textAlign: 'center' }}>
+              {calendarViewType === 'month' && calendarAnchorDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+              {calendarViewType === 'week' && getWeekRangeLabel(calendarAnchorDate)}
+              {calendarViewType === 'day' && calendarAnchorDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
 
-            {/* View type select (Month) */}
+            {/* View type select (Month/Week/Day) */}
             <div style={{ position: 'relative' }}>
               <select
-                value="Month"
-                onChange={() => {}}
-                style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 20px 6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none', fontFamily: 'inherit' }}
+                value={calendarViewType}
+                onChange={e => setCalendarViewType(e.target.value as any)}
+                style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 24px 6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none', fontFamily: 'inherit' }}
               >
-                <option>Month</option>
-                <option>Week</option>
-                <option>Day</option>
+                <option value="month">Month</option>
+                <option value="week">Week</option>
+                <option value="day">Day</option>
               </select>
               <ChevronDown size={12} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
             </div>
@@ -571,11 +621,13 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
                 key={status} 
                 className={`work-monday-group work-monday-group--${status}`} 
                 style={{ 
+                  border: '1px solid #e2e8f0',
                   borderLeft: `6px solid ${config.bg}`, 
-                  borderRadius: '4px', 
+                  borderRadius: '12px', 
                   background: '#ffffff', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                  overflow: 'hidden'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+                  overflow: 'hidden',
+                  flexShrink: 0
                 }}
               >
                 {/* Collapsible Group Header */}
@@ -584,21 +636,21 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
                   style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
-                    padding: '12px 16px', 
-                    background: '#fcfcfc', 
-                    borderBottom: '1px solid #f1f1f1',
+                    padding: '16px 20px', 
+                    background: '#ffffff', 
+                    borderBottom: isCollapsed ? 'none' : '1px solid #f1f5f9',
                     cursor: 'pointer',
                     userSelect: 'none',
-                    gap: '10px'
+                    gap: '12px'
                   }}
                 >
                   <span style={{ display: 'inline-flex', color: config.bg, transition: 'transform 0.2s', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
                     <ChevronDown size={16} />
                   </span>
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: config.bg }}>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: config.bg, letterSpacing: '-0.01em' }}>
                     {TASK_STATUS_LABELS[status]}
                   </h3>
-                  <span style={{ fontSize: '12px', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '12px', fontWeight: 500 }}>
+                  <span style={{ fontSize: '11px', background: `${config.bg}15`, color: config.bg, padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
                     {groupTasks.length} tasks
                   </span>
                 </div>
@@ -607,16 +659,16 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
                   <div style={{ overflowX: 'auto' }}>
                     <table className="work-monday-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#fafafa', color: '#475569', textAlign: 'left' }}>
-                          <th style={{ width: '38px', padding: '10px 12px' }}>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', textAlign: 'left' }}>
+                          <th style={{ width: '38px', padding: '12px' }}>
                             <input type="checkbox" disabled style={{ cursor: 'not-allowed', opacity: 0.5 }} />
                           </th>
-                          <th style={{ padding: '10px 12px', minWidth: '240px' }}>Task</th>
-                          <th style={{ width: '120px', padding: '10px 12px', textAlign: 'center' }}>Owner</th>
-                          <th style={{ width: '150px', padding: '10px 12px', textAlign: 'center' }}>Status</th>
-                          <th style={{ width: '150px', padding: '10px 12px', textAlign: 'center' }}>Due date</th>
-                          <th style={{ width: '140px', padding: '10px 12px', textAlign: 'center' }}>Priority</th>
-                          <th style={{ width: '40px', padding: '10px 12px', textAlign: 'center' }}>+</th>
+                          <th style={{ padding: '12px', minWidth: '240px', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Task</th>
+                          <th style={{ width: '120px', padding: '12px', textAlign: 'center', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Owner</th>
+                          <th style={{ width: '150px', padding: '12px', textAlign: 'center', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                          <th style={{ width: '150px', padding: '12px', textAlign: 'center', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Due date</th>
+                          <th style={{ width: '140px', padding: '12px', textAlign: 'center', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Priority</th>
+                          <th style={{ width: '40px', padding: '12px', textAlign: 'center', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>+</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -843,72 +895,172 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
       {viewMode === 'calendar' && (
         <div className="work-board-calendar-container">
           <div className="work-board-calendar-main">
-            <div className="work-board-calendar-weekdays">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <div key={day} className="work-board-calendar-weekday">
-                  {day}
-                </div>
-              ))}
-            </div>
+            {calendarViewType !== 'day' && (
+              <div className="work-board-calendar-weekdays">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                  <div key={day} className="work-board-calendar-weekday">
+                    {day}
+                  </div>
+                ))}
+              </div>
+            )}
 
-            <div className="work-board-calendar-grid">
-              {calendarCells.map(cell => {
-                const dayTasks = scheduledTasks.filter(t => t.dueDate === cell.dateStr);
-                const isToday = cell.dateStr === toIso(new Date());
-                const isDragOver = dragOverDate === cell.dateStr;
+            <div 
+              className="work-board-calendar-grid"
+              style={
+                calendarViewType === 'week'
+                  ? { gridTemplateRows: 'minmax(280px, 1fr)' }
+                  : calendarViewType === 'day'
+                  ? { gridTemplateColumns: '1fr', gridTemplateRows: '1fr', minHeight: '380px' }
+                  : {}
+              }
+            >
+              {calendarViewType === 'month' &&
+                calendarCells.map(cell => {
+                  const dayTasks = scheduledTasks.filter(t => t.dueDate === cell.dateStr);
+                  const isToday = cell.dateStr === toIso(new Date());
+                  const isDragOver = dragOverDate === cell.dateStr;
+
+                  return (
+                    <div
+                      key={cell.dateStr}
+                      className={`work-board-calendar-cell${!cell.isCurrentMonth ? ' work-board-calendar-cell--other-month' : ''}${isToday ? ' work-board-calendar-cell--today' : ''}${isDragOver ? ' work-board-calendar-cell--dragover' : ''}`}
+                      onDragOver={e => handleCellDragOver(e, cell.dateStr)}
+                      onDrop={e => handleCellDrop(e, cell.dateStr)}
+                      onDragLeave={() => setDragOverDate(null)}
+                    >
+                      <div className="work-board-calendar-cell-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+                        <span className="work-board-calendar-cell-day">
+                          {String(cell.dayNum).padStart(2, '0')}
+                        </span>
+                      </div>
+                      <div className="work-board-calendar-cell-tasks">
+                        {dayTasks.map(task => (
+                          <CompactTaskCard
+                            key={task.id}
+                            task={task}
+                            isDragging={dragState?.taskId === task.id}
+                            onOpen={() => openTaskDetail(task.id)}
+                            onDragStart={() => handleDragStart(task.id, undefined, 'calendar', cell.dateStr)}
+                            onDragEnd={handleDragEnd}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {calendarViewType === 'week' &&
+                weekCells.map(cell => {
+                  const dayTasks = scheduledTasks.filter(t => t.dueDate === cell.dateStr);
+                  const isToday = cell.dateStr === toIso(new Date());
+                  const isDragOver = dragOverDate === cell.dateStr;
+
+                  return (
+                    <div
+                      key={cell.dateStr}
+                      className={`work-board-calendar-cell${isToday ? ' work-board-calendar-cell--today' : ''}${isDragOver ? ' work-board-calendar-cell--dragover' : ''}`}
+                      onDragOver={e => handleCellDragOver(e, cell.dateStr)}
+                      onDrop={e => handleCellDrop(e, cell.dateStr)}
+                      onDragLeave={() => setDragOverDate(null)}
+                      style={{ minHeight: '280px' }}
+                    >
+                      <div className="work-board-calendar-cell-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>{cell.weekdayName}</span>
+                        <span className="work-board-calendar-cell-day" style={{ fontWeight: 700 }}>
+                          {String(cell.dayNum).padStart(2, '0')}
+                        </span>
+                      </div>
+                      <div className="work-board-calendar-cell-tasks" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {dayTasks.map(task => (
+                          <CompactTaskCard
+                            key={task.id}
+                            task={task}
+                            isDragging={dragState?.taskId === task.id}
+                            onOpen={() => openTaskDetail(task.id)}
+                            onDragStart={() => handleDragStart(task.id, undefined, 'calendar', cell.dateStr)}
+                            onDragEnd={handleDragEnd}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {calendarViewType === 'day' && (() => {
+                const dayCellStr = toIso(calendarAnchorDate);
+                const dayTasks = scheduledTasks.filter(t => t.dueDate === dayCellStr);
+                const isToday = dayCellStr === toIso(new Date());
+                const isDragOver = dragOverDate === dayCellStr;
 
                 return (
                   <div
-                    key={cell.dateStr}
-                    className={`work-board-calendar-cell${!cell.isCurrentMonth ? ' work-board-calendar-cell--other-month' : ''}${isToday ? ' work-board-calendar-cell--today' : ''}${isDragOver ? ' work-board-calendar-cell--dragover' : ''}`}
-                    onDragOver={e => handleCellDragOver(e, cell.dateStr)}
-                    onDrop={e => handleCellDrop(e, cell.dateStr)}
+                    className={`work-board-calendar-cell${isToday ? ' work-board-calendar-cell--today' : ''}${isDragOver ? ' work-board-calendar-cell--dragover' : ''}`}
+                    onDragOver={e => handleCellDragOver(e, dayCellStr)}
+                    onDrop={e => handleCellDrop(e, dayCellStr)}
                     onDragLeave={() => setDragOverDate(null)}
+                    style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
                   >
-                    <div className="work-board-calendar-cell-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
-                      <span className="work-board-calendar-cell-day">
-                        {String(cell.dayNum).padStart(2, '0')}
-                      </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>
+                          {calendarAnchorDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                        </h4>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
+                          {dayTasks.length} tasks scheduled for this day
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="org-btn org-btn--primary org-btn--sm"
+                        onClick={() => openAddWithDate(dayCellStr)}
+                      >
+                        + Schedule Task
+                      </button>
                     </div>
-                    <div className="work-board-calendar-cell-tasks">
-                      {dayTasks.map(task => (
-                        <CompactTaskCard
-                          key={task.id}
-                          task={task}
-                          isDragging={dragState?.taskId === task.id}
-                          onOpen={() => openTaskDetail(task.id)}
-                          onDragStart={() => handleDragStart(task.id, undefined, 'calendar', cell.dateStr)}
-                          onDragEnd={handleDragEnd}
-                        />
-                      ))}
-                      {dayTasks.length === 0 && (
-                        <button
-                          type="button"
-                          className="work-board-calendar-cell-center-add"
-                          onClick={() => openAddWithDate(cell.dateStr)}
-                          style={{
-                            display: 'none',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: 'auto',
-                            border: 'none',
-                            background: 'transparent',
-                            color: '#64748b',
-                            fontSize: '0.75rem',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          + Add
-                        </button>
+
+                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                      {dayTasks.length === 0 ? (
+                        <div style={{ margin: 'auto', textAlign: 'center', color: '#64748b', padding: '40px 0' }}>
+                          <p style={{ fontSize: '14px', fontWeight: 500, margin: 0 }}>No tasks scheduled for today</p>
+                          <p style={{ fontSize: '12px', marginTop: '4px' }}>Drag an unscheduled task here, or click the button above to create one.</p>
+                        </div>
+                      ) : (
+                        dayTasks.map(task => (
+                          <div 
+                            key={task.id}
+                            onClick={() => openTaskDetail(task.id)}
+                            style={{ 
+                              background: '#ffffff', 
+                              border: '1px solid #cbd5e1', 
+                              borderRadius: '8px', 
+                              padding: '12px 16px', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                              transition: 'transform 0.15s ease'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+                          >
+                            <div>
+                              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-s)', textTransform: 'uppercase', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', marginRight: '8px' }}>
+                                {task.key}
+                              </span>
+                              <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a' }}>{task.title}</span>
+                            </div>
+                            <span className={`cfg-badge cfg-badge--${priorityBadgeClass(task.priority)}`} style={{ fontSize: '10px' }}>
+                              {task.priority}
+                            </span>
+                          </div>
+                        ))
                       )}
                     </div>
                   </div>
                 );
-              })}
+              })()}
             </div>
           </div>
 
