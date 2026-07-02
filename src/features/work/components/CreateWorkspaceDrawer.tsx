@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -116,20 +116,6 @@ export const CreateWorkspaceDrawer: React.FC = () => {
 
   const iconRef = useRef<HTMLButtonElement>(null);
 
-  // Auto Workspace Key logic
-  const autoKey = useMemo(() => {
-    if (!draft.name.trim()) return '';
-    return draft.name
-      .trim()
-      .split(/\s+/)
-      .map(w => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 4);
-  }, [draft.name]);
-
-  const displayKey = draft.keyTouched ? draft.key : autoKey;
-
   // Reset when open
   useEffect(() => {
     if (activeModal === 'create-workspace') {
@@ -147,7 +133,6 @@ export const CreateWorkspaceDrawer: React.FC = () => {
     const e: Record<string, string> = {};
     if (s === 1) {
       if (!draft.name.trim()) e.name = 'Workspace name is required.';
-      if (!displayKey.trim()) e.key = 'Workspace key is required.';
     }
     if (s === 2) {
       if (draft.statuses.length === 0) e.statuses = 'At least one status is required.';
@@ -242,69 +227,55 @@ export const CreateWorkspaceDrawer: React.FC = () => {
         <p className="cpw-step-desc">Set up the basic details for your workspace.</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '24px', background: 'var(--surface-muted)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
         <button
           ref={iconRef}
           type="button"
           className="cpw-icon-btn"
-          style={{ width: 64, height: 64, borderRadius: 12 }}
+          style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
           onClick={() => setIconPickerOpen(true)}
           aria-label="Choose icon"
         >
-          <span style={{ fontSize: '28px' }}>{draft.icon}</span>
+          <span style={{ fontSize: '32px' }}>{draft.icon}</span>
         </button>
         <div style={{ flex: 1 }}>
-          <label className="cpw-field-label">Workspace Icon & Picture</label>
-          <p className="cpw-hint" style={{ marginTop: 2 }}>Click the box to choose an emoji logo, or attach a picture.</p>
-          <button
-            type="button"
-            className="org-btn org-btn--secondary org-btn--sm"
-            style={{ marginTop: '6px', fontSize: '11px', padding: '4px 8px' }}
-            onClick={() => {
-              const file = window.prompt("Upload Workspace Logo (preset name/URL, e.g. engineering_shield.png):");
-              if (file && file.trim()) {
-                setDraft(d => ({ ...d, logoUrl: file.trim(), icon: '🖼️' }));
-              }
-            }}
-          >
-            Upload Logo Picture
-          </button>
-          {draft.logoUrl && (
-            <span style={{ fontSize: '11px', color: '#16a34a', marginLeft: '8px', fontWeight: 600 }}>
-              ✓ Attached: {draft.logoUrl}
-            </span>
-          )}
+          <label className="cpw-field-label" style={{ fontWeight: 700, color: 'var(--text-h)', fontSize: '13px' }}>Workspace Icon & Logo</label>
+          <p className="cpw-hint" style={{ marginTop: 2, fontSize: '11px', color: 'var(--clr-text-secondary)' }}>Click the icon box to select an emoji, or upload an image file.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+            <button
+              type="button"
+              className="org-btn org-btn--secondary org-btn--sm"
+              style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '8px' }}
+              onClick={() => {
+                const file = window.prompt("Upload Workspace Logo (preset name/URL, e.g. engineering_shield.png):");
+                if (file && file.trim()) {
+                  setDraft(d => ({ ...d, logoUrl: file.trim(), icon: '🖼️' }));
+                }
+              }}
+            >
+              Upload Picture
+            </button>
+            {draft.logoUrl && (
+              <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                ✓ {draft.logoUrl}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="cpw-row cpw-row--2col">
-        <div className="cpw-field">
-          <label className="cpw-field-label" htmlFor="wsw-name">
-            Workspace Name <span className="cpw-required">*</span>
-          </label>
-          <input
-            id="wsw-name"
-            className={errors.name ? 'cpw-input cpw-input--error' : 'cpw-input'}
-            value={draft.name}
-            onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-            placeholder="e.g. Marketing, Engineering, HR..."
-          />
-          {errors.name && <p className="cpw-error">{errors.name}</p>}
-        </div>
-
-        <div className="cpw-field">
-          <label className="cpw-field-label" htmlFor="wsw-key">
-            Workspace Key <span className="cpw-required">*</span>
-          </label>
-          <input
-            id="wsw-key"
-            className="cpw-input cpw-input--key"
-            value={displayKey}
-            maxLength={6}
-            onChange={e => setDraft(d => ({ ...d, key: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), keyTouched: true }))}
-            placeholder="AUTO"
-          />
-        </div>
+      <div className="cpw-field">
+        <label className="cpw-field-label" htmlFor="wsw-name">
+          Workspace Name <span className="cpw-required">*</span>
+        </label>
+        <input
+          id="wsw-name"
+          className={errors.name ? 'cpw-input cpw-input--error' : 'cpw-input'}
+          value={draft.name}
+          onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+          placeholder="e.g. Marketing, Engineering, HR..."
+        />
+        {errors.name && <p className="cpw-error">{errors.name}</p>}
       </div>
 
       <div className="cpw-field">
@@ -322,28 +293,84 @@ export const CreateWorkspaceDrawer: React.FC = () => {
       <div className="cpw-row cpw-row--2col" style={{ marginTop: '1rem' }}>
         <div className="cpw-field">
           <label className="cpw-field-label">Visibility</label>
-          <select
-            className="cpw-input cpw-select"
-            value={draft.visibility}
-            onChange={e => setDraft(d => ({ ...d, visibility: e.target.value as any }))}
-          >
-            <option value="private">🔒 Private</option>
-            <option value="public_workspace">🏢 Public</option>
-          </select>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '2px' }}>
+            <button
+              type="button"
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: draft.visibility === 'private' ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                background: draft.visibility === 'private' ? 'var(--accent-bg)' : 'var(--surface)',
+                color: draft.visibility === 'private' ? 'var(--accent)' : 'var(--text-h)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onClick={() => setDraft(d => ({ ...d, visibility: 'private' }))}
+            >
+              <span style={{ fontSize: '14px' }}>🔒</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>Private</div>
+                <div style={{ fontSize: '0.65rem', color: draft.visibility === 'private' ? 'var(--accent)' : 'var(--clr-text-secondary)', opacity: 0.8 }}>Only invited members</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: draft.visibility === 'public_workspace' ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                background: draft.visibility === 'public_workspace' ? 'var(--accent-bg)' : 'var(--surface)',
+                color: draft.visibility === 'public_workspace' ? 'var(--accent)' : 'var(--text-h)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onClick={() => setDraft(d => ({ ...d, visibility: 'public_workspace' }))}
+            >
+              <span style={{ fontSize: '14px' }}>🏢</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>Public</div>
+                <div style={{ fontSize: '0.65rem', color: draft.visibility === 'public_workspace' ? 'var(--accent)' : 'var(--clr-text-secondary)', opacity: 0.8 }}>Anyone in organization</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="cpw-field">
-          <label className="cpw-field-label">Permission</label>
-          <select
-            className="cpw-input cpw-select"
-            value={draft.defaultPermission}
-            onChange={e => setDraft(d => ({ ...d, defaultPermission: e.target.value as any }))}
-          >
-            <option value="full">Full Edit</option>
-            <option value="edit">Edit Only</option>
-            <option value="comment">Comment Only</option>
-            <option value="view">View Only</option>
-          </select>
+          <label className="cpw-field-label">Default Permission</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', alignContent: 'center', height: '100%', minHeight: '44px' }}>
+            {(['full', 'edit', 'comment', 'view'] as const).map(p => {
+              const labelMap = { full: 'Full Edit', edit: 'Edit Only', comment: 'Comment', view: 'View Only' };
+              const active = draft.defaultPermission === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                    background: active ? 'var(--accent-bg)' : 'var(--surface-raised)',
+                    color: active ? 'var(--accent)' : 'var(--text-h)',
+                    fontSize: '0.74rem',
+                    fontWeight: active ? 600 : 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.12s'
+                  }}
+                  onClick={() => setDraft(d => ({ ...d, defaultPermission: p }))}
+                >
+                  {labelMap[p]}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -531,22 +558,130 @@ export const CreateWorkspaceDrawer: React.FC = () => {
           </div>
 
           {/* Preview card */}
-          <div className="cpw-sidebar__preview" style={{ padding: '16px' }}>
+          {/* Preview card */}
+          <div
+            className="qcm-preview-card"
+            style={{
+              margin: '16px 14px 20px',
+              width: 'auto',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
             <div
-              className="cpw-sidebar__preview-cover"
+              className="qcm-preview-cover"
               style={{
-                height: 48,
+                height: '70px',
+                width: '100%',
                 background: 'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 70%, #000) 100%)',
-                borderRadius: '8px 8px 0 0',
+                transition: 'background 0.2s'
+              }}
+            />
+            <div
+              className="qcm-preview-body"
+              style={{
+                padding: '20px',
+                position: 'relative',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                textAlign: 'left'
               }}
             >
-              <span style={{ fontSize: '24px' }}>{draft.icon}</span>
+              <div
+                className="qcm-preview-icon-container"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '10px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '-44px',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.06)',
+                  overflow: 'hidden',
+                  zIndex: 2
+                }}
+              >
+                {draft.logoUrl ? (
+                  draft.logoUrl.startsWith('http') || draft.logoUrl.includes('/') || draft.logoUrl.includes('.') ? (
+                    <img
+                      src={draft.logoUrl}
+                      alt={draft.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          const fallback = document.createElement('span');
+                          fallback.innerText = '🖼️';
+                          fallback.style.fontSize = '20px';
+                          parent.appendChild(fallback);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', background: 'var(--accent-bg)', color: 'var(--accent)', fontSize: '8px', fontWeight: 700, padding: '2px', textAlign: 'center', wordBreak: 'break-all', lineHeight: 1.1 }}>
+                      <span style={{ fontSize: '14px' }}>🖼️</span>
+                    </div>
+                  )
+                ) : (
+                  <span style={{ fontSize: '24px' }}>{draft.icon}</span>
+                )}
+              </div>
+
+              <h4
+                className="qcm-preview-name"
+                style={{
+                  fontSize: '1.05rem',
+                  fontWeight: 700,
+                  color: 'var(--text-h)',
+                  margin: '16px 0 6px 0',
+                  wordBreak: 'break-word',
+                  lineHeight: '1.35',
+                  textAlign: 'left',
+                  fontFamily: 'Outfit, Inter, sans-serif'
+                }}
+              >
+                {draft.name || 'Untitled Workspace'}
+              </h4>
+
+              <span
+                className="qcm-preview-type"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--accent)',
+                  fontWeight: 600,
+                  marginBottom: '16px',
+                  textAlign: 'left'
+                }}
+              >
+                {draft.type ? draft.type.charAt(0).toUpperCase() + draft.type.slice(1) : 'General'} Template
+              </span>
+
+              <div
+                className="qcm-preview-workspace"
+                style={{
+                  width: '100%',
+                  fontSize: '0.75rem',
+                  color: 'var(--clr-text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  borderTop: '1px solid var(--border)',
+                  paddingTop: '12px'
+                }}
+              >
+                <span>🔒 Private Workspace</span>
+              </div>
             </div>
-            <p className="cpw-sidebar__preview-name" style={{ marginTop: '8px', fontWeight: 700, fontSize: '0.85rem' }}>{draft.name || 'Untitled Workspace'}</p>
-            {displayKey && <code className="cpw-sidebar__preview-key">{displayKey}</code>}
           </div>
 
           {/* Steps */}

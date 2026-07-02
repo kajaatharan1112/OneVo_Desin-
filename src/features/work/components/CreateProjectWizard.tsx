@@ -36,6 +36,7 @@ export const CreateProjectWizard: React.FC = () => {
     projects,
     createProject,
     openProject,
+    addRelatedProject,
   } = useWork();
 
   const [name, setName] = useState('');
@@ -48,6 +49,8 @@ export const CreateProjectWizard: React.FC = () => {
   const iconRef = useRef<HTMLButtonElement>(null);
   const [allocatedHours, setAllocatedHours] = useState('');
   const [leadId, setLeadId] = useState(CURRENT_USER_ID);
+  const [showSubProjects, setShowSubProjects] = useState(false);
+  const [selectedSubProjectIds, setSelectedSubProjectIds] = useState<string[]>([]);
 
 
 
@@ -106,6 +109,8 @@ export const CreateProjectWizard: React.FC = () => {
       setDueDate('');
       setAllocatedHours('');
       setLeadId(CURRENT_USER_ID);
+      setShowSubProjects(false);
+      setSelectedSubProjectIds([]);
     }
   }, [activeModal, workspaceFilterId, activeWorkspaces]);
 
@@ -143,6 +148,11 @@ export const CreateProjectWizard: React.FC = () => {
       budgetLimit: undefined,
       riskLevel: 'Medium',
       tags: [],
+    });
+
+    // Link selected sub-projects
+    selectedSubProjectIds.forEach(subId => {
+      addRelatedProject(id, subId, 'child');
     });
 
     // Open the newly created project directly and close modal
@@ -839,6 +849,109 @@ export const CreateProjectWizard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Sub-Projects Selection Block */}
+                <div className="qcm-field" style={{ borderTop: '1px dashed var(--border)', paddingTop: '14px', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      color: 'var(--text-h)',
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      outline: 'none',
+                      textAlign: 'left'
+                    }}
+                    onClick={() => setShowSubProjects(!showSubProjects)}
+                  >
+                    <span style={{ fontSize: '9px', width: '12px', display: 'inline-block' }}>{showSubProjects ? '▼' : '▶'}</span>
+                    <span>Link Sub-Projects ({selectedSubProjectIds.length} selected)</span>
+                  </button>
+
+                  {showSubProjects && (
+                    <div
+                      style={{
+                        marginTop: '10px',
+                        background: 'var(--surface-raised)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        maxHeight: '160px',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}
+                    >
+                      {projects.filter(p => p.status === 'active').map(p => {
+                        const isSelected = selectedSubProjectIds.includes(p.id);
+                        return (
+                          <div
+                            key={p.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              background: isSelected ? 'var(--accent-bg)' : 'var(--surface)',
+                              border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onClick={() => {
+                              setSelectedSubProjectIds(prev =>
+                                prev.includes(p.id)
+                                  ? prev.filter(id => id !== p.id)
+                                  : [...prev, p.id]
+                              );
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              readOnly
+                              style={{ cursor: 'pointer' }}
+                            />
+                            <div style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '6px',
+                              background: p.coverColor || 'var(--accent)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '10px',
+                              color: '#fff',
+                              fontWeight: 700
+                            }}>
+                              {p.key.slice(0, 2)}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-h)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                {p.name}
+                              </div>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-s)' }}>
+                                {p.key}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {projects.filter(p => p.status === 'active').length === 0 && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-s)', textAlign: 'center', padding: '8px' }}>
+                          No active projects available to link.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="qcm-footer">
@@ -881,6 +994,39 @@ export const CreateProjectWizard: React.FC = () => {
                   )}
 
 
+
+                  {/* Selected Sub-projects count preview */}
+                  {selectedSubProjectIds.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '12px', borderTop: '1px dashed var(--border)', paddingTop: '10px', width: '100%' }}>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-s)', fontWeight: 600, width: '100%', marginBottom: '2px' }}>
+                        🔗 Sub-Projects ({selectedSubProjectIds.length})
+                      </span>
+                      {selectedSubProjectIds.map(subId => {
+                        const subP = projects.find(proj => proj.id === subId);
+                        if (!subP) return null;
+                        return (
+                          <span
+                            key={subId}
+                            style={{
+                              fontSize: '0.62rem',
+                              fontWeight: 600,
+                              color: 'var(--accent)',
+                              background: 'var(--accent-bg)',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              border: '1.5px solid var(--accent)',
+                              maxWidth: '120px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {subP.name}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   <div className="qcm-preview-workspace">
                     <Sparkles size={14} style={{ color: 'var(--accent)' }} />

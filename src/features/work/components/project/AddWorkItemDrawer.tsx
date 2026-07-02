@@ -11,6 +11,9 @@ import {
   Layers,
   CheckSquare,
   Clock,
+  Link2,
+  GitFork,
+  Plus,
 } from 'lucide-react';
 import { useWork } from '../../context/work-context';
 import {
@@ -28,6 +31,7 @@ interface Props {
   defaultAssigneeId: string;
   defaultDueDate?: string | null;
   defaultMilestoneId?: string | null;
+  defaultParentTaskId?: string | null;
 }
 
 export const AddWorkItemDrawer: React.FC<Props> = ({
@@ -38,8 +42,9 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
   defaultAssigneeId,
   defaultDueDate,
   defaultMilestoneId,
+  defaultParentTaskId,
 }) => {
-  const { addTask, projects, milestones, updateMilestone } = useWork();
+  const { addTask, projects, milestones, updateMilestone, tasks } = useWork();
   const [activeTab, setActiveTab] = useState<'task'>('task');
   const [showFields, setShowFields] = useState(false);
 
@@ -52,10 +57,33 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
   const [attachments, setAttachments] = useState<string[]>([]);
   const [notifyOnCreate, setNotifyOnCreate] = useState(false);
   const [showMoreSubmitOptions, setShowMoreSubmitOptions] = useState(false);
+
+  // Custom Options & Fields
+  const [showAddFieldsMenu, setShowAddFieldsMenu] = useState(false);
+  const [enabledSections, setEnabledSections] = useState({
+    timeEstimate: true,
+    dependencies: false,
+    subtasks: false,
+    checklist: true,
+  });
+  const [dependencies, setDependencies] = useState<{
+    blocks: string[];
+    blockedBy: string[];
+    relatesTo: string[];
+  }>({
+    blocks: [],
+    blockedBy: [],
+    relatesTo: [],
+  });
+  const [parentTaskId, setParentTaskId] = useState('');
+  const [tempBlock, setTempBlock] = useState('');
+  const [tempBlockedBy, setTempBlockedBy] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const optionsMenuRef = useRef<HTMLDivElement>(null);
   
   const currentProject = projects.find(p => p.id === currentProjectId) || project;
+  const projectTasks = tasks.filter(t => t.projectId === currentProjectId);
 
   const [form, setForm] = useState({
     title: '',
@@ -100,8 +128,38 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       setShowNewFieldInput(false);
       setNewFieldName('');
       setShowMoreSubmitOptions(false);
+
+      // Reset toggles & custom fields
+      setShowAddFieldsMenu(false);
+      setEnabledSections({
+        timeEstimate: true,
+        dependencies: false,
+        subtasks: false,
+        checklist: true,
+      });
+      setDependencies({
+        blocks: [],
+        blockedBy: [],
+        relatesTo: [],
+      });
+      setParentTaskId(defaultParentTaskId ?? '');
+      setTempBlock('');
+      setTempBlockedBy('');
     }
-  }, [open, project, defaultStatus, defaultAssigneeId, defaultDueDate, defaultMilestoneId]);
+  }, [open, project, defaultStatus, defaultAssigneeId, defaultDueDate, defaultMilestoneId, defaultParentTaskId]);
+
+  useEffect(() => {
+    if (!showAddFieldsMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (optionsMenuRef.current && !optionsMenuRef.current.contains(e.target as Node)) {
+        setShowAddFieldsMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAddFieldsMenu]);
 
   const handleProjectChange = (projId: string) => {
     setCurrentProjectId(projId);
@@ -190,8 +248,12 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
       endDate: form.endDate || null,
       linkedWorkspaceId: currentProject.workspaceIds.length > 1 ? form.linkedWorkspaceId : null,
       labels: form.labels.split(',').map(l => l.trim()).filter(Boolean),
-      allocatedHours: form.allocatedHours ? Number(form.allocatedHours) : undefined,
-      checklist: checklistItems.length > 0 ? [{ id: 'cl-1', name: 'Checklist', items: checklistItems.map((text, i) => ({ id: `cli-${Date.now()}-${i}`, text, done: false })) }] : [],
+      allocatedHours: enabledSections.timeEstimate && form.allocatedHours ? Number(form.allocatedHours) : undefined,
+      checklist: enabledSections.checklist && checklistItems.length > 0 ? [{ id: 'cl-1', name: 'Checklist', items: checklistItems.map((text, i) => ({ id: `cli-${Date.now()}-${i}`, text, done: false })) }] : [],
+      parentTaskId: enabledSections.subtasks ? (parentTaskId || null) : (defaultParentTaskId ?? null),
+      blocks: enabledSections.dependencies ? dependencies.blocks : [],
+      blockedBy: enabledSections.dependencies ? dependencies.blockedBy : [],
+      relatesTo: enabledSections.dependencies ? dependencies.relatesTo : [],
     });
     const targetMsId = form.milestoneId || defaultMilestoneId;
     if (targetMsId && newTask) {
@@ -310,6 +372,87 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
             </select>
             <ChevronDown size={11} style={{ position: 'absolute', right: '4px', pointerEvents: 'none' }} />
           </div>
+
+          {/* Add Options Fields Selector */}
+          <div 
+            ref={optionsMenuRef}
+            className="wi-dark-modal__pill-selector" 
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => setShowAddFieldsMenu(prev => !prev)}
+          >
+            <Plus size={13} />
+            <span>Options</span>
+            <ChevronDown size={11} />
+            {showAddFieldsMenu && (
+              <div 
+                className="animate-scale-in"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  left: 0,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+                  zIndex: 10001,
+                  minWidth: '180px',
+                  padding: '4px 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {[
+                  { id: 'timeEstimate', label: 'Time Estimate', icon: <Clock size={14} /> },
+                  { id: 'dependencies', label: 'Dependencies', icon: <Link2 size={14} /> },
+                  { id: 'subtasks', label: 'Subtasks', icon: <GitFork size={14} /> },
+                  { id: 'checklist', label: 'Checklist', icon: <CheckSquare size={14} /> },
+                ].map(item => {
+                  const isActive = enabledSections[item.id as keyof typeof enabledSections];
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setEnabledSections(prev => ({
+                          ...prev,
+                          [item.id]: !prev[item.id as keyof typeof enabledSections]
+                        }));
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 12px',
+                        background: isActive ? '#f1f5f9' : 'transparent',
+                        border: 'none',
+                        fontSize: '13px',
+                        fontFamily: 'Inter, sans-serif',
+                        cursor: 'pointer',
+                        color: '#334155',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                        transition: 'background-color 0.15s',
+                      }}
+                      onMouseEnter={e => {
+                        if (!isActive) e.currentTarget.style.background = '#f8fafc';
+                      }}
+                      onMouseLeave={e => {
+                        if (!isActive) e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: isActive ? '#1e4fbc' : '#64748b', display: 'inline-flex' }}>{item.icon}</span>
+                        <span style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#0f172a' : '#334155' }}>{item.label}</span>
+                      </span>
+                      {isActive && <span style={{ fontSize: '11px', color: '#1e4fbc', fontWeight: 'bold' }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Modal Inputs Body */}
@@ -417,24 +560,26 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
             </div>
 
             {/* Allocated Hours Pill */}
-            <div className="wi-attribute-pill">
-              <Clock size={12} />
-              <input
-                type="number"
-                min={0}
-                placeholder="Hours"
-                value={form.allocatedHours}
-                onChange={e => setForm(f => ({ ...f, allocatedHours: e.target.value }))}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: 'inherit',
-                  width: '60px',
-                  fontSize: 'inherit',
-                }}
-              />
-            </div>
+            {enabledSections.timeEstimate && (
+              <div className="wi-attribute-pill">
+                <Clock size={12} />
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Hours"
+                  value={form.allocatedHours}
+                  onChange={e => setForm(f => ({ ...f, allocatedHours: e.target.value }))}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: 'inherit',
+                    width: '60px',
+                    fontSize: 'inherit',
+                  }}
+                />
+              </div>
+            )}
 
             {/* Milestone Pill Select */}
             <div className="wi-attribute-pill">
@@ -476,56 +621,58 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
           )}
 
           {/* Checklist Creation Section */}
-          <div className="wi-dark-modal__custom-fields" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '12px', marginBottom: '12px' }}>
-            <h4 className="wi-dark-modal__custom-fields-title" style={{ cursor: 'default' }}>
-              Checklist ({checklistItems.length})
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-              {checklistItems.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', color: '#0f172a' }}>
-                  <span>{item}</span>
+          {enabledSections.checklist && (
+            <div className="wi-dark-modal__custom-fields" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '12px', marginBottom: '12px' }}>
+              <h4 className="wi-dark-modal__custom-fields-title" style={{ cursor: 'default' }}>
+                Checklist ({checklistItems.length})
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                {checklistItems.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', color: '#0f172a' }}>
+                    <span>{item}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChecklistItems(prev => prev.filter((_, i) => i !== idx))}
+                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="text"
+                    placeholder="Add checklist item..."
+                    value={newChecklistItem}
+                    onChange={e => setNewChecklistItem(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newChecklistItem.trim()) {
+                          setChecklistItems(prev => [...prev, newChecklistItem.trim()]);
+                          setNewChecklistItem('');
+                        }
+                      }
+                    }}
+                    style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                  />
                   <button
                     type="button"
-                    onClick={() => setChecklistItems(prev => prev.filter((_, i) => i !== idx))}
-                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                <input
-                  type="text"
-                  placeholder="Add checklist item..."
-                  value={newChecklistItem}
-                  onChange={e => setNewChecklistItem(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
+                    onClick={() => {
                       if (newChecklistItem.trim()) {
                         setChecklistItems(prev => [...prev, newChecklistItem.trim()]);
                         setNewChecklistItem('');
                       }
-                    }
-                  }}
-                  style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (newChecklistItem.trim()) {
-                      setChecklistItems(prev => [...prev, newChecklistItem.trim()]);
-                      setNewChecklistItem('');
-                    }
-                  }}
-                  className="org-btn org-btn--secondary org-btn--sm"
-                  style={{ padding: '6px 12px' }}
-                >
-                  Add
-                </button>
+                    }}
+                    className="org-btn org-btn--secondary org-btn--sm"
+                    style={{ padding: '6px 12px' }}
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Custom Fields Section */}
           <div className="wi-dark-modal__custom-fields">
@@ -601,6 +748,120 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
               </div>
             )}
           </div>
+
+          {/* Subtasks Section */}
+          {enabledSections.subtasks && (
+            <div className="wi-dark-modal__custom-fields" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '12px', marginBottom: '12px' }}>
+              <h4 className="wi-dark-modal__custom-fields-title" style={{ cursor: 'default' }}>
+                Subtask Setting
+              </h4>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#475569', minWidth: '100px' }}>Parent Task:</span>
+                <select
+                  value={parentTaskId}
+                  onChange={e => setParentTaskId(e.target.value)}
+                  style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff' }}
+                >
+                  <option value="">None (Create as independent task)</option>
+                  {projectTasks.filter(t => !t.parentTaskId).map(t => (
+                    <option key={t.id} value={t.id}>{t.key} — {t.title}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Dependencies Section */}
+          {enabledSections.dependencies && (
+            <div className="wi-dark-modal__custom-fields" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '12px', marginBottom: '12px' }}>
+              <h4 className="wi-dark-modal__custom-fields-title" style={{ cursor: 'default' }}>
+                Dependencies
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+                
+                {/* Blocks */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Blocks (This task blocks...)</span>
+                  {dependencies.blocks.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+                      {dependencies.blocks.map(k => (
+                        <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                          {k}
+                          <button type="button" onClick={() => setDependencies(prev => ({ ...prev, blocks: prev.blocks.filter(x => x !== k) }))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold', padding: 0, marginLeft: '4px' }}>&times;</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select
+                      value={tempBlock}
+                      onChange={e => setTempBlock(e.target.value)}
+                      style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff' }}
+                    >
+                      <option value="">Select task...</option>
+                      {projectTasks.filter(t => !dependencies.blocks.includes(t.key)).map(t => (
+                        <option key={t.id} value={t.key}>{t.key} — {t.title}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (tempBlock) {
+                          setDependencies(prev => ({ ...prev, blocks: [...prev.blocks, tempBlock] }));
+                          setTempBlock('');
+                        }
+                      }}
+                      className="org-btn org-btn--secondary org-btn--sm"
+                      style={{ padding: '6px 12px' }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Blocked By */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Blocked By (This task is blocked by...)</span>
+                  {dependencies.blockedBy.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+                      {dependencies.blockedBy.map(k => (
+                        <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                          {k}
+                          <button type="button" onClick={() => setDependencies(prev => ({ ...prev, blockedBy: prev.blockedBy.filter(x => x !== k) }))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold', padding: 0, marginLeft: '4px' }}>&times;</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select
+                      value={tempBlockedBy}
+                      onChange={e => setTempBlockedBy(e.target.value)}
+                      style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff' }}
+                    >
+                      <option value="">Select task...</option>
+                      {projectTasks.filter(t => !dependencies.blockedBy.includes(t.key)).map(t => (
+                        <option key={t.id} value={t.key}>{t.key} — {t.title}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (tempBlockedBy) {
+                          setDependencies(prev => ({ ...prev, blockedBy: [...prev.blockedBy, tempBlockedBy] }));
+                          setTempBlockedBy('');
+                        }
+                      }}
+                      className="org-btn org-btn--secondary org-btn--sm"
+                      style={{ padding: '6px 12px' }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Actions Footer */}
@@ -699,6 +960,12 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
                         endDate: form.endDate || null,
                         linkedWorkspaceId: currentProject.workspaceIds.length > 1 ? form.linkedWorkspaceId : null,
                         labels: form.labels.split(',').map(l => l.trim()).filter(Boolean),
+                        allocatedHours: enabledSections.timeEstimate && form.allocatedHours ? Number(form.allocatedHours) : undefined,
+                        checklist: enabledSections.checklist && checklistItems.length > 0 ? [{ id: 'cl-1', name: 'Checklist', items: checklistItems.map((text, i) => ({ id: `cli-${Date.now()}-${i}`, text, done: false })) }] : [],
+                        parentTaskId: enabledSections.subtasks ? (parentTaskId || null) : (defaultParentTaskId ?? null),
+                        blocks: enabledSections.dependencies ? dependencies.blocks : [],
+                        blockedBy: enabledSections.dependencies ? dependencies.blockedBy : [],
+                        relatesTo: enabledSections.dependencies ? dependencies.relatesTo : [],
                       });
                       if (defaultMilestoneId && newTask) {
                         const ms = milestones.find(m => m.id === defaultMilestoneId);
@@ -708,7 +975,13 @@ export const AddWorkItemDrawer: React.FC<Props> = ({
                           });
                         }
                       }
-                      setForm(f => ({ ...f, title: '', description: '', labels: '' }));
+                      setForm(f => ({ ...f, title: '', description: '', labels: '', allocatedHours: '' }));
+                      setChecklistItems([]);
+                      setNewChecklistItem('');
+                      setDependencies({ blocks: [], blockedBy: [], relatesTo: [] });
+                      setParentTaskId(defaultParentTaskId ?? '');
+                      setTempBlock('');
+                      setTempBlockedBy('');
                       setAttachments([]);
                       setCustomFields([]);
                       setShowMoreSubmitOptions(false);

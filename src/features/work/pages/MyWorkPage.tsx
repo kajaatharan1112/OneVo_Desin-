@@ -278,8 +278,33 @@ export const MyWorkPage: React.FC = () => {
                 onClick={() => setWorkspaceFilterId(ws.id)}
               >
                 <div className="ws-card-header">
-                  <div className="ws-card-logo">
-                    {ws.icon || '🏢'}
+                  <div className="ws-card-logo" style={{ overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+                    {ws.logoUrl ? (
+                      ws.logoUrl.startsWith('http') || ws.logoUrl.includes('/') || ws.logoUrl.includes('.') ? (
+                        <img
+                          src={ws.logoUrl}
+                          alt={ws.name}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) {
+                              const fallback = document.createElement('span');
+                              fallback.innerText = '🖼️';
+                              fallback.style.fontSize = '18px';
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', background: 'var(--accent-bg)', color: 'var(--accent)', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', padding: '2px', textAlign: 'center', wordBreak: 'break-all', lineHeight: 1.1 }}>
+                          <span style={{ fontSize: '14px' }}>🖼️</span>
+                          <span style={{ fontSize: '7px', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ws.logoUrl}</span>
+                        </div>
+                      )
+                    ) : (
+                      ws.icon || '🏢'
+                    )}
                   </div>
                   <div>
                     <h4 className="ws-card-title">{ws.name}</h4>

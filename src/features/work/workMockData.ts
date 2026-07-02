@@ -225,6 +225,7 @@ export interface WorkTask {
     endTime: string | null;
     hours: number;
   }>;
+  parentTaskId?: string | null;
 }
 
 export interface PlannerItem {

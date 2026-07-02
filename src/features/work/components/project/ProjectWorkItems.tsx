@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Ban, Calendar, GripVertical, LayoutGrid, List, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Ban, GripVertical, LayoutGrid, List, Plus, Search, ChevronLeft, ChevronRight, ChevronDown, User, SlidersHorizontal, MessageSquare, Calendar, Clock } from 'lucide-react';
 import { useWork } from '../../context/work-context';
 import {
   CURRENT_USER_ID,
@@ -7,6 +7,7 @@ import {
   TASK_STATUS_LABELS,
   employeeName,
   formatWorkDate,
+  formatWorkDateShort,
   priorityBadgeClass,
   projectTasks,
   type TaskStatus,
@@ -16,6 +17,33 @@ import {
 import { AddWorkItemDrawer } from './AddWorkItemDrawer';
 import { WorkAnalyticsPanel } from './WorkAnalyticsPanel';
 import { WorkItemDetailDrawer } from './WorkItemDetailDrawer';
+
+import { MOCK_EMPLOYEES } from '../../workMockData';
+
+const MONDAY_STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string }> = {
+  backlog: { label: 'Not Started', color: '#ffffff', bg: '#c4c4c4' },
+  todo: { label: 'Waiting', color: '#ffffff', bg: '#579bfc' },
+  in_progress: { label: 'Working on it', color: '#ffffff', bg: '#fdab3d' },
+  review: { label: 'Review', color: '#ffffff', bg: '#a25ddc' },
+  done: { label: 'Done', color: '#ffffff', bg: '#00c875' },
+};
+
+const MONDAY_PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  Low: { label: 'Low', color: '#ffffff', bg: '#579bfc' },
+  Medium: { label: 'Medium', color: '#ffffff', bg: '#4e5cdb' },
+  High: { label: 'High', color: '#ffffff', bg: '#784bd1' },
+  Critical: { label: 'Critical', color: '#ffffff', bg: '#df2f4a' },
+};
+
+const getAssigneeColor = (name: string): string => {
+  const colors = ['#1e4fbc', '#0073ea', '#a25ddc', '#00c875', '#fdab3d', '#df2f4a'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash % colors.length);
+  return colors[index];
+};
 
 interface Props {
   project: WorkProject;
@@ -32,12 +60,17 @@ interface DragState {
 }
 
 export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
-  const { tasks, addWorkItemSignal, updateTask, openTaskDetail } = useWork();
+  const { tasks, addWorkItemSignal, updateTask, openTaskDetail, addTask } = useWork();
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerStatus, setDrawerStatus] = useState<TaskStatus>('todo');
   const [drawerDueDate, setDrawerDueDate] = useState<string | null>(null);
+  const [drawerParentTaskId, setDrawerParentTaskId] = useState<string | null>(null);
+
+  // Monday table list view states
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [newTitles, setNewTitles] = useState<Record<string, string>>({});
 
   // Drag state
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -77,12 +110,14 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   const openAdd = (status: TaskStatus = 'todo') => {
     setDrawerStatus(status);
     setDrawerDueDate(null);
+    setDrawerParentTaskId(null);
     setDrawerOpen(true);
   };
 
   const openAddWithDate = (dateStr: string) => {
     setDrawerStatus('todo');
     setDrawerDueDate(dateStr);
+    setDrawerParentTaskId(null);
     setDrawerOpen(true);
   };
 
@@ -205,7 +240,7 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   };
 
   const calendarCells = useMemo(() => {
-    const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
+    const firstDayIndex = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
     const totalDays = daysInMonth(viewYear, viewMonth);
     const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
 
@@ -235,54 +270,213 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
   }, [viewYear, viewMonth]);
 
   const scheduledTasks = useMemo(() => {
-    return projectTaskList.filter(t => t.dueDate);
+    return projectTaskList.filter(t => t.dueDate && !t.parentTaskId);
   }, [projectTaskList]);
 
   const unscheduledTasks = useMemo(() => {
-    return projectTaskList.filter(t => !t.dueDate);
+    return projectTaskList.filter(t => !t.dueDate && !t.parentTaskId);
   }, [projectTaskList]);
 
   return (
-    <div className="work-board-page">
-      <div className="work-board-page__toolbar">
-        <div className="cfg-search work-board-page__search">
-          <Search size={14} />
-          <input placeholder="Search work items…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <div className="work-board-page__controls">
-          <div className="work-view-toggle admin-segmented">
-            <button
-              type="button"
-              className={`admin-segmented__btn${viewMode === 'board' ? ' admin-segmented__btn--active' : ''}`}
-              onClick={() => setViewMode('board')}
-              aria-label="Board view"
-            >
-              <LayoutGrid size={14} />
-            </button>
-            <button
-              type="button"
-              className={`admin-segmented__btn${viewMode === 'list' ? ' admin-segmented__btn--active' : ''}`}
-              onClick={() => setViewMode('list')}
-              aria-label="List view"
-            >
-              <List size={14} />
-            </button>
-            <button
-              type="button"
-              className={`admin-segmented__btn${viewMode === 'calendar' ? ' admin-segmented__btn--active' : ''}`}
-              onClick={() => setViewMode('calendar')}
-              aria-label="Calendar view"
-            >
-              <Calendar size={14} />
-            </button>
+    <div className="work-board-page" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '0', overflow: 'hidden' }}>
+      {/* Views Tab Bar */}
+      <div className="work-views-tab-bar" style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #cbd5e1', padding: '0 20px', background: '#ffffff', gap: '20px', flexShrink: 0 }}>
+        <button
+          type="button"
+          className={`work-view-tab${viewMode !== 'calendar' ? ' work-view-tab--active' : ''}`}
+          onClick={() => setViewMode('board')}
+          style={{
+            padding: '12px 4px',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: viewMode !== 'calendar' ? '#1e4fbc' : '#64748b',
+            border: 'none',
+            background: 'transparent',
+            borderBottom: viewMode !== 'calendar' ? '2px solid #1e4fbc' : '2px solid transparent',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          Main table
+        </button>
+        <button
+          type="button"
+          className={`work-view-tab${viewMode === 'calendar' ? ' work-view-tab--active' : ''}`}
+          onClick={() => setViewMode('calendar')}
+          style={{
+            padding: '12px 4px',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: viewMode === 'calendar' ? '#1e4fbc' : '#64748b',
+            border: 'none',
+            background: 'transparent',
+            borderBottom: viewMode === 'calendar' ? '2px solid #1e4fbc' : '2px solid transparent',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          Calendar
+        </button>
+        <span style={{ color: '#cbd5e1', fontSize: '14px', cursor: 'default' }}>...</span>
+        <span style={{ color: '#cbd5e1', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>+</span>
+      </div>
+
+      {/* Mode-specific Toolbar */}
+      {viewMode !== 'calendar' ? (
+        <div className="work-board-page__toolbar">
+          <div className="cfg-search work-board-page__search">
+            <Search size={14} />
+            <input placeholder="Search work items…" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <div className="work-board-page__controls">
+            <div className="work-view-toggle admin-segmented">
+              <button
+                type="button"
+                className={`admin-segmented__btn${viewMode === 'board' ? ' admin-segmented__btn--active' : ''}`}
+                onClick={() => setViewMode('board')}
+                aria-label="Board view"
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                type="button"
+                className={`admin-segmented__btn${viewMode === 'list' ? ' admin-segmented__btn--active' : ''}`}
+                onClick={() => setViewMode('list')}
+                aria-label="List view"
+              >
+                <List size={14} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Monday-like Calendar Toolbar */
+        <div className="work-board-calendar-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: '#ffffff', borderBottom: '1px solid #cbd5e1', gap: '12px', flexWrap: 'wrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* New task button */}
+            <div style={{ display: 'flex', alignItems: 'center', background: '#0073ea', color: '#ffffff', borderRadius: '4px', overflow: 'hidden' }}>
+              <button
+                type="button"
+                onClick={() => openAdd('todo')}
+                style={{ background: 'transparent', border: 'none', color: '#ffffff', padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                New task
+              </button>
+              <div style={{ width: '1px', background: 'rgba(255,255,255,0.3)', alignSelf: 'stretch' }} />
+              <button
+                type="button"
+                style={{ background: 'transparent', border: 'none', color: '#ffffff', padding: '6px 8px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <ChevronDown size={14} />
+              </button>
+            </div>
+
+            {/* Add widget button */}
+            <button
+              type="button"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <Plus size={14} />
+              <span>Add widget</span>
+            </button>
+
+            {/* Search input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '4px 10px', fontSize: '13px', color: '#334155', minWidth: '150px' }}>
+              <Search size={14} style={{ color: '#64748b' }} />
+              <input
+                type="text"
+                placeholder="Search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '13px' }}
+              />
+            </div>
+
+            {/* Person button */}
+            <button
+              type="button"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <User size={14} />
+              <span>Person</span>
+            </button>
+
+            {/* Filter button */}
+            <button
+              type="button"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <SlidersHorizontal size={14} />
+              <span>Filter</span>
+              <ChevronDown size={12} />
+            </button>
+
+            {/* Sidebar toggle button */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(prev => !prev)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <span>{isSidebarOpen ? 'Hide Unscheduled' : 'Show Unscheduled'}</span>
+            </button>
+          </div>
+
+          {/* Right side navigation & controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Today button */}
+            <button
+              type="button"
+              onClick={goToToday}
+              style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', fontWeight: 500, fontFamily: 'inherit' }}
+            >
+              Today
+            </button>
+
+            {/* Navigation arrows */}
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#ffffff' }}>
+              <button
+                type="button"
+                onClick={prevMonth}
+                style={{ background: 'transparent', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#334155', display: 'flex', alignItems: 'center' }}
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <div style={{ width: '1px', background: '#cbd5e1', alignSelf: 'stretch' }} />
+              <button
+                type="button"
+                onClick={nextMonth}
+                style={{ background: 'transparent', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#334155', display: 'flex', alignItems: 'center' }}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+
+            {/* Month / Year Label */}
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', minWidth: '90px', textAlign: 'center' }}>
+              {new Date(viewYear, viewMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            </span>
+
+            {/* View type select (Month) */}
+            <div style={{ position: 'relative' }}>
+              <select
+                value="Month"
+                onChange={() => {}}
+                style={{ border: '1px solid #cbd5e1', background: '#ffffff', borderRadius: '4px', padding: '6px 20px 6px 12px', fontSize: '13px', color: '#334155', cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none', fontFamily: 'inherit' }}
+              >
+                <option>Month</option>
+                <option>Week</option>
+                <option>Day</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {viewMode === 'board' && (
         <div className={`work-kanban${dragState ? ' work-kanban--dragging' : ''}`}>
           {TASK_STATUSES.map(status => {
-            const items = projectTaskList.filter(t => t.status === status);
+            const items = projectTaskList.filter(t => t.status === status && !t.parentTaskId);
             const isOver = dragOverCol === status;
             const isSource = dragState?.fromStatus === status;
 
@@ -322,6 +516,12 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
                       onMove={s => moveTask(task.id, s)}
                       onDragStart={() => handleDragStart(task.id, status)}
                       onDragEnd={handleDragEnd}
+                      onAddSubtask={() => {
+                        setDrawerStatus(task.status);
+                        setDrawerParentTaskId(task.id);
+                        setDrawerDueDate(null);
+                        setDrawerOpen(true);
+                      }}
                     />
                   ))}
 
@@ -336,80 +536,315 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
       )}
 
       {viewMode === 'list' && (
-        <div className="work-cycle-items__table-wrap">
-          <table className="work-cycle-items__table work-board-list">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Assignee</th>
-                <th>Due</th>
-                <th>Est.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projectTaskList.map(task => (
-                <tr key={task.id} className="work-board-list__row" onClick={() => openTaskDetail(task.id)}>
-                  <td><span className="work-task-key">{task.key}</span></td>
-                  <td>
-                    {task.blocked && <Ban size={12} className="work-task-card__blocked-icon" aria-label="Blocked" />}
-                    {task.title}
-                  </td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <select
-                      className="cfg-filter-select cfg-filter-select--inline"
-                      value={task.status}
-                      onChange={e => moveTask(task.id, e.target.value as TaskStatus)}
-                    >
-                      {TASK_STATUSES.map(s => (
-                        <option key={s} value={s}>{TASK_STATUS_LABELS[s]}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <span className={`cfg-badge cfg-badge--${priorityBadgeClass(task.priority)}`}>{task.priority}</span>
-                  </td>
-                  <td>{employeeName(task.assigneeId)}</td>
-                  <td>{formatWorkDate(task.dueDate)}</td>
-                  <td>{task.estimate ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="work-monday-container">
+          {TASK_STATUSES.map(status => {
+            const groupTasks = projectTaskList.filter(t => t.status === status && !t.parentTaskId);
+            const isCollapsed = collapsedGroups[status];
+            const config = MONDAY_STATUS_CONFIG[status];
+
+            // Calculate status & priority distribution for progress bars
+            const statusCounts = groupTasks.reduce((acc, t) => {
+              acc[t.status] = (acc[t.status] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+
+            const priorityCounts = groupTasks.reduce((acc, t) => {
+              acc[t.priority] = (acc[t.priority] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+
+            const totalCount = groupTasks.length;
+
+            // Calculate date range (timeline)
+            const dueDates = groupTasks.map(t => t.dueDate).filter(Boolean) as string[];
+            dueDates.sort();
+            let dateRangeStr = 'Not set';
+            if (dueDates.length > 0) {
+              const start = new Date(dueDates[0]);
+              const end = new Date(dueDates[dueDates.length - 1]);
+              const formatShort = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              dateRangeStr = `${formatShort(start)} - ${formatShort(end)}`;
+            }
+
+            return (
+              <div 
+                key={status} 
+                className={`work-monday-group work-monday-group--${status}`} 
+                style={{ 
+                  borderLeft: `6px solid ${config.bg}`, 
+                  borderRadius: '4px', 
+                  background: '#ffffff', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Collapsible Group Header */}
+                <div 
+                  onClick={() => setCollapsedGroups(prev => ({ ...prev, [status]: !prev[status] }))}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    padding: '12px 16px', 
+                    background: '#fcfcfc', 
+                    borderBottom: '1px solid #f1f1f1',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    gap: '10px'
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', color: config.bg, transition: 'transform 0.2s', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
+                    <ChevronDown size={16} />
+                  </span>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: config.bg }}>
+                    {TASK_STATUS_LABELS[status]}
+                  </h3>
+                  <span style={{ fontSize: '12px', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '12px', fontWeight: 500 }}>
+                    {groupTasks.length} tasks
+                  </span>
+                </div>
+
+                {!isCollapsed && (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="work-monday-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#fafafa', color: '#475569', textAlign: 'left' }}>
+                          <th style={{ width: '38px', padding: '10px 12px' }}>
+                            <input type="checkbox" disabled style={{ cursor: 'not-allowed', opacity: 0.5 }} />
+                          </th>
+                          <th style={{ padding: '10px 12px', minWidth: '240px' }}>Task</th>
+                          <th style={{ width: '120px', padding: '10px 12px', textAlign: 'center' }}>Owner</th>
+                          <th style={{ width: '150px', padding: '10px 12px', textAlign: 'center' }}>Status</th>
+                          <th style={{ width: '150px', padding: '10px 12px', textAlign: 'center' }}>Due date</th>
+                          <th style={{ width: '140px', padding: '10px 12px', textAlign: 'center' }}>Priority</th>
+                          <th style={{ width: '40px', padding: '10px 12px', textAlign: 'center' }}>+</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupTasks.map(task => {
+                          const assignee = MOCK_EMPLOYEES.find(e => e.id === task.assigneeId);
+                          const assigneeInitials = assignee ? assignee.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'U';
+
+                          return (
+                            <tr 
+                              key={task.id} 
+                              className="work-monday-row"
+                              style={{ borderBottom: '1px solid #f1f1f1', cursor: 'pointer' }}
+                              onClick={() => openTaskDetail(task.id)}
+                            >
+                              {/* Checkbox Column */}
+                              <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
+                                <input type="checkbox" style={{ cursor: 'pointer' }} />
+                              </td>
+
+                              {/* Task Title Column */}
+                              <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: 500 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  {task.blocked && <Ban size={12} style={{ color: '#ef4444' }} />}
+                                  <span>{task.title}</span>
+                                  <button 
+                                    type="button" 
+                                    style={{ border: 'none', background: 'transparent', color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', padding: '2px' }}
+                                    title="Open comments"
+                                  >
+                                    <MessageSquare size={13} />
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Owner/Assignee Column */}
+                              <td style={{ padding: '10px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '50%', background: assignee ? getAssigneeColor(assignee.name) : '#cbd5e1', color: '#ffffff', fontSize: '11px', fontWeight: 600, overflow: 'hidden' }} title={assignee?.name || 'Unassigned'}>
+                                  {assigneeInitials}
+                                </div>
+                              </td>
+
+                              {/* Status Select Column */}
+                              <td style={{ padding: '8px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                <div style={{ position: 'relative', width: '100%', height: '32px', borderRadius: '4px', overflow: 'hidden', background: MONDAY_STATUS_CONFIG[task.status]?.bg || '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 600 }}>
+                                    {MONDAY_STATUS_CONFIG[task.status]?.label}
+                                  </span>
+                                  <select
+                                    value={task.status}
+                                    onChange={e => moveTask(task.id, e.target.value as TaskStatus)}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      opacity: 0,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    {TASK_STATUSES.map(s => (
+                                      <option key={s} value={s}>{TASK_STATUS_LABELS[s]}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </td>
+
+                              {/* Due Date Column */}
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                  <Calendar size={12} style={{ color: '#94a3b8' }} />
+                                  <span>{task.dueDate ? formatWorkDate(task.dueDate) : '—'}</span>
+                                </div>
+                              </td>
+
+                              {/* Priority Column */}
+                              <td style={{ padding: '8px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                <div style={{ position: 'relative', width: '100%', height: '32px', borderRadius: '4px', overflow: 'hidden', background: MONDAY_PRIORITY_CONFIG[task.priority]?.bg || '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 600 }}>
+                                    {task.priority}
+                                  </span>
+                                  <select
+                                    value={task.priority}
+                                    onChange={e => updateTask(task.id, { priority: e.target.value as any })}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      opacity: 0,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                  </select>
+                                </div>
+                              </td>
+
+                              {/* Plus Column placeholder */}
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#cbd5e1' }}>+</td>
+                            </tr>
+                          );
+                        })}
+
+                        {/* Quick Task Creation Row */}
+                        <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '10px 12px' }}>
+                            <input type="checkbox" disabled style={{ opacity: 0.3 }} />
+                          </td>
+                          <td colSpan={6} style={{ padding: '8px 12px' }}>
+                            <input
+                              type="text"
+                              placeholder="+ Add task"
+                              value={newTitles[status] ?? ''}
+                              onChange={e => setNewTitles(prev => ({ ...prev, [status]: e.target.value }))}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  const val = newTitles[status]?.trim();
+                                  if (val) {
+                                    addTask({
+                                      projectId: project.id,
+                                      title: val,
+                                      status: status as TaskStatus,
+                                      priority: 'Medium',
+                                      assigneeId: CURRENT_USER_ID,
+                                    });
+                                    setNewTitles(prev => ({ ...prev, [status]: '' }));
+                                  }
+                                }
+                              }}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                outline: 'none',
+                                width: '100%',
+                                fontSize: '13px',
+                                color: '#0f172a',
+                                padding: '4px 0'
+                              }}
+                            />
+                          </td>
+                        </tr>
+
+                        {/* Group Summary Row (Footer) */}
+                        <tr style={{ background: '#fafafa', borderBottom: '1px solid #cbd5e1' }}>
+                          <td style={{ padding: '8px 12px' }}></td>
+                          <td style={{ padding: '8px 12px' }}></td>
+                          <td style={{ padding: '8px 12px' }}></td>
+
+                          {/* Status distribution summary bar */}
+                          <td style={{ padding: '8px 12px' }}>
+                            {totalCount > 0 && (
+                              <div style={{ display: 'flex', width: '100%', height: '16px', borderRadius: '4px', overflow: 'hidden' }}>
+                                {TASK_STATUSES.map(s => {
+                                  const count = statusCounts[s] || 0;
+                                  if (count === 0) return null;
+                                  const pct = (count / totalCount) * 100;
+                                  return (
+                                    <div 
+                                      key={s} 
+                                      style={{ 
+                                        width: `${pct}%`, 
+                                        background: MONDAY_STATUS_CONFIG[s as TaskStatus]?.bg || '#cbd5e1',
+                                        height: '100%'
+                                      }} 
+                                      title={`${TASK_STATUS_LABELS[s as TaskStatus]}: ${count}`}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Due Date Summary Bar (Timeline Oval) */}
+                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                            {totalCount > 0 && (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', background: '#333333', color: '#ffffff', borderRadius: '12px', padding: '2px 10px', fontSize: '11px', fontWeight: 600 }}>
+                                <Clock size={10} style={{ marginRight: '4px' }} />
+                                <span>{dateRangeStr}</span>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Priority summary bar */}
+                          <td style={{ padding: '8px 12px' }}>
+                            {totalCount > 0 && (
+                              <div style={{ display: 'flex', width: '100%', height: '16px', borderRadius: '4px', overflow: 'hidden' }}>
+                                {['Low', 'Medium', 'High', 'Critical'].map(p => {
+                                  const count = priorityCounts[p] || 0;
+                                  if (count === 0) return null;
+                                  const pct = (count / totalCount) * 100;
+                                  return (
+                                    <div 
+                                      key={p} 
+                                      style={{ 
+                                        width: `${pct}%`, 
+                                        background: MONDAY_PRIORITY_CONFIG[p]?.bg || '#94a3b8',
+                                        height: '100%'
+                                      }} 
+                                      title={`${p}: ${count}`}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+
+                          <td style={{ padding: '8px 12px' }}></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
       {viewMode === 'calendar' && (
         <div className="work-board-calendar-container">
           <div className="work-board-calendar-main">
-            <div className="work-board-calendar-header">
-              <h2 className="work-board-calendar-title">
-                {new Date(viewYear, viewMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-              </h2>
-              <div className="work-board-calendar-nav">
-                <button type="button" className="org-btn org-btn--secondary org-btn--sm" onClick={prevMonth}>
-                  <ChevronLeft size={14} /> Prev
-                </button>
-                <button type="button" className="org-btn org-btn--secondary org-btn--sm" onClick={goToToday}>
-                  Today
-                </button>
-                <button type="button" className="org-btn org-btn--secondary org-btn--sm" onClick={nextMonth}>
-                  Next <ChevronRight size={14} />
-                </button>
-              </div>
-              <button
-                type="button"
-                className="org-btn org-btn--secondary org-btn--sm work-calendar-toggle-sidebar"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              >
-                {isSidebarOpen ? 'Hide Unscheduled' : 'Show Unscheduled'}
-              </button>
-            </div>
-
             <div className="work-board-calendar-weekdays">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                 <div key={day} className="work-board-calendar-weekday">
                   {day}
                 </div>
@@ -430,16 +865,10 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
                     onDrop={e => handleCellDrop(e, cell.dateStr)}
                     onDragLeave={() => setDragOverDate(null)}
                   >
-                    <div className="work-board-calendar-cell-header">
-                      <span className="work-board-calendar-cell-day">{cell.dayNum}</span>
-                      <button
-                        type="button"
-                        className="work-board-calendar-cell-add"
-                        onClick={() => openAddWithDate(cell.dateStr)}
-                        title="Add task for this day"
-                      >
-                        <Plus size={10} />
-                      </button>
+                    <div className="work-board-calendar-cell-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+                      <span className="work-board-calendar-cell-day">
+                        {String(cell.dayNum).padStart(2, '0')}
+                      </span>
                     </div>
                     <div className="work-board-calendar-cell-tasks">
                       {dayTasks.map(task => (
@@ -452,6 +881,30 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
                           onDragEnd={handleDragEnd}
                         />
                       ))}
+                      {dayTasks.length === 0 && (
+                        <button
+                          type="button"
+                          className="work-board-calendar-cell-center-add"
+                          onClick={() => openAddWithDate(cell.dateStr)}
+                          style={{
+                            display: 'none',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: 'auto',
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#64748b',
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          + Add
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -498,11 +951,15 @@ export const ProjectWorkItems: React.FC<Props> = ({ project }) => {
 
       <AddWorkItemDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={() => {
+          setDrawerOpen(false);
+          setDrawerParentTaskId(null);
+        }}
         project={project}
         defaultStatus={drawerStatus}
         defaultAssigneeId={CURRENT_USER_ID}
         defaultDueDate={drawerDueDate}
+        defaultParentTaskId={drawerParentTaskId}
       />
       <WorkItemDetailDrawer project={project} />
       <WorkAnalyticsPanel project={project} />
@@ -578,8 +1035,72 @@ const TaskCard: React.FC<{
   onMove: (status: TaskStatus) => void;
   onDragStart: () => void;
   onDragEnd: () => void;
-}> = ({ task, isDragging, onOpen, onMove, onDragStart, onDragEnd }) => {
+  onAddSubtask: () => void;
+}> = ({ task, isDragging, onOpen, onMove, onDragStart, onDragEnd, onAddSubtask }) => {
+  const { tasks, updateTask, openTaskDetail } = useWork();
   const elapsed = useTaskElapsedTime(task);
+  const [isHovered, setIsHovered] = useState(false);
+  const [subtasksExpanded, setSubtasksExpanded] = useState(false);
+
+  const handleClockIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nowStr = new Date().toISOString();
+    const currentAssignee = MOCK_EMPLOYEES.find(emp => emp.id === task.assigneeId);
+    const assigneeName = currentAssignee ? currentAssignee.name : 'Unknown';
+
+    const newSession = {
+      id: `sess-${Date.now()}`,
+      assigneeId: task.assigneeId,
+      assigneeName,
+      startTime: nowStr,
+      endTime: null,
+      hours: 0,
+    };
+
+    const sessions = task.timeSessions ? [...task.timeSessions] : [];
+
+    updateTask(task.id, {
+      isClockedIn: true,
+      clockInStartTime: nowStr,
+      status: 'in_progress',
+      timeSessions: [...sessions, newSession],
+    });
+  };
+
+  const handleClockOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!task.clockInStartTime) return;
+
+    const endTime = new Date();
+    const startTime = new Date(task.clockInStartTime);
+    const diffMs = endTime.getTime() - startTime.getTime();
+    const sessionHours = Number((diffMs / (1000 * 60 * 60)).toFixed(4));
+
+    const sessions = task.timeSessions ? [...task.timeSessions] : [];
+    const updatedSessions = sessions.map(sess => {
+      if (sess.endTime === null) {
+        return {
+          ...sess,
+          endTime: endTime.toISOString(),
+          hours: sessionHours,
+        };
+      }
+      return sess;
+    });
+
+    const newTotalHours = Number(((task.totalWorkedHours ?? 0) + sessionHours).toFixed(4));
+
+    updateTask(task.id, {
+      isClockedIn: false,
+      clockInStartTime: null,
+      totalWorkedHours: newTotalHours,
+      timeSessions: updatedSessions,
+    });
+  };
+
+  const subtasks = useMemo(() => {
+    return tasks.filter(t => t.parentTaskId === task.id);
+  }, [tasks, task.id]);
 
   const delayInfo = useMemo(() => {
     if (!task.dueDate || task.status === 'done') return null;
@@ -595,8 +1116,9 @@ const TaskCard: React.FC<{
   }, [task.dueDate, task.status]);
 
   return (
-    <article
-      className={`work-task-card${task.blocked ? ' work-task-card--blocked' : ''}${isDragging ? ' work-task-card--ghost' : ''}`}
+    <>
+      <article
+        className={`work-task-card${task.blocked ? ' work-task-card--blocked' : ''}${isDragging ? ' work-task-card--ghost' : ''}`}
       draggable
       onDragStart={e => {
         e.dataTransfer.effectAllowed = 'move';
@@ -606,6 +1128,8 @@ const TaskCard: React.FC<{
       onDragEnd={onDragEnd}
       onClick={onOpen}
       onKeyDown={e => { if (e.key === 'Enter') onOpen(); }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       role="button"
       tabIndex={0}
     >
@@ -616,6 +1140,30 @@ const TaskCard: React.FC<{
       <div className="work-task-card__top">
         <span className="work-task-key">{task.key}</span>
         <div className="work-task-card__top-actions" onClick={e => e.stopPropagation()}>
+          {isHovered && !task.parentTaskId && (
+            <button
+              type="button"
+              title="Add Subtask"
+              onClick={() => onAddSubtask()}
+              style={{
+                background: 'var(--accent-bg)',
+                color: 'var(--accent)',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                width: '18px',
+                height: '18px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                marginRight: '6px'
+              }}
+            >
+              +
+            </button>
+          )}
           {task.blocked && (
             <span className="work-task-card__blocked-badge" title="Blocked">
               <Ban size={12} />
@@ -650,19 +1198,139 @@ const TaskCard: React.FC<{
         </div>
       )}
 
-      <div className="work-task-card__footer">
-        <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
-          {employeeName(task.assigneeId).slice(0, 2)}
-        </span>
-        <span className="work-task-card__assignee">{employeeName(task.assigneeId)}</span>
-        {elapsed && (
-          <span className="work-task-card__elapsed" title="Active duration" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 6px', background: 'var(--accent-bg)', color: 'var(--accent)', borderRadius: '999px', fontSize: '0.62rem', fontWeight: 600 }}>
-            ⏱ {elapsed}
+      <div className="work-task-card__footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="work-avatar-chip__circle work-avatar-chip__circle--sm">
+            {employeeName(task.assigneeId).slice(0, 2)}
           </span>
+          <span className="work-task-card__assignee">{employeeName(task.assigneeId)}</span>
+          {elapsed && (
+            <span className="work-task-card__elapsed" title="Active duration" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 6px', background: 'var(--accent-bg)', color: 'var(--accent)', borderRadius: '999px', fontSize: '0.62rem', fontWeight: 600 }}>
+              ⏱ {elapsed}
+            </span>
+          )}
+          {task.dueDate && <span className="work-task-card__due">{formatWorkDate(task.dueDate)}</span>}
+          <button
+            type="button"
+            onClick={task.isClockedIn ? handleClockOut : handleClockIn}
+            style={{
+              padding: '2px 8px',
+              fontSize: '10px',
+              fontWeight: 600,
+              borderRadius: '4px',
+              border: task.isClockedIn ? '1px solid #ef4444' : '1px solid #0073ea',
+              background: task.isClockedIn ? '#fee2e2' : '#e0f2fe',
+              color: task.isClockedIn ? '#b91c1c' : '#0369a1',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontFamily: 'inherit',
+              flexShrink: 0
+            }}
+          >
+            <span>{task.isClockedIn ? 'Clock Out' : 'Clock In'}</span>
+          </button>
+        </div>
+
+        {/* Collapsible toggle header inside footer */}
+        {subtasks.length > 0 && (
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              setSubtasksExpanded(prev => !prev);
+            }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              fontSize: '0.78rem', 
+              color: 'var(--text-m)', 
+              cursor: 'pointer',
+              userSelect: 'none',
+              marginTop: '4px',
+              borderTop: '1px solid var(--border)',
+              paddingTop: '8px'
+            }}
+          >
+            <ChevronDown 
+              size={14} 
+              style={{ 
+                transform: subtasksExpanded ? 'rotate(0deg)' : 'rotate(-90deg)', 
+                transition: 'transform 0.15s ease',
+                color: 'var(--text-s)'
+              }} 
+            />
+            <span style={{ fontWeight: 500 }}>
+              {subtasks.length} {subtasks.length === 1 ? 'subtask' : 'subtasks'}
+            </span>
+          </div>
         )}
-        {task.dueDate && <span className="work-task-card__due">{formatWorkDate(task.dueDate)}</span>}
       </div>
     </article>
+
+    {/* Collapsed subtask mini-cards rendered outside of parent article block */}
+    {subtasks.length > 0 && subtasksExpanded && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', paddingLeft: '16px' }} onClick={e => e.stopPropagation()}>
+        {subtasks.map(sub => {
+          const subAssignee = MOCK_EMPLOYEES.find(e => e.id === sub.assigneeId);
+          const subInitials = subAssignee ? subAssignee.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
+          const subAvatarBg = subAssignee ? getAssigneeColor(subAssignee.name) : '#cbd5e1';
+
+          return (
+            <div
+              key={sub.id}
+              onClick={() => openTaskDetail(sub.id)}
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+              }}
+            >
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-h)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                {sub.title}
+              </div>
+              
+              {/* Subtask Meta Row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {/* Owner avatar */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: subAvatarBg, color: '#ffffff', fontSize: '9px', fontWeight: 600 }} title={subAssignee?.name || 'Unassigned'}>
+                  {subInitials}
+                </div>
+
+                {/* Due Date */}
+                {sub.dueDate && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid var(--border)', borderRadius: '4px', padding: '1px 4px', fontSize: '9px', color: 'var(--text-m)', background: 'var(--surface-muted)' }}>
+                    <Calendar size={9} style={{ color: 'var(--text-s)' }} />
+                    <span>{formatWorkDateShort(sub.dueDate)}</span>
+                  </div>
+                )}
+
+                {/* Priority Flag */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid var(--border)', borderRadius: '4px', padding: '1px 4px', fontSize: '9px', color: 'var(--text-m)', background: 'var(--surface-muted)' }}>
+                  <span style={{ color: sub.priority === 'Critical' || sub.priority === 'High' ? '#ef4444' : '#3b82f6', fontSize: '8px' }}>🚩</span>
+                  <span>{sub.priority}</span>
+                </div>
+
+                {/* Label Tag icon */}
+                {sub.labels.length > 0 && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid var(--border)', borderRadius: '4px', padding: '1px 4px', fontSize: '9px', color: 'var(--text-m)', background: 'var(--surface-muted)' }}>
+                    <span>🏷️</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </>
   );
 };
 

@@ -95,6 +95,10 @@ interface AddTaskInput {
   customFieldValues?: Record<string, string | number>;
   allocatedHours?: number;
   checklist?: WorkTaskChecklistGroup[];
+  parentTaskId?: string | null;
+  blocks?: string[];
+  blockedBy?: string[];
+  relatesTo?: string[];
 }
 
 interface WorkContextValue {
@@ -519,6 +523,10 @@ export const WorkProvider: React.FC<{
       timeSessions: [],
       checklist: input.checklist ?? [],
       estimate: input.allocatedHours,
+      parentTaskId: input.parentTaskId ?? null,
+      blocks: input.blocks ?? [],
+      blockedBy: input.blockedBy ?? [],
+      relatesTo: input.relatesTo ?? [],
     };
     setTasks(prev => {
       const next = [...prev, task];

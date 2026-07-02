@@ -108,11 +108,14 @@ interface Props {
 const LEAVE_CONFLICT_USER = 'user-2';
 
 export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) => {
-  const { selectedTaskId, closeTaskDetail, updateTask, tasks, workspaces, getProject, milestones, updateMilestone } = useWork();
+  const { selectedTaskId, closeTaskDetail, updateTask, tasks, workspaces, getProject, milestones, updateMilestone, openTaskDetail } = useWork();
   const task = useMemo(
     () => (selectedTaskId ? tasks.find(t => t.id === selectedTaskId) : undefined),
     [selectedTaskId, tasks],
   );
+  const subtasks = useMemo(() => {
+    return task ? tasks.filter(t => t.parentTaskId === task.id) : [];
+  }, [tasks, task]);
   const elapsed = useTaskElapsedTime(task);
   const activeSessionSecs = useSessionTimer(task?.clockInStartTime, task?.isClockedIn);
 
@@ -548,6 +551,68 @@ export const WorkItemDetailDrawer: React.FC<Props> = ({ project: projectProp }) 
                 onAdd={text => addChecklistItem(group.id, text)}
               />
             ))}
+          </section>
+
+          {/* Subtasks Section */}
+          <section className="work-settings-section">
+            <h3 className="work-settings-section__title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Subtasks ({subtasks.length})</span>
+            </h3>
+            
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {subtasks.map(sub => (
+                <div
+                  key={sub.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#f8fafc',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '13px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={sub.status === 'done'}
+                      onChange={(e) => {
+                        updateTask(sub.id, { status: e.target.checked ? 'done' : 'todo' });
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span
+                      style={{
+                        color: 'var(--text-h)',
+                        fontWeight: 500,
+                        textDecoration: sub.status === 'done' ? 'line-through' : 'none',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        openTaskDetail(sub.id);
+                      }}
+                    >
+                      {sub.title}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-bg)', padding: '2px 6px', borderRadius: '4px' }}>
+                      {sub.key}
+                    </span>
+                    <span className={`cfg-badge cfg-badge--${priorityBadgeClass(sub.priority)}`}>
+                      {sub.priority}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {subtasks.length === 0 && (
+                <p className="work-panel__desc" style={{ fontStyle: 'italic', fontSize: '12px', color: '#64748b', margin: 0 }}>
+                  No subtasks linked to this item.
+                </p>
+              )}
+            </div>
           </section>
 
           <section className="work-settings-section">

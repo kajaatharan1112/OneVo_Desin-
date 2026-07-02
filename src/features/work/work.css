@@ -6867,6 +6867,7 @@
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -7750,8 +7751,17 @@
   color: #fff;
 }
 
-.work-board-calendar-cell:hover .work-board-calendar-cell-add {
-  display: flex;
+.work-board-calendar-cell:hover {
+  background: #f1f5f9 !important;
+}
+
+.work-board-calendar-cell:hover .work-board-calendar-cell-center-add {
+  display: flex !important;
+}
+
+.work-board-calendar-cell-center-add:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 /* Task list inside a cell */
@@ -7941,3 +7951,44 @@
     overflow-y: visible;
   }
 }
+
+/* ── Monday.com style table grid ───────────────── */
+.work-monday-container {
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.work-monday-group {
+  border: 1px solid #cbd5e1;
+}
+
+.work-monday-table th {
+  font-weight: 500;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.work-monday-table td {
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.work-monday-table th:last-child,
+.work-monday-table td:last-child {
+  border-right: none;
+}
+
+.work-monday-row:hover {
+  background: #f8fafc !important;
+}
+
+.work-monday-row input[type="checkbox"]:hover {
+  transform: scale(1.05);
+}
+
